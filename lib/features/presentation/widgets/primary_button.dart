@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:project_setup_flutter/utils/constants/colors.dart';
+import 'package:project_setup_flutter/utils/constants/sizes.dart';
 
 class PrimaryButton extends StatefulWidget {
   final String text;
@@ -95,10 +97,12 @@ class _PrimaryButtonState extends State<PrimaryButton>
   Widget build(BuildContext context) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFF97316), // A nice orange color
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 0, // No shadow for a flatter look
+        backgroundColor: XColors.primaryColor,
+        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(XSizes.borderRadiusSm),
+        ),
+        elevation: 0,
       ),
       onPressed: widget.isLoading ? null : widget.onPressed,
       child:
@@ -106,48 +110,13 @@ class _PrimaryButtonState extends State<PrimaryButton>
               ? _buildLoadingIndicator()
               : Text(
                 widget.text,
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+                  fontSize: XSizes.textSizeSm,
+                  fontWeight: FontWeight.w300,
+                  fontFamily: 'Lexend',
                 ),
               ),
-    );
-  }
-}
-
-class ButtonExample extends StatefulWidget {
-  const ButtonExample({Key? key}) : super(key: key);
-
-  @override
-  State<ButtonExample> createState() => _ButtonExampleState();
-}
-
-class _ButtonExampleState extends State<ButtonExample> {
-  bool _isLoading = false;
-
-  void _handlePress() async {
-    setState(() => _isLoading = true);
-    // Simulate a network call
-    await Future.delayed(const Duration(seconds: 3));
-    setState(() => _isLoading = false);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(title: const Text('Primary Button Example')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: PrimaryButton(
-            text: 'CONTINUE',
-            isLoading: _isLoading,
-            onPressed: _handlePress,
-          ),
-        ),
-      ),
     );
   }
 }

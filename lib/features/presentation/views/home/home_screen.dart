@@ -38,18 +38,6 @@ class HomeScreen extends StatelessWidget {
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
-                ListTile(
-                  title: Text('English'),
-                  onTap: () {
-                    Get.updateLocale(Locale('en', 'US'));
-                  },
-                ),
-                ListTile(
-                  title: Text('Español'),
-                  onTap: () {
-                    Get.updateLocale(Locale('es', 'ES'));
-                  },
-                ),
               ],
             ),
           ),

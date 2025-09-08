@@ -7,14 +7,14 @@ class XColors {
   static const Color success = Colors.green;
 
   // LIGHT VERSION
-  static const Color primaryColor = Color(0xFF3F51B5);
+  static const Color primaryColor = Color(0xFFF97316);
   static const Color backgroundColor = Color(0xFFFFFFFF);
   static const Color textColor = Color(0xFF212121);
   static const Color dotIndicatorColor = Color(0xFFBDBDBD);
   // ...add more for LIGHT VERSION like , button color, card color, etc
 
   // DARK VERSION
-  static const Color primaryColorDark = Color(0xFF3F51B5);
+  static const Color primaryColorDark = Color(0xFFF97316);
   static const Color backgroundColorDark = Color(0xFF212121);
   static const Color textColorDark = Color(0xFFFFFFFF);
   static const Color dotIndicatorColorDark = Color(0xFFBDBDBD);

@@ -51,7 +51,7 @@ class OnboardingController extends GetxController {
     // await prefs.setBool('onboarding_completed', true);
 
     // Navigate to home screen
-    Get.offAllNamed(XRoutes.home);
+    Get.offAllNamed(XRoutes.login);
   }
 
   /// Check if onboarding is completed
@@ -59,7 +59,7 @@ class OnboardingController extends GetxController {
     // TODO: Temporarily commented for development - uncomment when ready
     // final prefs = await SharedPreferences.getInstance();
     // return prefs.getBool('onboarding_completed') ?? false;
-    
+
     // Always return false during development to show onboarding every time
     return false;
   }

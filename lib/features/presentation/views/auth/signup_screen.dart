@@ -4,12 +4,11 @@ import 'package:get/get.dart';
 import '../../../../utils/constants/sizes.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/theme_controller.dart';
-import '../../routes/routes.dart';
 import '../../widgets/primary_button.dart';
 import 'components/password_field.dart';
 
-class SigninScreen extends StatelessWidget {
-  const SigninScreen({super.key});
+class SignupScreen extends StatelessWidget {
+  const SignupScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,19 +18,25 @@ class SigninScreen extends StatelessWidget {
       builder: (themeController) {
         return Scaffold(
           backgroundColor: themeController.backgroundColor,
+          appBar: AppBar(
+            backgroundColor: themeController.backgroundColor,
+            surfaceTintColor: themeController.backgroundColor,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: themeController.textColor),
+              onPressed: () => Get.back(),
+            ),
+          ),
           body: SafeArea(
             child: SingleChildScrollView(
               padding: EdgeInsets.all(XSizes.spacingLg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SizedBox(height: XSizes.spacingMd),
-                  // Logo
-                  Image.asset('assets/images/logo.png', width: 240),
-                  SizedBox(height: XSizes.spacingLg),
                   // Welcome Text
                   Text(
-                    'Sign In',
+                    'Sign Up',
                     style: TextStyle(
                       fontSize: XSizes.textSize2xl,
                       fontWeight: FontWeight.bold,
@@ -41,7 +46,7 @@ class SigninScreen extends StatelessWidget {
                   ),
                   SizedBox(height: XSizes.spacingSm),
                   Text(
-                    'Sign in to access your personalized \nlearning journey',
+                    'Create your account to embark on \nyour educational adventure',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       letterSpacing: 1.1,
@@ -54,12 +59,12 @@ class SigninScreen extends StatelessWidget {
 
                   SizedBox(height: XSizes.spacingXl),
 
-                  // Email Field
+                  // Full Name Field
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Email Here',
+                        'Full Name',
                         style: TextStyle(
                           fontSize: XSizes.textSizeSm,
                           fontWeight: FontWeight.w500,
@@ -69,7 +74,60 @@ class SigninScreen extends StatelessWidget {
                       ),
                       SizedBox(height: XSizes.spacingSm),
                       TextField(
-                        controller: authController.emailController,
+                        controller: authController.fullNameController,
+                        keyboardType: TextInputType.name,
+                        cursorColor: themeController.primaryColor,
+                        style: TextStyle(
+                          color: themeController.textColor,
+                          fontFamily: 'Lexend',
+                          fontSize: XSizes.textSizeSm,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Enter your full name',
+                          hintStyle: TextStyle(
+                            color: themeController.textColor.withValues(
+                              alpha: 0.5,
+                            ),
+                            fontSize: XSizes.textSizeSm,
+                            fontFamily: 'Lexend',
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: themeController.primaryColor,
+                              width: 1,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: themeController.primaryColor,
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: XSizes.spacingMd),
+
+                  // Email Field
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Email',
+                        style: TextStyle(
+                          fontSize: XSizes.textSizeSm,
+                          fontWeight: FontWeight.w500,
+                          color: themeController.textColor,
+                          fontFamily: 'Lexend',
+                        ),
+                      ),
+                      SizedBox(height: XSizes.spacingSm),
+                      TextField(
+                        controller: authController.signupEmailController,
                         keyboardType: TextInputType.emailAddress,
                         cursorColor: themeController.primaryColor,
                         style: TextStyle(
@@ -105,7 +163,7 @@ class SigninScreen extends StatelessWidget {
                     ],
                   ),
 
-                  SizedBox(height: XSizes.spacingLg),
+                  SizedBox(height: XSizes.spacingMd),
 
                   // Password Field
                   Column(
@@ -122,41 +180,44 @@ class SigninScreen extends StatelessWidget {
                       ),
                       SizedBox(height: XSizes.spacingSm),
                       PasswordField(
-                        controller: authController.passwordController,
+                        controller: authController.signupPasswordController,
                         hintText: '******************',
                       ),
                     ],
                   ),
-                  // Forgot Password
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        // Handle forgot password
-                      },
-                      child: Text(
-                        'Forgot Password?',
+
+                  SizedBox(height: XSizes.spacingMd),
+
+                  // Confirm Password Field
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Confirm Password',
                         style: TextStyle(
-                          color: themeController.textColor.withValues(
-                            alpha: 0.6,
-                          ),
                           fontSize: XSizes.textSizeSm,
+                          fontWeight: FontWeight.w500,
+                          color: themeController.textColor,
                           fontFamily: 'Lexend',
-                          fontWeight: FontWeight.w400,
                         ),
                       ),
-                    ),
+                      SizedBox(height: XSizes.spacingSm),
+                      PasswordField(
+                        controller: authController.confirmPasswordController,
+                        hintText: '******************',
+                      ),
+                    ],
                   ),
 
-                  SizedBox(height: XSizes.spacingSm),
+                  SizedBox(height: XSizes.spacingXl),
 
-                  // Sign In Button
+                  // Sign Up Button
                   SizedBox(
                     width: double.infinity,
                     child: Obx(
                       () => PrimaryButton(
-                        text: 'SIGN IN',
-                        onPressed: authController.signIn,
+                        text: 'SIGN UP',
+                        onPressed: authController.signUp,
                         isLoading: authController.isLoading.value,
                       ),
                     ),
@@ -164,7 +225,7 @@ class SigninScreen extends StatelessWidget {
 
                   SizedBox(height: XSizes.spacingLg),
 
-                  // Or Sign In with
+                  // Or Sign Up with
                   Row(
                     children: [
                       Expanded(
@@ -179,7 +240,7 @@ class SigninScreen extends StatelessWidget {
                           horizontal: XSizes.spacingMd,
                         ),
                         child: Text(
-                          'Or Sign In with',
+                          'Or Sign Up with',
                           style: TextStyle(
                             color: themeController.textColor.withValues(
                               alpha: 0.6,
@@ -210,11 +271,11 @@ class SigninScreen extends StatelessWidget {
                         width: double.infinity,
                         child: OutlinedButton.icon(
                           onPressed: () {
-                            // Handle Phone number login
-                            authController.signInWithPhone();
+                            // Handle Phone number signup
+                            authController.signUpWithPhone();
                           },
                           label: Text(
-                            'Sign In With Phone Number',
+                            'Sign Up With Phone Number',
                             style: TextStyle(
                               color: themeController.textColor,
                               fontFamily: 'Lexend',
@@ -244,11 +305,11 @@ class SigninScreen extends StatelessWidget {
                         width: double.infinity,
                         child: OutlinedButton.icon(
                           onPressed: () {
-                            // Handle Google login
-                            authController.signInWithGoogle();
+                            // Handle Google signup
+                            authController.signUpWithGoogle();
                           },
                           label: Text(
-                            'Sign In With Google',
+                            'Sign Up With Google',
                             style: TextStyle(
                               color: themeController.textColor,
                               fontFamily: 'Lexend',
@@ -280,7 +341,7 @@ class SigninScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        "Don't have an Account? ",
+                        "Already have an Account? ",
                         style: TextStyle(
                           color: themeController.textColor.withValues(
                             alpha: 0.7,
@@ -292,9 +353,9 @@ class SigninScreen extends StatelessWidget {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => Get.toNamed(XRoutes.signup),
+                        onTap: () => Get.back(),
                         child: Text(
-                          'Sign Up here',
+                          'Sign In here',
                           style: TextStyle(
                             color: themeController.textColor,
                             fontFamily: 'Lexend',

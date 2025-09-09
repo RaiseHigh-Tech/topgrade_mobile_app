@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../common/error/response_exception.dart';
 import '../../../common/error/server_exception.dart';
 import '../../data/source/remote_source.dart';
+import '../../data/model/signin_response_model.dart';
 import '../routes/routes.dart';
 
 enum ResetStep { email, otp, newPassword }
@@ -11,22 +13,28 @@ enum ResetStep { email, otp, newPassword }
 class AuthController extends GetxController {
   late RemoteSourceImpl remoteSource;
   final _isLoading = false.obs;
+  static const _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
+  );
 
   // TextField Controllers for sign-in form
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  
+
   // TextField Controllers for mobile sign-in form
   final phoneController = TextEditingController();
   final otpController = TextEditingController();
   final _isOtpSent = false.obs;
-  
+
   // TextField Controllers for sign-up form
   final fullNameController = TextEditingController();
   final signupEmailController = TextEditingController();
   final signupPasswordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
-  
+
   // TextField Controllers for reset password form
   final resetEmailController = TextEditingController();
   final resetOtpController = TextEditingController();
@@ -49,48 +57,47 @@ class AuthController extends GetxController {
         return;
       }
 
+      if (!GetUtils.isEmail(emailController.text.trim())) {
+        Get.snackbar('Error', 'Please enter a valid email address');
+        return;
+      }
+
       if (passwordController.text.trim().isEmpty) {
         Get.snackbar('Error', 'Please enter your password');
         return;
       }
 
-      // Use existing remote source for login
-      await remoteSource
-          .demoLogin(email: emailController.text.trim(), password: passwordController.text.trim())
-          .then((response) {
-            _isLoading.value = false;
-            Get.offAllNamed(XRoutes.home);
-            Get.snackbar(
-              'Success', 
-              'Welcome back!',
-              snackPosition: SnackPosition.BOTTOM,
-            );
-          });
+      // Call signin API
+      final SigninResponseModel response = await remoteSource.signin(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      // Check if signin was successful
+      if (response.isAuthSuccess) {
+        // Save tokens to storage
+        await _saveTokens(response.accessToken!, response.refreshToken!);
+
+        // Clear form
+        emailController.clear();
+        passwordController.clear();
+
+        // Navigate to home
+        Get.offAllNamed(XRoutes.home);
+        Get.snackbar(
+          'Success',
+          response.message,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } else {
+        Get.snackbar('Error', response.message);
+      }
     } on ResponseException catch (e) {
       Get.snackbar('Error', e.message);
     } on ServerException catch (e) {
       Get.snackbar('Error', e.message);
     } catch (e) {
-      Get.snackbar('Error', 'Login failed. Please try again.');
-    } finally {
-      _isLoading.value = false;
-    }
-  }
-
-  // Original login method (keeping for backward compatibility)
-  Future<void> login() async {
-    try {
-      _isLoading.value = true;
-      await remoteSource
-          .demoLogin(email: "dhinesh.tech2001@gmail.com", password: "12345")
-          .then((response) {
-            _isLoading.value = false;
-            Get.toNamed(XRoutes.home);
-          });
-    } on ResponseException catch (e) {
-      print(e.message);
-    } on ServerException catch (e) {
-      print(e.message);
+      Get.snackbar('Error', 'Signin failed. Please try again.');
     } finally {
       _isLoading.value = false;
     }
@@ -100,61 +107,59 @@ class AuthController extends GetxController {
   Future<void> sendOtp() async {
     try {
       _isLoading.value = true;
-      
+
       // Basic validation
       if (phoneController.text.trim().isEmpty) {
         Get.snackbar('Error', 'Please enter your phone number');
         return;
       }
-      
+
       if (phoneController.text.trim().length < 10) {
         Get.snackbar('Error', 'Please enter a valid phone number');
         return;
       }
-      
+
       // Simulate OTP sending
       await Future.delayed(const Duration(seconds: 2));
-      
+
       _isOtpSent.value = true;
       Get.snackbar(
-        'Success', 
+        'Success',
         'OTP sent to ${phoneController.text}',
         snackPosition: SnackPosition.BOTTOM,
       );
-      
     } catch (e) {
       Get.snackbar('Error', 'Failed to send OTP');
     } finally {
       _isLoading.value = false;
     }
   }
-  
+
   // Verify OTP and sign in
   Future<void> verifyOtpAndSignIn() async {
     try {
       _isLoading.value = true;
-      
+
       // Basic validation
       if (otpController.text.trim().isEmpty) {
         Get.snackbar('Error', 'Please enter the OTP');
         return;
       }
-      
+
       if (otpController.text.trim().length < 6) {
         Get.snackbar('Error', 'Please enter a valid 6-digit OTP');
         return;
       }
-      
+
       // Simulate OTP verification
       await Future.delayed(const Duration(seconds: 2));
-      
+
       Get.offAllNamed(XRoutes.home);
       Get.snackbar(
-        'Success', 
+        'Success',
         'Signed in successfully!',
         snackPosition: SnackPosition.BOTTOM,
       );
-      
     } catch (e) {
       Get.snackbar('Error', 'Invalid OTP');
     } finally {
@@ -171,17 +176,16 @@ class AuthController extends GetxController {
   Future<void> signInWithGoogle() async {
     try {
       _isLoading.value = true;
-      
+
       // Simulate Google authentication
       await Future.delayed(const Duration(seconds: 2));
-      
+
       Get.offAllNamed(XRoutes.home);
       Get.snackbar(
-        'Success', 
+        'Success',
         'Signed in with Google!',
         snackPosition: SnackPosition.BOTTOM,
       );
-      
     } catch (e) {
       Get.snackbar('Error', 'Google sign-in failed');
     } finally {
@@ -225,21 +229,21 @@ class AuthController extends GetxController {
         return;
       }
 
-      if (signupPasswordController.text.trim() != confirmPasswordController.text.trim()) {
+      if (signupPasswordController.text.trim() !=
+          confirmPasswordController.text.trim()) {
         Get.snackbar('Error', 'Passwords do not match');
         return;
       }
 
       // Simulate signup process
       await Future.delayed(const Duration(seconds: 2));
-      
+
       Get.offAllNamed(XRoutes.home);
       Get.snackbar(
-        'Success', 
+        'Success',
         'Account created successfully! Welcome ${fullNameController.text.trim()}!',
         snackPosition: SnackPosition.BOTTOM,
       );
-      
     } catch (e) {
       Get.snackbar('Error', 'Sign up failed. Please try again.');
     } finally {
@@ -256,17 +260,16 @@ class AuthController extends GetxController {
   Future<void> signUpWithGoogle() async {
     try {
       _isLoading.value = true;
-      
+
       // Simulate Google authentication
       await Future.delayed(const Duration(seconds: 2));
-      
+
       Get.offAllNamed(XRoutes.home);
       Get.snackbar(
-        'Success', 
+        'Success',
         'Account created with Google!',
         snackPosition: SnackPosition.BOTTOM,
       );
-      
     } catch (e) {
       Get.snackbar('Error', 'Google sign-up failed');
     } finally {
@@ -278,61 +281,59 @@ class AuthController extends GetxController {
   Future<void> sendResetOtp() async {
     try {
       _isLoading.value = true;
-      
+
       // Basic validation
       if (resetEmailController.text.trim().isEmpty) {
         Get.snackbar('Error', 'Please enter your email address');
         return;
       }
-      
+
       if (!GetUtils.isEmail(resetEmailController.text.trim())) {
         Get.snackbar('Error', 'Please enter a valid email address');
         return;
       }
-      
+
       // Simulate sending reset OTP
       await Future.delayed(const Duration(seconds: 2));
-      
+
       _resetStep.value = ResetStep.otp;
       Get.snackbar(
-        'Success', 
+        'Success',
         'Verification code sent to ${resetEmailController.text}',
         snackPosition: SnackPosition.BOTTOM,
       );
-      
     } catch (e) {
       Get.snackbar('Error', 'Failed to send verification code');
     } finally {
       _isLoading.value = false;
     }
   }
-  
+
   // Verify reset password OTP
   Future<void> verifyResetOtp() async {
     try {
       _isLoading.value = true;
-      
+
       // Basic validation
       if (resetOtpController.text.trim().isEmpty) {
         Get.snackbar('Error', 'Please enter the verification code');
         return;
       }
-      
+
       if (resetOtpController.text.trim().length < 6) {
         Get.snackbar('Error', 'Please enter a valid 6-digit code');
         return;
       }
-      
+
       // Simulate OTP verification
       await Future.delayed(const Duration(seconds: 2));
-      
+
       _resetStep.value = ResetStep.newPassword;
       Get.snackbar(
-        'Success', 
+        'Success',
         'Code verified successfully!',
         snackPosition: SnackPosition.BOTTOM,
       );
-      
     } catch (e) {
       Get.snackbar('Error', 'Invalid verification code');
     } finally {
@@ -361,33 +362,86 @@ class AuthController extends GetxController {
         return;
       }
 
-      if (newPasswordController.text.trim() != confirmNewPasswordController.text.trim()) {
+      if (newPasswordController.text.trim() !=
+          confirmNewPasswordController.text.trim()) {
         Get.snackbar('Error', 'Passwords do not match');
         return;
       }
 
       // Simulate password reset
       await Future.delayed(const Duration(seconds: 2));
-      
+
       // Clear all reset form data
       resetEmailController.clear();
       resetOtpController.clear();
       newPasswordController.clear();
       confirmNewPasswordController.clear();
       _resetStep.value = ResetStep.email;
-      
+
       Get.back(); // Go back to signin screen
       Get.snackbar(
-        'Success', 
+        'Success',
         'Password reset successfully! Please sign in with your new password.',
         snackPosition: SnackPosition.BOTTOM,
       );
-      
     } catch (e) {
       Get.snackbar('Error', 'Password reset failed. Please try again.');
     } finally {
       _isLoading.value = false;
     }
+  }
+
+  // Save tokens to secure storage
+  Future<void> _saveTokens(String accessToken, String refreshToken) async {
+    await _secureStorage.write(key: 'access_token', value: accessToken);
+    await _secureStorage.write(key: 'refresh_token', value: refreshToken);
+  }
+
+  // Get access token from secure storage
+  Future<String?> getAccessToken() async {
+    return await _secureStorage.read(key: 'access_token');
+  }
+
+  // Get refresh token from secure storage
+  Future<String?> getRefreshToken() async {
+    return await _secureStorage.read(key: 'refresh_token');
+  }
+
+  // Check if user is logged in
+  Future<bool> isLoggedIn() async {
+    final accessToken = await getAccessToken();
+    return accessToken != null && accessToken.isNotEmpty;
+  }
+
+  // Logout user
+  Future<void> logout() async {
+    await _secureStorage.delete(key: 'access_token');
+    await _secureStorage.delete(key: 'refresh_token');
+
+    // Clear all form controllers
+    emailController.clear();
+    passwordController.clear();
+    phoneController.clear();
+    otpController.clear();
+    fullNameController.clear();
+    signupEmailController.clear();
+    signupPasswordController.clear();
+    confirmPasswordController.clear();
+    resetEmailController.clear();
+    resetOtpController.clear();
+    newPasswordController.clear();
+    confirmNewPasswordController.clear();
+
+    // Reset states
+    _isOtpSent.value = false;
+    _resetStep.value = ResetStep.email;
+
+    Get.offAllNamed(XRoutes.login);
+    Get.snackbar(
+      'Success',
+      'Logged out successfully',
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 
   @override

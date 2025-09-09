@@ -1,478 +1,266 @@
 # Authentication API Documentation
 
-This document provides comprehensive guidance for backend developers to implement the required authentication endpoints for the Flutter application.
-
-## Table of Contents
-- [Overview](#overview)
-- [Base Configuration](#base-configuration)
-- [Authentication Endpoints](#authentication-endpoints)
-- [Error Handling](#error-handling)
-- [Security Considerations](#security-considerations)
-- [Testing](#testing)
-
 ## Overview
+This document provides a complete guide for implementing authentication in your frontend/mobile application using our Django REST API with JWT tokens.
 
-The Flutter application implements a comprehensive authentication system with the following features:
-- Email/Password Sign In
-- Phone/OTP Sign In
-- User Registration (Sign Up)
-- Password Reset Flow
-- Google OAuth Integration
-- Mobile OTP Verification
-
-## Base Configuration
-
-### Headers
-All API requests include the following headers:
+## Base URL
 ```
-Content-Type: application/json; charset=UTF-8
+http://your-domain.com/auth/
 ```
 
-### Timeouts
-- Send Timeout: 60 seconds
-- Receive Timeout: 60 seconds
+## Authentication Flow
 
-### Base Response Format
-All successful responses should return HTTP status codes `200` or `201`.
+### 1. Token-Based Authentication
+- **Access Token**: Valid for 1 hour, used for API calls
+- **Refresh Token**: Valid for 7 days, used to get new access tokens
+- **Header Format**: `Authorization: Bearer <access_token>`
 
-## Authentication Endpoints
+---
 
-### 1. Email/Password Sign In
+## API Endpoints
 
-**Endpoint:** `POST /login`
+### 1. Email Signup
+**Endpoint**: `POST /auth/signup`
 
-**Description:** Authenticates user with email and password credentials.
-
-**Request Body:**
+**Request Body**:
 ```json
 {
-  "email": "user@example.com",
-  "password": "userpassword123"
+    "fullname": "John Doe",
+    "email": "john@example.com",
+    "password": "securepassword123",
+    "confirm_password": "securepassword123"
 }
 ```
 
-**Request Validation:**
-- `email`: Required, must be a valid email format
-- `password`: Required, minimum 6 characters
-
-**Success Response (200/201):**
+**Success Response** (200):
 ```json
 {
-  "id": 1,
-  "name": "John Doe",
-  "username": "johndoe",
-  "email": "user@example.com",
-  "phone": "+1234567890",
-  "access_token": "jwt_token_here",
-  "refresh_token": "refresh_token_here"
+    "success": true,
+    "message": "User created successfully",
+    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+    "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
 }
 ```
 
-**Error Responses:**
-
-*400 Bad Request:*
+**Error Responses**:
 ```json
+// Passwords don't match
 {
-  "error": "Invalid email or password"
+    "message": "Passwords do not match"
 }
-```
 
-*500 Internal Server Error:*
-```json
+// Email already exists
 {
-  "error": "Internal server error message"
+    "message": "User with this email already exists"
 }
 ```
 
 ---
 
-### 2. Phone OTP Sign In
+### 2. Email Signin
+**Endpoint**: `POST /auth/signin`
 
-**Note:** Currently implemented as simulation in the app. Backend should implement the following endpoints:
-
-#### 2.1 Send OTP to Phone
-
-**Endpoint:** `POST /auth/send-otp`
-
-**Description:** Sends OTP to the provided phone number.
-
-**Request Body:**
+**Request Body**:
 ```json
 {
-  "phone": "+1234567890"
+    "email": "john@example.com",
+    "password": "securepassword123"
 }
 ```
 
-**Request Validation:**
-- `phone`: Required, minimum 10 digits, should include country code
-
-**Success Response (200):**
+**Success Response** (200):
 ```json
 {
-  "message": "OTP sent successfully",
-  "phone": "+1234567890",
-  "expires_in": 300
+    "success": true,
+    "message": "Signin successful",
+    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+    "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
 }
 ```
 
-**Error Responses:**
+**Error Response** (401):
 ```json
 {
-  "error": "Invalid phone number"
-}
-```
-
-#### 2.2 Verify OTP and Sign In
-
-**Endpoint:** `POST /auth/verify-otp`
-
-**Description:** Verifies OTP and signs in the user.
-
-**Request Body:**
-```json
-{
-  "phone": "+1234567890",
-  "otp": "123456"
-}
-```
-
-**Request Validation:**
-- `phone`: Required, must match the phone number OTP was sent to
-- `otp`: Required, exactly 6 digits
-
-**Success Response (200):**
-```json
-{
-  "id": 1,
-  "name": "John Doe",
-  "username": "johndoe",
-  "email": "user@example.com",
-  "phone": "+1234567890",
-  "website": "https://johndoe.com",
-  "access_token": "jwt_token_here",
-  "refresh_token": "refresh_token_here"
-}
-```
-
-**Error Responses:**
-```json
-{
-  "error": "Invalid or expired OTP"
+    "message": "User not found"
 }
 ```
 
 ---
 
-### 3. User Registration (Sign Up)
+### 3. Phone OTP Signin (2-Step Process)
 
-**Endpoint:** `POST /auth/register`
+#### Step 1: Request OTP
+**Endpoint**: `POST /auth/request-phone-otp`
 
-**Description:** Creates a new user account.
-
-**Request Body:**
+**Request Body**:
 ```json
 {
-  "full_name": "John Doe",
-  "email": "user@example.com",
-  "password": "userpassword123",
-  "confirm_password": "userpassword123"
+    "phone_number": "9876543210"
 }
 ```
 
-**Request Validation:**
-- `full_name`: Required, non-empty string
-- `email`: Required, valid email format, must be unique
-- `password`: Required, minimum 6 characters
-- `confirm_password`: Required, must match password
-
-**Success Response (201):**
+**Success Response** (200):
 ```json
 {
-  "id": 1,
-  "name": "John Doe",
-  "username": "johndoe",
-  "email": "user@example.com",
-  "phone": null,
-  "access_token": "jwt_token_here",
-  "refresh_token": "refresh_token_here"
+    "success": true,
+    "message": "OTP sent to phone successfully",
+    "otp": "654321",
+    "user_exists": true
 }
 ```
 
-**Error Responses:**
-
-*400 Bad Request:*
+**Error Response** (400):
 ```json
 {
-  "error": "Email already exists"
+    "message": "Phone number must be exactly 10 digits"
 }
 ```
 
-*422 Unprocessable Entity:*
+#### Step 2: Signin with OTP
+**Endpoint**: `POST /auth/phone-signin`
+
+**Request Body**:
 ```json
 {
-  "error": "Passwords do not match"
+    "phone_number": "9876543210",
+    "otp": "654321"
+}
+```
+
+**Success Response** (200):
+```json
+{
+    "success": true,
+    "message": "Phone signin successful",
+    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+    "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+**Note**: If user doesn't exist, they will be automatically created with:
+- **fullname**: Masked phone (e.g., "98XXXXXXX0")
+- **email**: Auto-generated (e.g., "phone_9876543210_1703123456@tempuser.com")
+
+---
+
+### 4. Password Reset (2-Step Process)
+
+#### Step 1: Request OTP for Reset
+**Endpoint**: `POST /auth/request-otp`
+
+**Request Body**:
+```json
+{
+    "email": "john@example.com"
+}
+```
+
+**Success Response** (200):
+```json
+{
+    "success": true,
+    "message": "OTP sent successfully",
+    "otp": "654321"
+}
+```
+
+#### Step 2: Reset Password
+**Endpoint**: `POST /auth/reset-password`
+
+**Request Body**:
+```json
+{
+    "email": "john@example.com",
+    "otp": "654321",
+    "new_password": "newpassword123",
+    "confirm_password": "newpassword123"
+}
+```
+
+**Success Response** (200):
+```json
+{
+    "success": true,
+    "message": "Password reset successfully"
 }
 ```
 
 ---
 
-### 4. Password Reset Flow
+### 5. Refresh Token
+**Endpoint**: `POST /auth/refresh`
 
-The password reset process involves three steps:
-
-#### 4.1 Send Reset Password OTP
-
-**Endpoint:** `POST /auth/forgot-password`
-
-**Description:** Sends verification code to user's email for password reset.
-
-**Request Body:**
+**Request Body**:
 ```json
 {
-  "email": "user@example.com"
+    "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
 }
 ```
 
-**Request Validation:**
-- `email`: Required, valid email format, must exist in system
-
-**Success Response (200):**
+**Success Response** (200):
 ```json
 {
-  "message": "Verification code sent to email",
-  "email": "user@example.com",
-  "expires_in": 600
+    "success": true,
+    "message": "Token refreshed successfully",
+    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
 }
 ```
 
-**Error Responses:**
+**Error Response** (401):
 ```json
 {
-  "error": "Email not found"
-}
-```
-
-#### 4.2 Verify Reset OTP
-
-**Endpoint:** `POST /auth/verify-reset-otp`
-
-**Description:** Verifies the reset password OTP.
-
-**Request Body:**
-```json
-{
-  "email": "user@example.com",
-  "otp": "123456"
-}
-```
-
-**Request Validation:**
-- `email`: Required, must match email from step 1
-- `otp`: Required, exactly 6 digits
-
-**Success Response (200):**
-```json
-{
-  "message": "OTP verified successfully",
-  "reset_token": "temporary_reset_token_here"
-}
-```
-
-**Error Responses:**
-```json
-{
-  "error": "Invalid or expired verification code"
-}
-```
-
-#### 4.3 Reset Password
-
-**Endpoint:** `POST /auth/reset-password`
-
-**Description:** Sets new password using the reset token.
-
-**Request Body:**
-```json
-{
-  "reset_token": "temporary_reset_token_here",
-  "new_password": "newpassword123",
-  "confirm_password": "newpassword123"
-}
-```
-
-**Request Validation:**
-- `reset_token`: Required, valid token from step 2
-- `new_password`: Required, minimum 6 characters
-- `confirm_password`: Required, must match new_password
-
-**Success Response (200):**
-```json
-{
-  "message": "Password reset successfully"
-}
-```
-
-**Error Responses:**
-```json
-{
-  "error": "Invalid or expired reset token"
+    "message": "Invalid or expired refresh token"
 }
 ```
 
 ---
+## Important Notes
 
-### 5. Google OAuth Integration
+### 1. OTP Configuration
+- **Static OTP**: Currently set to "654321" for all requests
+- **Phone Validation**: Must be exactly 10 digits
+- **Supported Formats**: "9876543210", "+91 9876543210", "(987) 654-3210"
 
-**Note:** Currently simulated in the app. Backend should implement OAuth flow.
+### 2. Security Best Practices
+- Store tokens securely (not in plain localStorage for production)
+- Implement automatic token refresh
+- Handle token expiration gracefully
+- Use HTTPS in production
+- Validate all user inputs
 
-#### 5.1 Google Sign In/Sign Up
+### 3. Error Handling
+- Always check response status codes
+- Implement retry logic for network failures
+- Show user-friendly error messages
+- Log errors for debugging
 
-**Endpoint:** `POST /auth/google`
-
-**Description:** Authenticates or creates user account using Google OAuth.
-
-**Request Body:**
-```json
-{
-  "google_token": "google_oauth_token_here",
-  "action": "signin"
-}
-```
-
-**Request Validation:**
-- `google_token`: Required, valid Google OAuth token
-- `action`: Required, either "signin" or "signup"
-
-**Success Response (200/201):**
-```json
-{
-  "id": 1,
-  "name": "John Doe",
-  "username": "johndoe",
-  "email": "user@gmail.com",
-  "phone": null,
-  "website": null,
-  "access_token": "jwt_token_here",
-  "refresh_token": "refresh_token_here",
-  "is_new_user": false
-}
-```
-
-**Error Responses:**
-```json
-{
-  "error": "Invalid Google token"
-}
-```
+### 4. Token Lifecycle
+- **Access Token**: 1 hour expiry
+- **Refresh Token**: 7 days expiry
+- **Auto-refresh**: Implement automatic token refresh
+- **Logout**: Clear all stored tokens
 
 ---
 
-## Error Handling
+## Testing Endpoints
 
-The Flutter app expects specific error response formats:
+You can test all endpoints using tools like:
+- **Postman**
+- **curl**
+- **Insomnia**
+- **Thunder Client** (VS Code extension)
 
-### HTTP Status Codes
-- `400`: Bad Request - Invalid input data
-- `401`: Unauthorized - Invalid credentials
-- `404`: Not Found - Resource not found
-- `422`: Unprocessable Entity - Validation errors
-- `500`: Internal Server Error - Server-side errors
-
-### Error Response Format
-All error responses should include an `error` field with a descriptive message:
-
-```json
-{
-  "error": "Descriptive error message here"
-}
-```
-
-### Client-Side Error Handling
-The app handles errors as follows:
-- `400` status: Displays `response.data['error']` message
-- `500` status: Displays `response.data` as string
-- Other exceptions: Displays generic error message
-
----
-
-## Security Considerations
-
-### 1. Password Requirements
-- Minimum 6 characters
-- Consider implementing additional complexity requirements
-
-### 2. OTP Security
-- OTP should expire after 5-10 minutes
-- Implement rate limiting for OTP requests
-- Use secure random number generation
-
-### 3. JWT Tokens
-- Implement proper JWT token validation
-- Use secure signing algorithms (RS256 recommended)
-- Set appropriate expiration times
-
-### 4. Rate Limiting
-- Implement rate limiting on all authentication endpoints
-- Particularly important for OTP and password reset endpoints
-
-### 5. Input Validation
-- Validate all input parameters
-- Sanitize email addresses
-- Validate phone number formats
-
----
-
-## Testing
-
-### Test Accounts
-For development and testing, you can use these sample credentials:
-
-**Default Test Account:**
-- Email: `dhinesh.tech2001@gmail.com`
-- Password: `12345`
-
-### Sample API Calls
-
-#### Login Test
+Example curl command:
 ```bash
-curl -X POST http://your-api-base-url/login \
+curl -X POST http://your-domain.com/auth/signin \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "dhinesh.tech2001@gmail.com",
-    "password": "12345"
-  }'
-```
-
-#### Registration Test
-```bash
-curl -X POST http://your-api-base-url/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "full_name": "Test User",
-    "email": "test@example.com",
-    "password": "testpass123",
-    "confirm_password": "testpass123"
-  }'
+  -d '{"email": "test@example.com", "password": "password123"}'
 ```
 
 ---
 
-## Implementation Notes
+## Support
 
-1. **Base URL Configuration**: The app uses a configurable base URL through the DioClient. Ensure your API base URL is properly configured.
-
-2. **Response Model**: The app expects user data in the `DemoModel` format. Ensure your API responses match this structure.
-
-3. **Navigation Flow**: Successful authentication redirects users to the home screen (`/home` route).
-
-4. **State Management**: The app uses GetX for state management. Authentication state is managed through the `AuthController`.
-
-5. **Validation**: Client-side validation is implemented, but server-side validation is also required for security.
-
-6. **Error Messages**: Error messages should be user-friendly and descriptive to provide good user experience.
-
----
-
-## Questions or Issues?
-
-If you have any questions about implementing these endpoints or need clarification on any requirements, please refer to the Flutter app code or contact the mobile development team.
+For any issues or questions regarding the authentication API, please contact the backend development team or refer to the API documentation at:
+- **General API Docs**: `http://your-domain.com/api/docs`
+- **Auth API Docs**: `http://your-domain.com/auth/docs`

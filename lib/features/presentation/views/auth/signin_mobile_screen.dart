@@ -13,10 +13,6 @@ class SigninMobileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authController = Get.find<AuthController>();
-    
-    // Debug print to check the state
-    print('isOtpSent value: ${authController.isOtpSent.value}');
-
     return GetBuilder<XThemeController>(
       builder: (themeController) {
         return Scaffold(

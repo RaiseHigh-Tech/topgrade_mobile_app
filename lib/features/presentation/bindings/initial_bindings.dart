@@ -1,16 +1,23 @@
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../utils/network/dio_client.dart';
 import '../../data/source/remote_source.dart';
 import '../controllers/theme_controller.dart';
+import '../controllers/auth_controller.dart';
+import '../controllers/onboarding_controller.dart';
 
 class InitialBindings extends Bindings {
   @override
-  void dependencies() async {
+  void dependencies() {
+    // Core dependencies
     Get.put(XThemeController(), permanent: true);
-    Get.put(await SharedPreferences.getInstance(), permanent: true);
+    
+    // Network dependencies
     Get.put(DioClient(), permanent: true);
     Get.put(RemoteSourceImpl(dio: Get.find<DioClient>()), permanent: true);
+    
+    // Controllers
+    Get.put(OnboardingController(), permanent: true);
+    Get.put(AuthController(), permanent: true);
   }
 }

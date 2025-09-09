@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../routes/routes.dart';
 
 class OnboardingController extends GetxController {
-  static OnboardingController get instance => Get.find();
+  static OnboardingController get instance => Get.find<OnboardingController>();
 
   /// Variables
   final pageController = PageController();
@@ -45,10 +45,9 @@ class OnboardingController extends GetxController {
 
   /// Complete onboarding and navigate to home
   void completeOnboarding() async {
-    // TODO: Temporarily commented for development - uncomment when ready
     // Save onboarding completion status
-    // final prefs = await SharedPreferences.getInstance();
-    // await prefs.setBool('onboarding_completed', true);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboarding_completed', true);
 
     // Navigate to home screen
     Get.offAllNamed(XRoutes.login);
@@ -56,12 +55,8 @@ class OnboardingController extends GetxController {
 
   /// Check if onboarding is completed
   static Future<bool> isOnboardingCompleted() async {
-    // TODO: Temporarily commented for development - uncomment when ready
-    // final prefs = await SharedPreferences.getInstance();
-    // return prefs.getBool('onboarding_completed') ?? false;
-
-    // Always return false during development to show onboarding every time
-    return false;
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('onboarding_completed') ?? false;
   }
 
   @override

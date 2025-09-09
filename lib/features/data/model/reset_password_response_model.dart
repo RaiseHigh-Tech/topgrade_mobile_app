@@ -33,11 +33,11 @@ class ResetPasswordResponseModel {
   /// Check if response contains OTP
   bool get hasOtp => otp != null;
 
-  /// Check if this is a successful OTP request response
-  bool get isOtpRequestSuccess => success && hasOtp;
+  /// Check if this is a successful OTP request response (Step 1)
+  bool get isOtpRequestSuccess => success && !hasOtp;
 
-  /// Check if this is a successful password reset response
-  bool get isPasswordResetSuccess => success && !hasOtp;
+  /// Check if this is a successful password reset response (Step 3)
+  bool get isPasswordResetSuccess => success;
 
   @override
   String toString() {

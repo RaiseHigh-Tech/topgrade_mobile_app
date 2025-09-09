@@ -7,6 +7,7 @@ import '../../../utils/network/dio_client.dart';
 import '../model/signin_response_model.dart';
 import '../model/signup_response_model.dart';
 import '../model/reset_password_response_model.dart';
+import '../model/verify_otp_response_model.dart';
 import '../model/phone_otp_response_model.dart';
 import '../model/phone_signin_response_model.dart';
 
@@ -30,9 +31,13 @@ abstract class RemoteSource {
     required String email,
   });
 
-  Future<ResetPasswordResponseModel> resetPassword({
+  Future<VerifyOtpResponseModel> verifyPasswordResetOtp({
     required String email,
     required String otp,
+  });
+
+  Future<ResetPasswordResponseModel> resetPassword({
+    required String email,
     required String newPassword,
     required String confirmPassword,
   });
@@ -211,7 +216,6 @@ class RemoteSourceImpl extends RemoteSource {
   @override
   Future<ResetPasswordResponseModel> resetPassword({
     required String email,
-    required String otp,
     required String newPassword,
     required String confirmPassword,
   }) async {
@@ -220,7 +224,6 @@ class RemoteSourceImpl extends RemoteSource {
         ApiEndpoints.resetPasswordUrl,
         data: {
           'email': email,
-          'otp': otp,
           'new_password': newPassword,
           'confirm_password': confirmPassword,
         },
@@ -242,13 +245,9 @@ class RemoteSourceImpl extends RemoteSource {
               // Bad request - validation errors, passwords don't match, invalid OTP
               final message = responseData['message'] ?? 'Invalid request';
               throw ResponseException(message: message);
-            case 401:
-              // Invalid or expired OTP
-              final message = responseData['message'] ?? 'Invalid or expired OTP';
-              throw ResponseException(message: message);
             case 404:
               // User not found
-              final message = responseData['message'] ?? 'User not found';
+              final message = responseData['message'] ?? 'User with this email does not exist';
               throw ResponseException(message: message);
             case 500:
               // Server error
@@ -343,6 +342,60 @@ class RemoteSourceImpl extends RemoteSource {
             case 401:
               // Invalid or expired OTP
               final message = responseData['message'] ?? 'Invalid or expired OTP';
+              throw ResponseException(message: message);
+            case 500:
+              // Server error
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          // Network error
+          throw ServerException(message: 'Network error: Please check your connection');
+        }
+      }
+      // Other exceptions
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<VerifyOtpResponseModel> verifyPasswordResetOtp({
+    required String email,
+    required String otp,
+  }) async {
+    try {
+      final response = await dio.post(
+        ApiEndpoints.verifyOtpUrl,
+        data: {
+          'email': email,
+          'otp': otp,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return VerifyOtpResponseModel.fromJson(response.data);
+      } else {
+        throw ServerException(message: "Unexpected response code: ${response.statusCode}");
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 400:
+              // Bad request - invalid OTP format
+              final message = responseData['message'] ?? 'Invalid OTP';
+              throw ResponseException(message: message);
+            case 401:
+              // Invalid OTP
+              final message = responseData['message'] ?? 'Invalid OTP';
+              throw ResponseException(message: message);
+            case 404:
+              // User not found
+              final message = responseData['message'] ?? 'User with this email does not exist';
               throw ResponseException(message: message);
             case 500:
               // Server error

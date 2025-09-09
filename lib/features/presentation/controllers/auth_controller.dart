@@ -8,6 +8,7 @@ import '../../data/source/remote_source.dart';
 import '../../data/model/signin_response_model.dart';
 import '../../data/model/signup_response_model.dart';
 import '../../data/model/reset_password_response_model.dart';
+import '../../data/model/verify_otp_response_model.dart';
 import '../../data/model/phone_otp_response_model.dart';
 import '../../data/model/phone_signin_response_model.dart';
 import '../routes/routes.dart';
@@ -247,15 +248,27 @@ class AuthController extends GetxController {
         return;
       }
 
-      // Simulate OTP verification
-      await Future.delayed(const Duration(seconds: 2));
-
-      _resetStep.value = ResetStep.newPassword;
-      Get.snackbar(
-        'Success',
-        'Code verified successfully!',
-        snackPosition: SnackPosition.BOTTOM,
+      // Call verify OTP API
+      final VerifyOtpResponseModel response = await remoteSource.verifyPasswordResetOtp(
+        email: resetEmailController.text.trim(),
+        otp: resetOtpController.text.trim(),
       );
+
+      // Check if OTP verification was successful
+      if (response.isOtpVerificationSuccess) {
+        _resetStep.value = ResetStep.newPassword;
+        Get.snackbar(
+          'Success',
+          response.message,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } else {
+        Get.snackbar('Error', response.message);
+      }
+    } on ResponseException catch (e) {
+      Get.snackbar('Error', e.message);
+    } on ServerException catch (e) {
+      Get.snackbar('Error', e.message);
     } catch (e) {
       Get.snackbar('Error', 'Invalid verification code');
     } finally {
@@ -294,7 +307,6 @@ class AuthController extends GetxController {
       final ResetPasswordResponseModel response = await remoteSource
           .resetPassword(
             email: resetEmailController.text.trim(),
-            otp: resetOtpController.text.trim(),
             newPassword: newPasswordController.text.trim(),
             confirmPassword: confirmNewPasswordController.text.trim(),
           );

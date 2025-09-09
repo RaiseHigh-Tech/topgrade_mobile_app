@@ -1,6 +1,6 @@
-# project_setup_flutter
+# TopGrade
 
-A new Flutter project.
+TopGrade - Your educational companion app built with Flutter.
 
 ## Getting Started
 

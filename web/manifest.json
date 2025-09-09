@@ -1,6 +1,6 @@
 {
-    "name": "project_setup_flutter",
-    "short_name": "project_setup_flutter",
+    "name": "TopGrade",
+    "short_name": "TopGrade",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

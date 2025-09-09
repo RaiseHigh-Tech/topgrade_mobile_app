@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:project_setup_flutter/utils/constants/colors.dart';
-import 'package:project_setup_flutter/utils/constants/sizes.dart';
+import 'package:topgrade/utils/constants/colors.dart';
+import 'package:topgrade/utils/constants/sizes.dart';
 
 class PrimaryButton extends StatefulWidget {
   final String text;

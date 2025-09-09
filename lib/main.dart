@@ -6,9 +6,14 @@ import 'features/presentation/bindings/initial_bindings.dart';
 import 'features/presentation/controllers/onboarding_controller.dart';
 import 'features/presentation/routes/routes.dart';
 import 'utils/constants/strings.dart';
+import 'utils/font_loader.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Preload fonts to ensure they work in release builds
+  await FontPreloader.preloadFonts();
+  await FontPreloader.loadCommonWeights();
   
   // TODO: Temporarily commented for development - uncomment when ready
   // Check if onboarding is completed

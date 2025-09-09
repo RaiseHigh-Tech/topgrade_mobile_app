@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import 'package:project_setup_flutter/utils/constants/sizes.dart';
+import 'package:topgrade/utils/constants/sizes.dart';
 import '../../../controllers/theme_controller.dart';
 
 class PasswordField extends StatefulWidget {

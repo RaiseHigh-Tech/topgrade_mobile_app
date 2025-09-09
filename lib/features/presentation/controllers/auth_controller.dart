@@ -6,6 +6,8 @@ import '../../../common/error/server_exception.dart';
 import '../../data/source/remote_source.dart';
 import '../routes/routes.dart';
 
+enum ResetStep { email, otp, newPassword }
+
 class AuthController extends GetxController {
   late RemoteSourceImpl remoteSource;
   final _isLoading = false.obs;
@@ -24,9 +26,17 @@ class AuthController extends GetxController {
   final signupEmailController = TextEditingController();
   final signupPasswordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+  
+  // TextField Controllers for reset password form
+  final resetEmailController = TextEditingController();
+  final resetOtpController = TextEditingController();
+  final newPasswordController = TextEditingController();
+  final confirmNewPasswordController = TextEditingController();
+  final _resetStep = ResetStep.email.obs;
 
   RxBool get isLoading => _isLoading;
   RxBool get isOtpSent => _isOtpSent;
+  Rx<ResetStep> get resetStep => _resetStep;
 
   // Sign in method for the new UI
   Future<void> signIn() async {
@@ -264,6 +274,122 @@ class AuthController extends GetxController {
     }
   }
 
+  // Send reset password OTP
+  Future<void> sendResetOtp() async {
+    try {
+      _isLoading.value = true;
+      
+      // Basic validation
+      if (resetEmailController.text.trim().isEmpty) {
+        Get.snackbar('Error', 'Please enter your email address');
+        return;
+      }
+      
+      if (!GetUtils.isEmail(resetEmailController.text.trim())) {
+        Get.snackbar('Error', 'Please enter a valid email address');
+        return;
+      }
+      
+      // Simulate sending reset OTP
+      await Future.delayed(const Duration(seconds: 2));
+      
+      _resetStep.value = ResetStep.otp;
+      Get.snackbar(
+        'Success', 
+        'Verification code sent to ${resetEmailController.text}',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to send verification code');
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+  
+  // Verify reset password OTP
+  Future<void> verifyResetOtp() async {
+    try {
+      _isLoading.value = true;
+      
+      // Basic validation
+      if (resetOtpController.text.trim().isEmpty) {
+        Get.snackbar('Error', 'Please enter the verification code');
+        return;
+      }
+      
+      if (resetOtpController.text.trim().length < 6) {
+        Get.snackbar('Error', 'Please enter a valid 6-digit code');
+        return;
+      }
+      
+      // Simulate OTP verification
+      await Future.delayed(const Duration(seconds: 2));
+      
+      _resetStep.value = ResetStep.newPassword;
+      Get.snackbar(
+        'Success', 
+        'Code verified successfully!',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      
+    } catch (e) {
+      Get.snackbar('Error', 'Invalid verification code');
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  // Reset password
+  Future<void> resetPassword() async {
+    try {
+      _isLoading.value = true;
+
+      // Basic validation
+      if (newPasswordController.text.trim().isEmpty) {
+        Get.snackbar('Error', 'Please enter your new password');
+        return;
+      }
+
+      if (newPasswordController.text.trim().length < 6) {
+        Get.snackbar('Error', 'Password must be at least 6 characters');
+        return;
+      }
+
+      if (confirmNewPasswordController.text.trim().isEmpty) {
+        Get.snackbar('Error', 'Please confirm your new password');
+        return;
+      }
+
+      if (newPasswordController.text.trim() != confirmNewPasswordController.text.trim()) {
+        Get.snackbar('Error', 'Passwords do not match');
+        return;
+      }
+
+      // Simulate password reset
+      await Future.delayed(const Duration(seconds: 2));
+      
+      // Clear all reset form data
+      resetEmailController.clear();
+      resetOtpController.clear();
+      newPasswordController.clear();
+      confirmNewPasswordController.clear();
+      _resetStep.value = ResetStep.email;
+      
+      Get.back(); // Go back to signin screen
+      Get.snackbar(
+        'Success', 
+        'Password reset successfully! Please sign in with your new password.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      
+    } catch (e) {
+      Get.snackbar('Error', 'Password reset failed. Please try again.');
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -280,6 +406,10 @@ class AuthController extends GetxController {
     signupEmailController.dispose();
     signupPasswordController.dispose();
     confirmPasswordController.dispose();
+    resetEmailController.dispose();
+    resetOtpController.dispose();
+    newPasswordController.dispose();
+    confirmNewPasswordController.dispose();
     super.onClose();
   }
 }

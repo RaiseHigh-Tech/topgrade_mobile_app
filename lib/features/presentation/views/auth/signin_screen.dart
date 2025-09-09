@@ -132,7 +132,7 @@ class SigninScreen extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {
-                        // Handle forgot password
+                        Get.toNamed(XRoutes.resetPassword);
                       },
                       child: Text(
                         'Forgot Password?',

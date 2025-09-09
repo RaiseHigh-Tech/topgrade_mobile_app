@@ -12,7 +12,10 @@ class SigninMobileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authController = Get.put(AuthController());
+    final authController = Get.find<AuthController>();
+    
+    // Debug print to check the state
+    print('isOtpSent value: ${authController.isOtpSent.value}');
 
     return GetBuilder<XThemeController>(
       builder: (themeController) {
@@ -63,13 +66,15 @@ class SigninMobileScreen extends StatelessWidget {
                   SizedBox(height: XSizes.spacingXl),
 
                   Obx(
-                    () =>
-                        !authController.isOtpSent.value
-                            ? _buildPhoneNumberSection(
+                    () {
+                      print('Obx rebuilding - isOtpSent: ${authController.isOtpSent.value}');
+                      return !authController.isOtpSent.value
+                          ? _buildPhoneNumberSection(
                               themeController,
                               authController,
                             )
-                            : _buildOtpSection(themeController, authController),
+                          : _buildOtpSection(themeController, authController);
+                    },
                   ),
 
                   SizedBox(height: XSizes.spacingLg),
@@ -408,6 +413,7 @@ class SigninMobileScreen extends StatelessWidget {
                 authController.phoneController.clear();
                 authController.otpController.clear();
                 authController.isOtpSent.value = false;
+                print('Manually set isOtpSent to false');
               },
               child: Text(
                 'Change Number',

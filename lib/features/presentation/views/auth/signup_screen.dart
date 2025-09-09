@@ -272,7 +272,7 @@ class SignupScreen extends StatelessWidget {
                         child: OutlinedButton.icon(
                           onPressed: () {
                             // Handle Phone number signup
-                            authController.signUpWithPhone();
+                            authController.signInWithGoogle();
                           },
                           label: Text(
                             'Sign Up With Phone Number',
@@ -306,7 +306,7 @@ class SignupScreen extends StatelessWidget {
                         child: OutlinedButton.icon(
                           onPressed: () {
                             // Handle Google signup
-                            authController.signUpWithGoogle();
+                            authController.signInWithGoogle();
                           },
                           label: Text(
                             'Sign Up With Google',

@@ -11,7 +11,6 @@ import '../../data/model/reset_password_response_model.dart';
 import '../../data/model/verify_otp_response_model.dart';
 import '../../data/model/phone_otp_response_model.dart';
 import '../../data/model/phone_signin_response_model.dart';
-import '../../data/model/area_of_interest_response_model.dart';
 import '../routes/routes.dart';
 
 enum ResetStep { email, otp, newPassword }

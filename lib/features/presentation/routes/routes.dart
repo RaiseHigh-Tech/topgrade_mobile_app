@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:topgrade/features/presentation/views/intrest/intrest_screen.dart';
 
 import '../views/auth/signin_screen.dart';
 import '../views/auth/signin_mobile_screen.dart';
@@ -15,6 +16,7 @@ class XRoutes {
   static const String signinMobile = '/signin-mobile';
   static const String signup = '/signup';
   static const String resetPassword = '/reset-password';
+  static const String interests = '/interests';
 
   static List<GetPage> routes = [
     GetPage(name: onboarding, page: () => const OnboardingScreen()),
@@ -23,5 +25,6 @@ class XRoutes {
     GetPage(name: signinMobile, page: () => const SigninMobileScreen()),
     GetPage(name: signup, page: () => const SignupScreen()),
     GetPage(name: resetPassword, page: () => const ResetPasswordScreen()),
+    GetPage(name: interests, page: () => const IntrestScreen()),
   ];
 }

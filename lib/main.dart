@@ -12,12 +12,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Check if onboarding is complete.
-  final bool isOnboardingCompleted =
-      await OnboardingController.isOnboardingCompleted();
+  // final bool isOnboardingCompleted =
+  //     await OnboardingController.isOnboardingCompleted();
 
   runApp(
     MyApp(
-      initialRoute: isOnboardingCompleted ? XRoutes.login : XRoutes.onboarding,
+      // initialRoute: isOnboardingCompleted ? XRoutes.login : XRoutes.onboarding,
+      initialRoute: XRoutes.interests,
     ),
   );
 }

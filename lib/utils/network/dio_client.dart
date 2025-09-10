@@ -10,7 +10,7 @@ class DioClient {
               responseType: ResponseType.json,
               sendTimeout: const Duration(seconds: 60),
               receiveTimeout: const Duration(seconds: 60)),
-        )..interceptors.addAll([LoggerInterceptor()]);
+        )..interceptors.addAll([AuthInterceptor(), LoggerInterceptor()]);
 
   //! GET METHOD
   Future<Response> get(

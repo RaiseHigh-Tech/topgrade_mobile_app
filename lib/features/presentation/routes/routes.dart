@@ -16,7 +16,7 @@ class XRoutes {
   static const String signinMobile = '/signin-mobile';
   static const String signup = '/signup';
   static const String resetPassword = '/reset-password';
-  static const String interests = '/interests';
+  static const String interest = '/interest';
 
   static List<GetPage> routes = [
     GetPage(name: onboarding, page: () => const OnboardingScreen()),
@@ -25,6 +25,6 @@ class XRoutes {
     GetPage(name: signinMobile, page: () => const SigninMobileScreen()),
     GetPage(name: signup, page: () => const SignupScreen()),
     GetPage(name: resetPassword, page: () => const ResetPasswordScreen()),
-    GetPage(name: interests, page: () => const IntrestScreen()),
+    GetPage(name: interest, page: () => const IntrestScreen()),
   ];
 }

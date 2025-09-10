@@ -10,6 +10,7 @@ import '../model/reset_password_response_model.dart';
 import '../model/verify_otp_response_model.dart';
 import '../model/phone_otp_response_model.dart';
 import '../model/phone_signin_response_model.dart';
+import '../model/area_of_interest_response_model.dart';
 
 abstract class RemoteSource {
   final DioClient dio;
@@ -49,6 +50,10 @@ abstract class RemoteSource {
   Future<PhoneSigninResponseModel> phoneSignin({
     required String phoneNumber,
     required String otp,
+  });
+
+  Future<AreaOfInterestResponseModel> addAreaOfInterest({
+    required String areaOfIntrest,
   });
 }
 
@@ -410,6 +415,54 @@ class RemoteSourceImpl extends RemoteSource {
       }
       // Other exceptions
       throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<AreaOfInterestResponseModel> addAreaOfInterest({
+    required String areaOfIntrest,
+  }) async {
+    try {
+      final response = await dio.post(
+        ApiEndpoints.addAreaOfInterestUrl,
+        data: {'area_of_intrest': areaOfIntrest},
+      );
+ 
+      if (response.statusCode == 200) {
+        return AreaOfInterestResponseModel.fromJson(response.data);
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 401:
+              // Unauthorized - invalid or missing token
+              final message = responseData['detail'] ?? 'Authentication required';
+              throw ResponseException(message: message);
+            case 422:
+              // Validation error
+              final message = responseData['detail']?[0]?['msg'] ?? 'Validation error';
+              throw ResponseException(message: message);
+            case 500:
+              // Server error
+              final message = responseData['message'] ?? 'Internal server error';
+              throw ServerException(message: message);
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          throw ServerException(message: 'Network error occurred');
+        }
+      } else {
+        throw ServerException(message: 'An unexpected error occurred');
+      }
     }
   }
 }

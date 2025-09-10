@@ -6,12 +6,14 @@ class PhoneSigninResponseModel {
   final String message;
   final String? accessToken;
   final String? refreshToken;
+  final bool? hasAreaOfIntrest;
 
   PhoneSigninResponseModel({
     required this.success,
     required this.message,
     this.accessToken,
     this.refreshToken,
+    this.hasAreaOfIntrest,
   });
 
   /// Factory method to create PhoneSigninResponseModel from JSON
@@ -21,6 +23,7 @@ class PhoneSigninResponseModel {
       message: json['message'] ?? '',
       accessToken: json['access_token'],
       refreshToken: json['refresh_token'],
+      hasAreaOfIntrest: json['has_area_of_intrest'],
     );
   }
 
@@ -33,6 +36,7 @@ class PhoneSigninResponseModel {
     
     if (accessToken != null) data['access_token'] = accessToken;
     if (refreshToken != null) data['refresh_token'] = refreshToken;
+    if (hasAreaOfIntrest != null) data['has_area_of_intrest'] = hasAreaOfIntrest;
     
     return data;
   }
@@ -55,7 +59,8 @@ class PhoneSigninResponseModel {
         other.success == success &&
         other.message == message &&
         other.accessToken == accessToken &&
-        other.refreshToken == refreshToken;
+        other.refreshToken == refreshToken &&
+        other.hasAreaOfIntrest == hasAreaOfIntrest;
   }
 
   @override
@@ -63,6 +68,7 @@ class PhoneSigninResponseModel {
     return success.hashCode ^
         message.hashCode ^
         accessToken.hashCode ^
-        refreshToken.hashCode;
+        refreshToken.hashCode ^
+        hasAreaOfIntrest.hashCode;
   }
 }

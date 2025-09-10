@@ -5,6 +5,7 @@ class SigninResponseModel {
   final String? refreshToken;
   final String? otp;
   final bool? userExists;
+  final bool? hasAreaOfIntrest;
 
   SigninResponseModel({
     required this.success,
@@ -13,6 +14,7 @@ class SigninResponseModel {
     this.refreshToken,
     this.otp,
     this.userExists,
+    this.hasAreaOfIntrest,
   });
 
   /// Factory method to create SigninResponseModel from JSON
@@ -24,6 +26,7 @@ class SigninResponseModel {
       refreshToken: json['refresh_token'],
       otp: json['otp'],
       userExists: json['user_exists'],
+      hasAreaOfIntrest: json['has_area_of_intrest'],
     );
   }
 
@@ -38,6 +41,7 @@ class SigninResponseModel {
     if (refreshToken != null) data['refresh_token'] = refreshToken;
     if (otp != null) data['otp'] = otp;
     if (userExists != null) data['user_exists'] = userExists;
+    if (hasAreaOfIntrest != null) data['has_area_of_intrest'] = hasAreaOfIntrest;
     
     return data;
   }
@@ -68,7 +72,8 @@ class SigninResponseModel {
         other.accessToken == accessToken &&
         other.refreshToken == refreshToken &&
         other.otp == otp &&
-        other.userExists == userExists;
+        other.userExists == userExists &&
+        other.hasAreaOfIntrest == hasAreaOfIntrest;
   }
 
   @override
@@ -78,6 +83,7 @@ class SigninResponseModel {
         accessToken.hashCode ^
         refreshToken.hashCode ^
         otp.hashCode ^
-        userExists.hashCode;
+        userExists.hashCode ^
+        hasAreaOfIntrest.hashCode;
   }
 }

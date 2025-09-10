@@ -11,6 +11,7 @@ import '../../data/model/reset_password_response_model.dart';
 import '../../data/model/verify_otp_response_model.dart';
 import '../../data/model/phone_otp_response_model.dart';
 import '../../data/model/phone_signin_response_model.dart';
+import '../../data/model/area_of_interest_response_model.dart';
 import '../routes/routes.dart';
 
 enum ResetStep { email, otp, newPassword }
@@ -109,8 +110,15 @@ class AuthController extends GetxController {
         signupPasswordController.clear();
         confirmPasswordController.clear();
 
-        // Navigate to home
-        Get.offAllNamed(XRoutes.home);
+        // Navigate based on area of interest status
+        if (response.hasAreaOfIntrest == true) {
+          // User has selected area of interest, go to home
+          Get.offAllNamed(XRoutes.home);
+        } else {
+          // User hasn't selected area of interest, go to interest screen
+          Get.offAllNamed(XRoutes.interest);
+        }
+        
         Get.snackbar(
           'Success',
           response.message,
@@ -169,8 +177,15 @@ class AuthController extends GetxController {
         emailController.clear();
         passwordController.clear();
 
-        // Navigate to home
-        Get.offAllNamed(XRoutes.home);
+        // Navigate based on area of interest status
+        if (response.hasAreaOfIntrest == true) {
+          // User has selected area of interest, go to home
+          Get.offAllNamed(XRoutes.home);
+        } else {
+          // User hasn't selected area of interest, go to interest screen
+          Get.offAllNamed(XRoutes.interest);
+        }
+        
         Get.snackbar(
           'Success',
           response.message,
@@ -438,8 +453,14 @@ class AuthController extends GetxController {
         otpController.clear();
         _isOtpSent.value = false;
 
-        // Navigate to home
-        Get.offAllNamed(XRoutes.home);
+        // Navigate based on area of interest status
+        if (response.hasAreaOfIntrest == true) {
+          // User has selected area of interest, go to home
+          Get.offAllNamed(XRoutes.home);
+        } else {
+          // User hasn't selected area of interest, go to interest screen
+          Get.offAllNamed(XRoutes.interest);
+        }
         Get.snackbar(
           'Success',
           response.message,

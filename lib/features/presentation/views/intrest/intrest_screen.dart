@@ -73,7 +73,6 @@ class IntrestScreen extends StatelessWidget {
                           alignment: Alignment.topRight,
                           child: TextButton(
                             onPressed: () {
-                              // Handle Skip action
                               Get.toNamed(XRoutes.home);
                             },
                             child: Text(
@@ -137,17 +136,11 @@ class IntrestScreen extends StatelessWidget {
                                 width: double.infinity,
                                 height: 50,
                                 child: PrimaryButton(
-                                  text: 'Next',
+                                  text: 'Continue',
+                                  isLoading: interestController.isLoading,
                                   onPressed: () {
-                                    // Handle Next button action
-                                    final selectedInterest = interestController
-                                        .getSelectedInterest(interests);
-                                    if (selectedInterest != null) {
-                                      print(
-                                        'Selected: ${selectedInterest['title']}',
-                                      );
-                                      // Send to server or navigate to next screen
-                                    }
+                                    // Submit selected interest to API
+                                    interestController.submitInterest(interests);
                                   },
                                 ),
                               ),

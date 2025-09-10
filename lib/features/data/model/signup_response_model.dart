@@ -3,12 +3,14 @@ class SignupResponseModel {
   final String message;
   final String? accessToken;
   final String? refreshToken;
+  final bool? hasAreaOfIntrest;
 
   SignupResponseModel({
     required this.success,
     required this.message,
     this.accessToken,
     this.refreshToken,
+    this.hasAreaOfIntrest,
   });
 
   /// Factory method to create SignupResponseModel from JSON
@@ -18,6 +20,7 @@ class SignupResponseModel {
       message: json['message'] ?? '',
       accessToken: json['access_token'],
       refreshToken: json['refresh_token'],
+      hasAreaOfIntrest: json['has_area_of_intrest'],
     );
   }
 
@@ -30,6 +33,7 @@ class SignupResponseModel {
     
     if (accessToken != null) data['access_token'] = accessToken;
     if (refreshToken != null) data['refresh_token'] = refreshToken;
+    if (hasAreaOfIntrest != null) data['has_area_of_intrest'] = hasAreaOfIntrest;
     
     return data;
   }
@@ -52,7 +56,8 @@ class SignupResponseModel {
         other.success == success &&
         other.message == message &&
         other.accessToken == accessToken &&
-        other.refreshToken == refreshToken;
+        other.refreshToken == refreshToken &&
+        other.hasAreaOfIntrest == hasAreaOfIntrest;
   }
 
   @override
@@ -60,6 +65,7 @@ class SignupResponseModel {
     return success.hashCode ^
         message.hashCode ^
         accessToken.hashCode ^
-        refreshToken.hashCode;
+        refreshToken.hashCode ^
+        hasAreaOfIntrest.hashCode;
   }
 }

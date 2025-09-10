@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
+import '../helpers/token_helper.dart';
 
 class LoggerInterceptor extends Interceptor {
   Logger logger = Logger(
@@ -29,5 +30,30 @@ class LoggerInterceptor extends Interceptor {
         'HEADERS: ${response.headers} \n'
         'Data: ${response.data}'); // Debug log
     handler.next(response);
+  }
+}
+
+class AuthInterceptor extends Interceptor {
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+    // Get access token from storage
+    final accessToken = await TokenHelper.getAccessToken();
+    
+    // Add Authorization header if token exists
+    if (accessToken != null && accessToken.isNotEmpty) {
+      options.headers['Authorization'] = 'Bearer $accessToken';
+    }
+    
+    handler.next(options);
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
+    // Handle token refresh logic if needed
+    if (err.response?.statusCode == 401) {
+      // Token might be expired, you can implement refresh logic here
+      // For now, just pass the error
+    }
+    handler.next(err);
   }
 }

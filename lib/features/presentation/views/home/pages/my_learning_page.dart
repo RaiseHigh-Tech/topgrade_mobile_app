@@ -30,15 +30,57 @@ class MyLearningPage extends StatefulWidget {
   _MyLearningPageState createState() => _MyLearningPageState();
 }
 
-class _MyLearningPageState extends State<MyLearningPage> {
+class _MyLearningPageState extends State<MyLearningPage>
+    with TickerProviderStateMixin {
   int _selectedFilterIndex = 0;
   bool _isSearchVisible = false;
   final List<String> _filters = ["Saved Courses", "In Progress", "Completed"];
+  
+  late AnimationController _searchAnimationController;
+  late Animation<Offset> _searchSlideAnimation;
+  late Animation<double> _searchFadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    
+    _searchSlideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, -1.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _searchAnimationController,
+      curve: Curves.easeInOut,
+    ));
+    
+    _searchFadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _searchAnimationController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _searchAnimationController.dispose();
+    super.dispose();
+  }
 
   void _toggleSearch() {
     setState(() {
       _isSearchVisible = !_isSearchVisible;
     });
+    
+    if (_isSearchVisible) {
+      _searchAnimationController.forward();
+    } else {
+      _searchAnimationController.reverse();
+    }
   }
 
   // Dummy data representing
@@ -88,9 +130,21 @@ class _MyLearningPageState extends State<MyLearningPage> {
                 child: Column(
                   children: [
                     _buildHeader(themeController),
-                    Visibility(
-                      visible: _isSearchVisible,
-                      child: _buildSearchBar(themeController),
+                    AnimatedBuilder(
+                      animation: _searchAnimationController,
+                      builder: (context, child) {
+                        return ClipRect(
+                          child: SlideTransition(
+                            position: _searchSlideAnimation,
+                            child: FadeTransition(
+                              opacity: _searchFadeAnimation,
+                              child: _isSearchVisible
+                                  ? _buildSearchBar(themeController)
+                                  : const SizedBox.shrink(),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     SizedBox(height: XSizes.spacingMd),
                     _buildFilterTabs(themeController),

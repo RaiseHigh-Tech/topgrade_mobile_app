@@ -22,7 +22,7 @@ class HomeScreen extends StatelessWidget {
       builder: (themeController) {
         return Obx(() => Scaffold(
           backgroundColor: themeController.backgroundColor,
-          body: _getSelectedPage(bottomNavController.selectedIndex, themeController),
+          body: _getSelectedPage(bottomNavController.selectedIndex, themeController, bottomNavController),
           bottomNavigationBar: Container(
             decoration: BoxDecoration(
               color: themeController.backgroundColor,
@@ -95,18 +95,36 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _getSelectedPage(int index, XThemeController themeController) {
+  Widget _getSelectedPage(int index, XThemeController themeController, BottomNavController bottomNavController) {
+    Widget page;
     switch (index) {
       case 0:
-        return const HomePage();
+        page = const HomePage();
+        break;
       case 1:
-        return const MyLearningPage();
+        page = const MyLearningPage();
+        break;
       case 2:
-        return const ChatPage();
+        page = const ChatPage();
+        break;
       case 3:
-        return const ProfilePage();
+        page = const ProfilePage();
+        break;
       default:
-        return const HomePage();
+        page = const HomePage();
     }
+    
+    return AnimatedBuilder(
+      animation: bottomNavController.fadeAnimation,
+      builder: (context, child) {
+        return FadeTransition(
+          opacity: bottomNavController.fadeAnimation,
+          child: SlideTransition(
+            position: bottomNavController.slideAnimation,
+            child: page,
+          ),
+        );
+      },
+    );
   }
 }

@@ -120,25 +120,17 @@ class HomePage extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.search,
-                  color:
-                      themeController.isLightTheme
-                          ? Colors.grey[600]!
-                          : Colors.white,
-                ),
+                Icon(Icons.search, color: Colors.grey[600]),
                 SizedBox(width: XSizes.spacingSm),
                 Expanded(
                   child: TextField(
+                    cursorColor: themeController.primaryColor,
                     decoration: InputDecoration(
                       hintText: "Search courses...",
                       hintStyle: TextStyle(
                         fontFamily: XFonts.lexend,
                         fontSize: XSizes.textSizeMd,
-                        color:
-                            themeController.isLightTheme
-                                ? Colors.grey[600]!
-                                : Colors.white,
+                        color: Colors.grey[600],
                       ),
                       border: InputBorder.none,
                     ),

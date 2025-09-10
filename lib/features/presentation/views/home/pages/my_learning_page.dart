@@ -1,193 +1,399 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/theme_controller.dart';
-import '../../../../../utils/constants/fonts.dart';
 import '../../../../../utils/constants/sizes.dart';
+import '../../../../../utils/constants/fonts.dart';
 
-class MyLearningPage extends StatelessWidget {
+// A simple data model for a course
+class Course {
+  final String title;
+  final String institution;
+  final double rating;
+  final String description;
+  final int studentCount;
+  final String imageUrl;
+
+  Course({
+    required this.title,
+    required this.institution,
+    required this.rating,
+    required this.description,
+    required this.studentCount,
+    required this.imageUrl,
+  });
+}
+
+class MyLearningPage extends StatefulWidget {
   const MyLearningPage({super.key});
+
+  @override
+  _MyLearningPageState createState() => _MyLearningPageState();
+}
+
+class _MyLearningPageState extends State<MyLearningPage> {
+  int _selectedFilterIndex = 0;
+  bool _isSearchVisible = false;
+  final List<String> _filters = ["Saved Courses", "In Progress", "Completed"];
+
+  void _toggleSearch() {
+    setState(() {
+      _isSearchVisible = !_isSearchVisible;
+    });
+  }
+
+  // Dummy data representing
+  // the list of courses
+  final List<Course> courses = [
+    Course(
+      title: 'Branding and Identity Design',
+      institution: 'Brand Strategy College',
+      rating: 4.4,
+      description:
+          'This course explores the fundamentals of branding, brand strategy, and visual identity design. Learn how to ...',
+      studentCount: 1457,
+      imageUrl:
+          'https://images.unsplash.com/photo-1558655146-364adaf1fcc9?w=500',
+    ),
+    Course(
+      title: 'Game Design and Development',
+      institution: 'Game Development Academy',
+      rating: 4.4,
+      description:
+          'Visual Communication College\'s Typography and Layout Design course explores the art and science of...',
+      studentCount: 5679,
+      imageUrl:
+          'https://images.unsplash.com/photo-1580327344181-c1163234e5a0?w=500', // Placeholder
+    ),
+    Course(
+      title: 'Animation and Motion Graphics',
+      institution: 'Animation Institute of Digital Arts',
+      rating: 4.7,
+      description:
+          'This course in Animation and Motion Graphics. Learn the principles of animation, 2D and 3D animation...',
+      studentCount: 2679,
+      imageUrl:
+          'https://images.unsplash.com/photo-1579566346927-c68383817a25?w=500', // Placeholder
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return GetBuilder<XThemeController>(
-      builder: (themeController) => Scaffold(
-        backgroundColor: themeController.backgroundColor,
-        body: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.all(XSizes.paddingLg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Text(
-                  'My Learning',
-                  style: TextStyle(
-                    fontSize: XSizes.textSize3xl,
-                    fontFamily: XFonts.lexend,
-                    color: themeController.textColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: XSizes.spacingSm),
-                Text(
-                  'Continue your learning journey',
-                  style: TextStyle(
-                    fontSize: XSizes.textSizeLg,
-                    fontFamily: XFonts.lexend,
-                    color: Colors.grey,
-                  ),
-                ),
-                SizedBox(height: XSizes.spacingLg),
-                
-                // Progress Overview
-                Container(
-                  padding: EdgeInsets.all(XSizes.paddingLg),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        themeController.primaryColor,
-                        themeController.primaryColor.withValues(alpha: 0.8),
-                      ],
+      builder:
+          (themeController) => Scaffold(
+            backgroundColor: themeController.backgroundColor,
+            body: SafeArea(
+              child: Container(
+                padding: EdgeInsets.all(XSizes.paddingMd),
+                child: Column(
+                  children: [
+                    _buildHeader(themeController),
+                    Visibility(
+                      visible: _isSearchVisible,
+                      child: _buildSearchBar(themeController),
                     ),
-                    borderRadius: BorderRadius.circular(XSizes.borderRadiusLg),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Learning Progress',
-                        style: TextStyle(
-                          fontSize: XSizes.textSizeXl,
-                          fontFamily: XFonts.lexend,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      SizedBox(height: XSizes.spacingSm),
-                      Text(
-                        '3 courses in progress',
-                        style: TextStyle(
-                          fontSize: XSizes.textSizeMd,
-                          fontFamily: XFonts.lexend,
-                          color: Colors.white.withValues(alpha: 0.9),
-                        ),
-                      ),
-                      SizedBox(height: XSizes.spacingMd),
-                      LinearProgressIndicator(
-                        value: 0.65,
-                        backgroundColor: Colors.white.withValues(alpha: 0.3),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                      SizedBox(height: XSizes.spacingSm),
-                      Text(
-                        '65% Complete',
-                        style: TextStyle(
-                          fontSize: XSizes.textSizeSm,
-                          fontFamily: XFonts.lexend,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
+                    SizedBox(height: XSizes.spacingMd),
+                    _buildFilterTabs(themeController),
+                    SizedBox(height: XSizes.spacingXl),
+                    Expanded(child: _buildCourseList(themeController)),
+                  ],
                 ),
-                SizedBox(height: XSizes.spacingLg),
-                
-                // Enrolled Courses
-                Text(
-                  'Enrolled Courses',
+              ),
+            ),
+          ),
+    );
+  }
+
+  Widget _buildHeader(XThemeController themeController) {
+    return Row(
+      children: [
+        Text(
+          'My Learning',
+          style: TextStyle(
+            fontSize: XSizes.textSizeXl,
+            fontWeight: FontWeight.bold,
+            color: themeController.textColor,
+            fontFamily: XFonts.lexend,
+          ),
+        ),
+        const Spacer(),
+        IconButton(
+          onPressed: _toggleSearch,
+          icon: Icon(
+            Icons.search,
+            color: themeController.textColor,
+            size: XSizes.iconSizeMd,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterTabs(XThemeController themeController) {
+    return SizedBox(
+      height: XSizes.paddingXl + XSizes.paddingXs,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _filters.length,
+        itemBuilder: (context, index) {
+          final isSelected = _selectedFilterIndex == index;
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedFilterIndex = index;
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: EdgeInsets.only(right: XSizes.marginSm),
+              padding: EdgeInsets.symmetric(
+                horizontal: XSizes.paddingMd,
+                vertical: XSizes.paddingSm,
+              ),
+              decoration: BoxDecoration(
+                color:
+                    isSelected
+                        ? themeController.primaryColor
+                        : Colors.transparent,
+                borderRadius: BorderRadius.circular(XSizes.borderRadiusXl),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+              ),
+              child: Center(
+                child: Text(
+                  _filters[index],
                   style: TextStyle(
-                    fontSize: XSizes.textSize2xl,
+                    color:
+                        isSelected
+                            ? Colors.white
+                            : themeController.textColor.withValues(alpha: 0.6),
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    fontSize: XSizes.textSizeSm,
                     fontFamily: XFonts.lexend,
-                    color: themeController.textColor,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: XSizes.spacingMd),
-                
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: 4,
-                    itemBuilder: (context, index) {
-                      return Container(
-                        margin: EdgeInsets.only(bottom: XSizes.spacingMd),
-                        padding: EdgeInsets.all(XSizes.paddingMd),
-                        decoration: BoxDecoration(
-                          color: themeController.backgroundColor,
-                          borderRadius: BorderRadius.circular(XSizes.borderRadiusLg),
-                          border: Border.all(
-                            color: Colors.grey.withValues(alpha: 0.2),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCourseCard(Course course, XThemeController themeController) {
+    return Container(
+      margin: EdgeInsets.only(bottom: XSizes.marginMd),
+      padding: EdgeInsets.all(XSizes.paddingSm),
+      decoration: BoxDecoration(
+        color: themeController.backgroundColor,
+        borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+        border: Border.all(
+          color: themeController.textColor.withValues(alpha: 0.2),
+          width: XSizes.borderSizeSm,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(XSizes.borderRadiusSm),
+            child: Stack(
+              children: [
+                Container(
+                  width: XSizes.iconSizeXxl + XSizes.paddingXl,
+                  height: XSizes.iconSizeXxl + XSizes.paddingXl,
+                  color: themeController.textColor.withValues(alpha: 0.1),
+                  child:
+                      course.imageUrl.isNotEmpty
+                          ? Image.network(
+                            course.imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder:
+                                (context, error, stackTrace) => Icon(
+                                  Icons.play_circle_fill,
+                                  size: XSizes.iconSizeXl,
+                                  color: themeController.primaryColor,
+                                ),
+                          )
+                          : Icon(
+                            Icons.play_circle_fill,
+                            size: XSizes.iconSizeXl,
+                            color: themeController.primaryColor,
                           ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 50,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    color: themeController.primaryColor.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
-                                  ),
-                                  child: Icon(
-                                    Icons.book_outlined,
-                                    color: themeController.primaryColor,
-                                    size: XSizes.iconSizeMd,
-                                  ),
-                                ),
-                                SizedBox(width: XSizes.spacingMd),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Course ${index + 1}',
-                                        style: TextStyle(
-                                          fontSize: XSizes.textSizeLg,
-                                          fontFamily: XFonts.lexend,
-                                          color: themeController.textColor,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Lesson ${index + 2} of 10',
-                                        style: TextStyle(
-                                          fontSize: XSizes.textSizeSm,
-                                          fontFamily: XFonts.lexend,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Text(
-                                  '${(index + 1) * 20}%',
-                                  style: TextStyle(
-                                    fontSize: XSizes.textSizeMd,
-                                    fontFamily: XFonts.lexend,
-                                    color: themeController.primaryColor,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: XSizes.spacingMd),
-                            LinearProgressIndicator(
-                              value: (index + 1) * 0.2,
-                              backgroundColor: Colors.grey.withValues(alpha: 0.2),
-                              valueColor: AlwaysStoppedAnimation<Color>(themeController.primaryColor),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                ),
+                Container(
+                  width: XSizes.iconSizeXxl + XSizes.paddingXl,
+                  height: XSizes.iconSizeXxl + XSizes.paddingXl,
+                  color: themeController.primaryColor.withValues(alpha: 0.3),
                 ),
               ],
             ),
           ),
+          SizedBox(width: XSizes.spacingMd),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  course.title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: XSizes.textSizeSm,
+                    color: themeController.textColor,
+                    fontFamily: XFonts.lexend,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: XSizes.spacingXxs),
+                Text(
+                  course.institution,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: themeController.textColor.withValues(alpha: 0.6),
+                    fontSize: XSizes.textSizeXs,
+                    fontFamily: XFonts.lexend,
+                  ),
+                ),
+                SizedBox(height: XSizes.spacingXs),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.star,
+                      color: Colors.amber.shade600,
+                      size: XSizes.iconSizeXs,
+                    ),
+                    SizedBox(width: XSizes.spacingXs),
+                    Text(
+                      course.rating.toString(),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: XSizes.textSizeXs,
+                        color: themeController.textColor,
+                        fontFamily: XFonts.lexend,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: XSizes.spacingXs),
+                Text(
+                  course.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: themeController.textColor.withValues(alpha: 0.6),
+                    fontSize: XSizes.textSizeXxs,
+                    fontFamily: XFonts.lexend,
+                  ),
+                ),
+                SizedBox(height: XSizes.spacingSm),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: themeController.primaryColor,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        minimumSize: Size(90, 35),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            XSizes.borderRadiusMd,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        'Enroll Now',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontFamily: XFonts.lexend,
+                          fontSize: XSizes.textSizeXs,
+                        ),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.group,
+                          color: themeController.textColor.withValues(
+                            alpha: 0.5,
+                          ),
+                          size: XSizes.iconSizeXs,
+                        ),
+                        SizedBox(width: XSizes.spacingXs),
+                        Text(
+                          course.studentCount.toString(),
+                          style: TextStyle(
+                            color: themeController.textColor.withValues(
+                              alpha: 0.6,
+                            ),
+                            fontWeight: FontWeight.w500,
+                            fontSize: XSizes.textSizeXs,
+                            fontFamily: XFonts.lexend,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCourseList(XThemeController themeController) {
+    return ListView.builder(
+      itemCount: courses.length,
+      itemBuilder: (context, index) {
+        return _buildCourseCard(courses[index], themeController);
+      },
+    );
+  }
+
+  Widget _buildSearchBar(XThemeController themeController) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: XSizes.paddingMd),
+      margin: EdgeInsets.only(top: XSizes.marginSm),
+      decoration: BoxDecoration(
+        color: themeController.backgroundColor,
+        borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+        border: Border.all(
+          color:
+              themeController.isLightTheme
+                  ? Colors.grey[300]!
+                  : Colors.grey[600]!,
         ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.search, color: Colors.grey[600]),
+          SizedBox(width: XSizes.spacingSm),
+          Expanded(
+            child: TextField(
+              cursorColor: themeController.primaryColor,
+              decoration: InputDecoration(
+                hintText: "Search Courses...",
+                hintStyle: TextStyle(
+                  fontFamily: XFonts.lexend,
+                  fontSize: XSizes.textSizeMd,
+                  color: Colors.grey[600],
+                ),
+                border: InputBorder.none,
+              ),
+              style: TextStyle(
+                fontFamily: XFonts.lexend,
+                color: themeController.textColor,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -32,6 +32,8 @@ class HomePage extends StatelessWidget {
                         university: "Tech Innovations University",
                         rating: 4.9,
                         progress: 0.79,
+                        imageUrl:
+                            "https://images.unsplash.com/photo-1558655146-364adaf1fcc9?w=500",
                       ),
                       SizedBox(height: XSizes.spacingSm),
                       _buildContinueWatchingCard(
@@ -39,6 +41,8 @@ class HomePage extends StatelessWidget {
                         university: "Creative Arts Institute",
                         rating: 4.7,
                         progress: 0.55,
+                        imageUrl:
+                            "https://images.unsplash.com/photo-1580327344181-c1163234e5a0?w=500",
                       ),
                       SizedBox(height: XSizes.spacingMd),
                       _buildSectionHeader("Categories"),
@@ -155,6 +159,7 @@ class HomePage extends StatelessWidget {
     required String university,
     required double rating,
     required double progress,
+    required String imageUrl,
   }) {
     return GetBuilder<XThemeController>(
       builder:
@@ -171,8 +176,11 @@ class HomePage extends StatelessWidget {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+                    child: Image.network(imageUrl, fit: BoxFit.cover),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -294,18 +302,24 @@ class HomePage extends StatelessWidget {
         "college": "Visual Communication College",
         "rating": 4.7,
         "bookmarked": false,
+        "imageUrl":
+            "https://images.unsplash.com/photo-1580327344181-c1163234e5a0?w=500",
       },
       {
         "title": "Branding and Identity Design",
         "college": "Innovation and Design School",
         "rating": 4.4,
         "bookmarked": true,
+        "imageUrl":
+            "https://images.unsplash.com/photo-1558655146-364adaf1fcc9?w=500",
       },
       {
         "title": "Web Design Fundamentals",
         "college": "Web Development Uni",
         "rating": 4.9,
         "bookmarked": false,
+        "imageUrl":
+            "https://images.unsplash.com/photo-1579566346927-c68383817a25?w=500",
       },
     ];
 
@@ -321,6 +335,7 @@ class HomePage extends StatelessWidget {
             college: course['college'] as String,
             rating: course['rating'] as double,
             isBookmarked: isTopCourse ? true : course['bookmarked'] as bool,
+            imageUrl: course['imageUrl'] as String,
           );
         },
       ),
@@ -332,12 +347,13 @@ class HomePage extends StatelessWidget {
     required String college,
     required double rating,
     required bool isBookmarked,
+    required String imageUrl,
   }) {
     return GetBuilder<XThemeController>(
       builder:
           (themeController) => Container(
             width: 160,
-            margin: EdgeInsets.only(right: XSizes.marginSm),
+            margin: EdgeInsets.only(right: XSizes.marginSm + XSizes.marginXs),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -345,11 +361,18 @@ class HomePage extends StatelessWidget {
                   children: [
                     Container(
                       height: 110,
+                      width: 160,
                       decoration: BoxDecoration(
                         color: Colors.grey.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(
                           XSizes.borderRadiusLg,
                         ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          XSizes.borderRadiusMd,
+                        ),
+                        child: Image.network(imageUrl, fit: BoxFit.cover),
                       ),
                     ),
                     Positioned(

@@ -36,13 +36,15 @@ class XSizes {
   static double get borderRadiusXxl => 32.0 * scaleFactor;
   static double get borderRadiusCircle => 100.0 * scaleFactor;
 
+  static double get iconSizeXxs => 8.0 * scaleFactor;
+  static double get iconSizeXs => 12.0 * scaleFactor;
   static double get iconSizeSm => 16.0 * scaleFactor;
   static double get iconSizeMd => 24.0 * scaleFactor;
   static double get iconSizeLg => 32.0 * scaleFactor;
   static double get iconSizeXl => 48.0 * scaleFactor;
   static double get iconSizeXxl => 64.0 * scaleFactor;
 
-static double get textSizeXxs => 8.0 * scaleFactor;
+  static double get textSizeXxs => 8.0 * scaleFactor;
   static double get textSizeXs => 10.0 * scaleFactor;
   static double get textSizeSm => 12.0 * scaleFactor;
   static double get textSizeMd => 14.0 * scaleFactor;
@@ -52,6 +54,7 @@ static double get textSizeXxs => 8.0 * scaleFactor;
   static double get textSize3xl => 24.0 * scaleFactor;
   static double get textSize4xl => 28.0 * scaleFactor;
 
+  static double get spacingXxs => 2.0 * scaleFactor;
   static double get spacingXs => 4.0 * scaleFactor;
   static double get spacingSm => 8.0 * scaleFactor;
   static double get spacingMd => 16.0 * scaleFactor;

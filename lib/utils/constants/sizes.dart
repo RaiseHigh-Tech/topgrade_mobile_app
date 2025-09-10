@@ -42,6 +42,7 @@ class XSizes {
   static double get iconSizeXl => 48.0 * scaleFactor;
   static double get iconSizeXxl => 64.0 * scaleFactor;
 
+static double get textSizeXxs => 8.0 * scaleFactor;
   static double get textSizeXs => 10.0 * scaleFactor;
   static double get textSizeSm => 12.0 * scaleFactor;
   static double get textSizeMd => 14.0 * scaleFactor;

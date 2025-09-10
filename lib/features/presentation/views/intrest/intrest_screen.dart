@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:topgrade/features/presentation/controllers/interest_controller.dart';
 import 'package:topgrade/features/presentation/controllers/theme_controller.dart';
+import 'package:topgrade/features/presentation/routes/routes.dart';
 import 'package:topgrade/features/presentation/widgets/primary_button.dart';
 import 'package:topgrade/utils/constants/fonts.dart';
 import 'package:topgrade/utils/constants/sizes.dart';
@@ -73,6 +74,7 @@ class IntrestScreen extends StatelessWidget {
                           child: TextButton(
                             onPressed: () {
                               // Handle Skip action
+                              Get.toNamed(XRoutes.home);
                             },
                             child: Text(
                               XString.skip,

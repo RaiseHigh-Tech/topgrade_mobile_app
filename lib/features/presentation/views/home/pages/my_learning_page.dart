@@ -345,7 +345,9 @@ class _MyLearningPageState extends State<MyLearningPage>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Get.toNamed('/course-details');
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: themeController.primaryColor,
                         foregroundColor: Colors.white,

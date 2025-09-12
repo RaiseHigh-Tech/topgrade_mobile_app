@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -52,23 +53,23 @@ class XThemeController extends GetxController {
     Get.changeTheme(isLight ? ThemeData.light() : ThemeData.dark());
 
     // if you want mobile status bar color to change with theme
-    // if (isLight) {
-    //   SystemChrome.setSystemUIOverlayStyle(
-    //     SystemUiOverlayStyle.light.copyWith(
-    //       statusBarColor: XColors.backgroundColor,
-    //       statusBarIconBrightness: Brightness.dark,
-    //       statusBarBrightness: Brightness.light,
-    //     ),
-    //   );
-    // } else {
-    //   SystemChrome.setSystemUIOverlayStyle(
-    //     SystemUiOverlayStyle.light.copyWith(
-    //       statusBarColor: XColors.backgroundColorDark,
-    //       statusBarIconBrightness: Brightness.light,
-    //       statusBarBrightness: Brightness.dark,
-    //     ),
-    //   );
-    // }
+    if (isLight) {
+      SystemChrome.setSystemUIOverlayStyle(
+        SystemUiOverlayStyle.light.copyWith(
+          statusBarColor: XColors.backgroundColor,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+        ),
+      );
+    } else {
+      SystemChrome.setSystemUIOverlayStyle(
+        SystemUiOverlayStyle.light.copyWith(
+          statusBarColor: XColors.backgroundColorDark,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+        ),
+      );
+    }
     update();
   }
 }

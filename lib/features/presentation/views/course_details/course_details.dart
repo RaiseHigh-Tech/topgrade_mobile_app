@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Add this import
 import 'package:get/get.dart';
+import 'package:topgrade/features/presentation/views/course_details/tabs/lession_tab.dart';
 import 'package:topgrade/features/presentation/widgets/primary_button.dart';
 import '../../controllers/theme_controller.dart';
 import '../../../../utils/constants/sizes.dart';
@@ -321,41 +322,7 @@ class CourseDetailsScreen extends StatelessWidget {
                           ),
                         ),
                         // Lessons Tab - Scrollable
-                        SingleChildScrollView(
-                          padding: EdgeInsets.only(
-                            top: XSizes.spacingLg,
-                            bottom: XSizes.spacingXxl,
-                          ),
-                          child: Column(
-                            children: [
-                              Text(
-                                'Lessons will be listed here.',
-                                style: TextStyle(
-                                  fontFamily: XFonts.lexend,
-                                  color: themeController.textColor,
-                                ),
-                              ),
-                              SizedBox(height: XSizes.spacingMd),
-                              // Add some sample lesson content
-                              ...List.generate(
-                                10,
-                                (index) => Padding(
-                                  padding: EdgeInsets.only(
-                                    bottom: XSizes.spacingSm,
-                                  ),
-                                  child: Text(
-                                    'Lesson ${index + 1}: Introduction to Typography',
-                                    style: TextStyle(
-                                      fontFamily: XFonts.lexend,
-                                      color: themeController.textColor
-                                          .withValues(alpha: 0.7),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        LessonsTab(),
                       ],
                     ),
                   ),

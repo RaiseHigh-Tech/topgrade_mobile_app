@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get/get_state_manager/src/simple/get_state.dart';
-import 'package:topgrade/features/presentation/controllers/theme_controller.dart';
-import 'package:topgrade/utils/constants/sizes.dart';
+import 'package:get/get.dart';
+import '../../../../../utils/constants/fonts.dart';
+import '../../../../../utils/constants/sizes.dart';
+import '../../../controllers/theme_controller.dart';
 
 class SubTopic {
   final String title;
@@ -32,13 +33,11 @@ class LessonsTab extends StatefulWidget {
 }
 
 class _LessonsTabState extends State<LessonsTab> {
-  // List to hold the lesson data and manage the expansion state.
   late final List<Lesson> _lessons;
 
   @override
   void initState() {
     super.initState();
-    // Initialize the lesson data when the widget is first created.
     _lessons = _getLessonsData();
   }
 
@@ -47,73 +46,177 @@ class _LessonsTabState extends State<LessonsTab> {
     return GetBuilder<XThemeController>(
       builder:
           (themeController) => SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: XSizes.paddingXs),
-            child: ExpansionPanelList(
-              elevation: 0, // Remove shadow
-              expansionCallback: (int index, bool isExpanded) {},
+            padding: EdgeInsets.only(
+              top: XSizes.spacingLg,
+              bottom: XSizes.spacingXxl,
+            ),
+            child: Column(
               children:
-                  _lessons.map<ExpansionPanel>((Lesson lesson) {
-                    return ExpansionPanel(
-                      backgroundColor: themeController.backgroundColor,
-                      canTapOnHeader: true,
-                      headerBuilder: (BuildContext context, bool isExpanded) {
-                        return Container(
-                          padding: EdgeInsets.symmetric(
-                            vertical: XSizes.paddingMd,
-                            horizontal: XSizes.paddingMd,
-                          ),
-                          child: Text(
-                            lesson.title,
-                            style: TextStyle(
-                              fontSize: XSizes.textSizeMd,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        );
-                      },
-                      body: Container(
+                  _lessons.asMap().entries.map((entry) {
+                    int index = entry.key;
+                    Lesson lesson = entry.value;
+                    return Container(
+                      margin: EdgeInsets.only(bottom: XSizes.spacingMd),
+                      decoration: BoxDecoration(
                         color: themeController.backgroundColor,
-                        padding: const EdgeInsets.only(
-                          left: 16.0,
-                          right: 16.0,
-                          bottom: 16.0,
+
+                        border: Border.all(
+                          color: themeController.textColor.withValues(
+                            alpha: 0.05,
+                          ),
                         ),
-                        child: Column(
+                      ),
+                      child: Theme(
+                        data: Theme.of(context).copyWith(
+                          dividerColor: themeController.textColor.withValues(
+                            alpha: 0.05,
+                          ),
+                        ),
+                        child: ExpansionTile(
+                          initiallyExpanded: lesson.isExpanded,
+                          onExpansionChanged: (bool expanded) {
+                            setState(() {
+                              lesson.isExpanded = expanded;
+                            });
+                          },
+                          tilePadding: EdgeInsets.symmetric(
+                            horizontal: XSizes.paddingMd,
+                            vertical: XSizes.paddingXs,
+                          ),
+                          childrenPadding: EdgeInsets.only(
+                            left: XSizes.paddingMd,
+                            right: XSizes.paddingMd,
+                            bottom: XSizes.paddingMd,
+                          ),
+                          backgroundColor: themeController.backgroundColor,
+                          collapsedBackgroundColor:
+                              themeController.backgroundColor,
+                          iconColor: themeController.primaryColor,
+                          collapsedIconColor: themeController.textColor
+                              .withValues(alpha: 0.6),
+                          title: Row(
+                            children: [
+                              // Extract and display serial number
+                              Container(
+                                width: XSizes.iconSizeLg,
+                                height: XSizes.iconSizeLg,
+                                decoration: BoxDecoration(
+                                  color: themeController.primaryColor
+                                      .withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${index + 1}',
+                                    style: TextStyle(
+                                      fontSize: XSizes.textSizeXs,
+                                      fontWeight: FontWeight.w700,
+                                      fontFamily: XFonts.lexend,
+                                      color: themeController.primaryColor,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: XSizes.spacingMd),
+                              // Display title without serial number
+                              Expanded(
+                                child: Text(
+                                  lesson.title,
+                                  style: TextStyle(
+                                    fontSize: XSizes.textSizeSm,
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: XFonts.lexend,
+                                    color: themeController.textColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                           children:
                               lesson.subTopics.map((subTopic) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 12.0),
+                                return Container(
+                                  margin: EdgeInsets.only(
+                                    bottom: XSizes.spacingSm,
+                                  ),
+                                  padding: EdgeInsets.all(XSizes.paddingMd),
+                                  decoration: BoxDecoration(
+                                    color: themeController.textColor.withValues(
+                                      alpha: 0.02,
+                                    ),
+                                    borderRadius: BorderRadius.circular(
+                                      XSizes.borderRadiusMd,
+                                    ),
+                                    border: Border.all(
+                                      color: themeController.textColor
+                                          .withValues(alpha: 0.05),
+                                      width: 1,
+                                    ),
+                                  ),
                                   child: Row(
                                     children: [
-                                      CircleAvatar(
-                                        radius: 12,
-                                        backgroundColor:
-                                            subTopic.isLocked
-                                                ? Colors.grey.shade300
-                                                : themeController.primaryColor,
+                                      Container(
+                                        width: XSizes.iconSizeMd,
+                                        height: XSizes.iconSizeMd,
+                                        decoration: BoxDecoration(
+                                          color:
+                                              subTopic.isLocked
+                                                  ? themeController.textColor
+                                                      .withValues(alpha: 0.1)
+                                                  : themeController.primaryColor
+                                                      .withValues(alpha: 0.1),
+                                          shape: BoxShape.circle,
+                                        ),
                                         child: Icon(
                                           subTopic.isLocked
                                               ? Icons.lock
                                               : Icons.play_arrow,
-                                          size: 14,
+                                          size: XSizes.iconSizeXs,
                                           color:
                                               subTopic.isLocked
-                                                  ? Colors.grey.shade600
-                                                  : themeController.primaryColor,
+                                                  ? themeController.textColor
+                                                      .withValues(alpha: 0.4)
+                                                  : themeController
+                                                      .primaryColor,
                                         ),
                                       ),
-                                      const SizedBox(width: 16),
-                                      Text(
-                                        subTopic.title,
-                                        style: const TextStyle(
-                                          color: Color(0xFF666666),
+                                      SizedBox(width: XSizes.spacingMd),
+                                      Expanded(
+                                        child: Text(
+                                          subTopic.title,
+                                          style: TextStyle(
+                                            fontSize: XSizes.textSizeXs,
+                                            fontFamily: XFonts.lexend,
+                                            fontWeight: FontWeight.w400,
+                                            color:
+                                                subTopic.isLocked
+                                                    ? themeController.textColor
+                                                        .withValues(alpha: 0.5)
+                                                    : themeController.textColor
+                                                        .withValues(alpha: 0.8),
+                                          ),
                                         ),
                                       ),
-                                      const Spacer(),
-                                      Text(
-                                        subTopic.duration,
-                                        style: const TextStyle(
-                                          color: Color(0xFF666666),
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: XSizes.paddingSm,
+                                          vertical: XSizes.paddingXs,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: themeController.textColor
+                                              .withValues(alpha: 0.05),
+                                          borderRadius: BorderRadius.circular(
+                                            XSizes.borderRadiusSm,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          subTopic.duration,
+                                          style: TextStyle(
+                                            fontSize: XSizes.textSizeXs,
+                                            fontFamily: XFonts.lexend,
+                                            fontWeight: FontWeight.w500,
+                                            color: themeController.textColor
+                                                .withValues(alpha: 0.6),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -122,7 +225,6 @@ class _LessonsTabState extends State<LessonsTab> {
                               }).toList(),
                         ),
                       ),
-                      isExpanded: lesson.isExpanded,
                     );
                   }).toList(),
             ),
@@ -134,7 +236,7 @@ class _LessonsTabState extends State<LessonsTab> {
   List<Lesson> _getLessonsData() {
     return [
       Lesson(
-        title: '1. Introduction to Mobile Applications',
+        title: 'Introduction to Mobile Applications',
         isExpanded: true, // Initially expanded as in the image
         subTopics: [
           SubTopic(
@@ -155,23 +257,23 @@ class _LessonsTabState extends State<LessonsTab> {
         ],
       ),
       Lesson(
-        title: '2. Introduction to Android',
+        title: 'Introduction to Android',
         subTopics: [SubTopic(title: '...', duration: '...')],
       ),
       Lesson(
-        title: '3. Android Architecture',
+        title: 'Android Architecture',
         subTopics: [SubTopic(title: '...', duration: '...')],
       ),
       Lesson(
-        title: '4. Preparing Android Developement',
+        title: 'Preparing Android Developement',
         subTopics: [SubTopic(title: '...', duration: '...')],
       ),
       Lesson(
-        title: '5. Creating First Android Application',
+        title: 'Creating First Android Application',
         subTopics: [SubTopic(title: '...', duration: '...')],
       ),
       Lesson(
-        title: '6. Android Application Component - Part 1',
+        title: 'Android Application Component - Part 1',
         subTopics: [SubTopic(title: '...', duration: '...')],
       ),
     ];

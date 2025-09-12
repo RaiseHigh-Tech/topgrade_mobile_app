@@ -12,20 +12,16 @@ import 'utils/helpers/token_helper.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Check if onboarding is complete
   final bool isOnboardingCompleted =
       await OnboardingController.isOnboardingCompleted();
-
-  // Determine initial route based on app state
   String initialRoute;
-  
+
   if (!isOnboardingCompleted) {
-    // User hasn't completed onboarding
     initialRoute = XRoutes.onboarding;
   } else {
     // Check if user is already logged in
     final bool isLoggedIn = await TokenHelper.isLoggedIn();
-    
+
     if (isLoggedIn) {
       // User has valid tokens, go to home
       initialRoute = XRoutes.home;
@@ -35,11 +31,7 @@ void main() async {
     }
   }
 
-  runApp(
-    MyApp(
-      initialRoute: initialRoute,
-    ),
-  );
+  runApp(MyApp(initialRoute: XRoutes.home));
 }
 
 class MyApp extends StatelessWidget {

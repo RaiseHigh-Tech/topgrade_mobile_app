@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
 import '../../data/model/landing_response_model.dart';
 import '../../data/model/program_model.dart';
-import '../../data/model/categories_response_model.dart';
 import '../../data/source/remote_source.dart';
 import '../../../utils/network/dio_client.dart';
 
@@ -20,14 +19,15 @@ class LandingController extends GetxController {
   var programs = <ProgramModel>[].obs;
   var advancedPrograms = <ProgramModel>[].obs;
   var continueWatching = <ProgramModel>[].obs;
-  var counts = LandingCountsModel(
-    topCourse: 0,
-    recentlyAdded: 0,
-    featured: 0,
-    programs: 0,
-    advancedPrograms: 0,
-    continueWatching: 0,
-  ).obs;
+  var counts =
+      LandingCountsModel(
+        topCourse: 0,
+        recentlyAdded: 0,
+        featured: 0,
+        programs: 0,
+        advancedPrograms: 0,
+        continueWatching: 0,
+      ).obs;
 
   @override
   void onInit() {
@@ -42,7 +42,7 @@ class LandingController extends GetxController {
       errorMessage.value = '';
 
       final response = await _remoteSource.getLandingData();
-      
+
       if (response.success) {
         // Update observable variables
         topCourse.value = response.data.topCourse;
@@ -59,7 +59,6 @@ class LandingController extends GetxController {
     } catch (e) {
       hasError.value = true;
       errorMessage.value = e.toString();
-      print('Error fetching landing data: $e');
     } finally {
       isLoading.value = false;
     }
@@ -75,7 +74,7 @@ class LandingController extends GetxController {
   bool get hasTopCourses => topCourse.isNotEmpty;
   bool get hasPrograms => programs.isNotEmpty;
   bool get hasContinueWatching => continueWatching.isNotEmpty;
-  
+
   // Get programs by type for display
   List<ProgramModel> get suggestionsForYou => featured.take(5).toList();
   List<ProgramModel> get topCourses => topCourse.take(5).toList();

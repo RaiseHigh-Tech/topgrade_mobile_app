@@ -1119,8 +1119,6 @@ class _CourseListScreenState extends State<CourseListScreen>
               (context, setFilterState) => Column(
                 children:
                     ratings.map((rating) {
-                      final isSelected = _tempMinRating == rating;
-
                       return RadioListTile<double>(
                         title: Row(
                           children: [

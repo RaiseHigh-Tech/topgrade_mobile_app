@@ -31,6 +31,10 @@ class XRoutes {
     GetPage(name: resetPassword, page: () => const ResetPasswordScreen()),
     GetPage(name: interest, page: () => const IntrestScreen()),
     GetPage(name: courseDetails, page: () => const CourseDetailsScreen()),
-    GetPage(name: courseList, page: () => const CourseListScreen()),
+    GetPage(
+      name: courseList,
+      page: () => const CourseListScreen(),
+      transition: Transition.fade,
+    ),
   ];
 }

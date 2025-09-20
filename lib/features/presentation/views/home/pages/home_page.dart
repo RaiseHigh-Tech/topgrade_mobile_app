@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:topgrade/utils/constants/colors.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import '../../../controllers/theme_controller.dart';
 import '../../../controllers/categories_controller.dart';
 import '../../../controllers/landing_controller.dart';
@@ -23,6 +23,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     CategoriesController(),
   );
   final LandingController _landingController = Get.put(LandingController());
+
+  // Current carousel index for indicators
+  int _currentCarouselIndex = 0;
 
   @override
   void initState() {
@@ -145,6 +148,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   )
                                   : const SizedBox.shrink(),
                         ),
+                        Obx(
+                          () =>
+                              isLoading
+                                  ? _buildShimmerCarousel()
+                                  : _buildImageCarousel(),
+                        ),
+                        SizedBox(height: XSizes.spacingMd),
                         Obx(
                           () =>
                               isLoading
@@ -282,109 +292,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       fontFamily: XFonts.lexend,
                       color: themeController.textColor,
                     ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-    );
-  }
-
-  Widget _buildContinueWatchingCard({
-    required String title,
-    required String university,
-    required double rating,
-    required double progress,
-    required String imageUrl,
-  }) {
-    return GetBuilder<XThemeController>(
-      builder:
-          (themeController) => Container(
-            padding: EdgeInsets.all(XSizes.paddingSm),
-            decoration: BoxDecoration(
-              color: themeController.backgroundColor,
-              borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
-                    child: Image.network(imageUrl, fit: BoxFit.cover),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: XSizes.textSizeMd,
-                          fontFamily: XFonts.lexend,
-                          color: themeController.textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        university,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: XSizes.textSizeXs,
-                          fontFamily: XFonts.lexend,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(Icons.star, color: Colors.amber, size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            rating.toString(),
-                            style: TextStyle(
-                              fontFamily: XFonts.lexend,
-                              color: themeController.textColor,
-                              fontSize: XSizes.textSizeXs,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: LinearProgressIndicator(
-                              value: progress,
-                              backgroundColor: Colors.grey[300],
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                themeController.primaryColor,
-                              ),
-                              minHeight: 6,
-                              borderRadius: BorderRadius.circular(
-                                XSizes.borderRadiusXxl,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${(progress * 100).toInt()}%',
-                            style: TextStyle(
-                              fontSize: XSizes.textSizeXs,
-                              color: themeController.textColor,
-                              fontFamily: XFonts.lexend,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
                   ),
                 ),
               ],
@@ -891,6 +798,151 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  Widget _buildImageCarousel() {
+    return GetBuilder<XThemeController>(
+      builder: (themeController) {
+        // Sample carousel images - you can replace with actual API data
+        final List<String> carouselImages = [
+          'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=300&fit=crop',
+          'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&h=300&fit=crop',
+          'https://images.unsplash.com/photo-1543269664-76bc57c0bb7e?w=800&h=300&fit=crop',
+        ];
+
+        return CarouselSlider(
+          options: CarouselOptions(
+            height: 160,
+            viewportFraction: 1,
+            autoPlay: true,
+            autoPlayInterval: const Duration(seconds: 4),
+            autoPlayAnimationDuration: const Duration(milliseconds: 800),
+            autoPlayCurve: Curves.fastOutSlowIn,
+            enlargeCenterPage: true,
+            scrollDirection: Axis.horizontal,
+            onPageChanged: (index, reason) {
+              setState(() {
+                _currentCarouselIndex = index;
+              });
+            },
+          ),
+          items:
+              carouselImages.map((imageUrl) {
+                return Builder(
+                  builder: (BuildContext context) {
+                    return Container(
+                      width: MediaQuery.of(context).size.width,
+                      margin: EdgeInsets.symmetric(horizontal: XSizes.marginXs),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(
+                          XSizes.borderRadiusMd,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          XSizes.borderRadiusMd,
+                        ),
+                        child: Stack(
+                          children: [
+                            Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                              loadingBuilder: (
+                                context,
+                                child,
+                                loadingProgress,
+                              ) {
+                                if (loadingProgress == null) return child;
+                                return Container(
+                                  color: themeController.textColor.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 30,
+                                      height: 30,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 3,
+                                        color: themeController.primaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                              errorBuilder:
+                                  (context, error, stackTrace) => Container(
+                                    color: themeController.textColor.withValues(
+                                      alpha: 0.1,
+                                    ),
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.image_not_supported,
+                                        size: 40,
+                                        color: themeController.textColor
+                                            .withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                  ),
+                            ),
+                            // Gradient overlay for better contrast
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withValues(alpha: 0.3),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            // Carousel Indicators positioned at bottom center
+                            Positioned(
+                              bottom: 12,
+                              left: 0,
+                              right: 0,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children:
+                                    carouselImages.asMap().entries.map((entry) {
+                                      return GestureDetector(
+                                        onTap: () {
+                                          // You can add functionality to jump to specific slide here if needed
+                                        },
+                                        child: Container(
+                                          width: 8.0,
+                                          height: 8.0,
+                                          margin: EdgeInsets.symmetric(
+                                            horizontal: 4.0,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color:
+                                                _currentCarouselIndex ==
+                                                        entry.key
+                                                    ? Colors.white
+                                                    : Colors.white.withValues(
+                                                      alpha: 0.5,
+                                                    ),
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }).toList(),
+        );
+      },
+    );
+  }
+
   // Shimmer effect methods
   Widget _buildShimmerWrapper(Widget child, XThemeController themeController) {
     return AnimatedBuilder(
@@ -1020,123 +1072,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildShimmerContinueWatchingCards() {
-    return GetBuilder<XThemeController>(
-      builder:
-          (themeController) => Column(
-            children: [
-              _buildShimmerContinueWatchingCard(themeController),
-              SizedBox(height: XSizes.spacingSm),
-              _buildShimmerContinueWatchingCard(themeController),
-            ],
-          ),
-    );
-  }
-
-  Widget _buildShimmerContinueWatchingCard(XThemeController themeController) {
-    return Container(
-      padding: EdgeInsets.all(XSizes.paddingSm),
-      decoration: BoxDecoration(
-        color: themeController.backgroundColor,
-        borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          _buildShimmerWrapper(
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: themeController.textColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
-              ),
-            ),
-            themeController,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildShimmerWrapper(
-                  Container(
-                    width: double.infinity,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: themeController.textColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  themeController,
-                ),
-                const SizedBox(height: 4),
-                _buildShimmerWrapper(
-                  Container(
-                    width: 120,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: themeController.textColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  themeController,
-                ),
-                const SizedBox(height: 8),
-                _buildShimmerWrapper(
-                  Container(
-                    width: 60,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: themeController.textColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  themeController,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildShimmerWrapper(
-                        Container(
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: themeController.textColor.withValues(
-                              alpha: 0.1,
-                            ),
-                            borderRadius: BorderRadius.circular(
-                              XSizes.borderRadiusXxl,
-                            ),
-                          ),
-                        ),
-                        themeController,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _buildShimmerWrapper(
-                      Container(
-                        width: 30,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: themeController.textColor.withValues(
-                            alpha: 0.1,
-                          ),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      themeController,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildShimmerCategories() {
     return GetBuilder<XThemeController>(
       builder:
@@ -1254,6 +1189,35 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildShimmerCarousel() {
+    return GetBuilder<XThemeController>(
+      builder:
+          (themeController) => Container(
+            height: 160,
+            margin: EdgeInsets.symmetric(horizontal: XSizes.marginXs),
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 3,
+              itemBuilder: (context, index) {
+                return _buildShimmerWrapper(
+                  Container(
+                    width: MediaQuery.of(context).size.width,
+                    decoration: BoxDecoration(
+                      color: themeController.textColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(
+                        XSizes.borderRadiusMd,
+                      ),
+                    ),
+                  ),
+                  themeController,
+                );
+              },
+            ),
+          ),
     );
   }
 }

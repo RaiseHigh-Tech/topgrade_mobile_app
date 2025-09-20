@@ -6,6 +6,7 @@ import '../../controllers/categories_controller.dart';
 import '../../controllers/programs_controller.dart';
 import '../../../../utils/constants/sizes.dart';
 import '../../../../utils/constants/fonts.dart';
+import '../../../../utils/constants/api_endpoints.dart';
 
 // Course model for the course list
 class Course {
@@ -836,33 +837,71 @@ class _CourseListScreenState extends State<CourseListScreen>
                   color: themeController.textColor.withValues(alpha: 0.1),
                   child: program.image.isNotEmpty
                       ? Image.network(
-                          program.image,
+                          program.image.startsWith('http') 
+                              ? program.image 
+                              : '${ApiEndpoints.baseUrl}${program.image}',
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) {
+                              return child;
+                            }
+                            return Container(
+                              width: XSizes.iconSizeXxl + XSizes.paddingXl,
+                              height: XSizes.iconSizeXxl + XSizes.paddingXl,
+                              color: themeController.textColor.withValues(alpha: 0.05),
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: themeController.primaryColor,
+                                        value: loadingProgress.expectedTotalBytes != null
+                                            ? loadingProgress.cumulativeBytesLoaded / 
+                                              loadingProgress.expectedTotalBytes!
+                                            : null,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      loadingProgress.expectedTotalBytes != null
+                                          ? '${((loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!) * 100).toInt()}%'
+                                          : 'Loading...',
+                                      style: TextStyle(
+                                        fontSize: 8,
+                                        color: themeController.textColor.withValues(alpha: 0.6),
+                                        fontFamily: XFonts.lexend,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: XSizes.iconSizeXxl + XSizes.paddingXl,
+                            height: XSizes.iconSizeXxl + XSizes.paddingXl,
+                            color: themeController.textColor.withValues(alpha: 0.05),
+                            child: Icon(
+                              Icons.image_not_supported,
+                              size: XSizes.iconSizeXl,
+                              color: themeController.textColor.withValues(alpha: 0.3),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          width: XSizes.iconSizeXxl + XSizes.paddingXl,
+                          height: XSizes.iconSizeXxl + XSizes.paddingXl,
+                          color: themeController.textColor.withValues(alpha: 0.05),
+                          child: Icon(
                             Icons.play_circle_fill,
                             size: XSizes.iconSizeXl,
                             color: themeController.primaryColor,
                           ),
-                        )
-                      : Icon(
-                          Icons.play_circle_fill,
-                          size: XSizes.iconSizeXl,
-                          color: themeController.primaryColor,
                         ),
-                ),
-                Container(
-                  width: XSizes.iconSizeXxl + XSizes.paddingXl,
-                  height: XSizes.iconSizeXxl + XSizes.paddingXl,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        themeController.primaryColor.withValues(alpha: 0.1),
-                        themeController.primaryColor.withValues(alpha: 0.3),
-                      ],
-                    ),
-                  ),
                 ),
                 if (program.pricing.isFree || program.isBestSeller)
                   Positioned(

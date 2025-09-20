@@ -1,6 +1,6 @@
 class ApiEndpoints {
   // Base URL
-  static const String baseUrl = 'https://a001cb2a9b2e.ngrok-free.app/';
+  static const String baseUrl = 'https://4ecbecec3057.ngrok-free.app/';
 
   // Complete URLs
   static const String signupUrl = '${baseUrl}api/auth/signup';
@@ -14,4 +14,7 @@ class ApiEndpoints {
   
   // Interest endpoints
   static const String addAreaOfInterestUrl = '${baseUrl}api/add-area-of-interest';
+  
+  // Categories endpoints
+  static const String categoriesUrl = '${baseUrl}api/categories';
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/theme_controller.dart';
+import '../../controllers/categories_controller.dart';
 import '../../../../utils/constants/sizes.dart';
 import '../../../../utils/constants/fonts.dart';
 
@@ -42,17 +43,10 @@ class _CourseListScreenState extends State<CourseListScreen>
     with TickerProviderStateMixin {
   int _selectedCategoryIndex = 0;
   bool _isSearchVisible = false;
-  bool _isLoading = true;
   String _sortBy = 'Popular'; // Popular, Rating, Price, Recent
-  final List<String> _categories = [
-    "All",
-    "Design",
-    "Programming",
-    "Business",
-    "Marketing",
-    "Photography",
-  ];
   final List<String> _sortOptions = ["Popular", "Rating", "Price", "Recent"];
+  
+  final CategoriesController _categoriesController = Get.put(CategoriesController());
 
   late AnimationController _searchAnimationController;
   late AnimationController _shimmerAnimationController;
@@ -103,7 +97,13 @@ class _CourseListScreenState extends State<CourseListScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _shimmerAnimationController.repeat();
-        _simulateLoading();
+        
+        // Listen to categories controller loading state
+        ever(_categoriesController.isLoading, (isLoading) {
+          if (!isLoading) {
+            _shimmerAnimationController.stop();
+          }
+        });
       }
     });
   }
@@ -115,17 +115,7 @@ class _CourseListScreenState extends State<CourseListScreen>
     super.dispose();
   }
 
-  void _simulateLoading() {
-    // Simulate a 1.5-second loading delay (reduced for better UX)
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        _shimmerAnimationController.stop();
-      }
-    });
-  }
+
 
   void _toggleSearch() {
     setState(() {
@@ -306,7 +296,7 @@ class _CourseListScreenState extends State<CourseListScreen>
           filtered
               .where(
                 (course) =>
-                    course.category == _categories[_selectedCategoryIndex],
+                    course.category == _categoriesController.displayCategories[_selectedCategoryIndex],
               )
               .toList();
     }
@@ -397,19 +387,18 @@ class _CourseListScreenState extends State<CourseListScreen>
                       },
                     ),
                     SizedBox(height: XSizes.spacingMd),
-                    _isLoading
-                        ? _buildShimmerCategoryTabs(themeController)
-                        : _buildCategoryTabs(themeController),
+                    Obx(() => _categoriesController.isLoading.value 
+                        ? _buildShimmerCategoryTabs(themeController) 
+                        : _buildCategoryTabs(themeController)),
                     SizedBox(height: XSizes.spacingMd),
-                    _isLoading
-                        ? _buildShimmerResultsHeader(themeController)
-                        : _buildResultsHeader(themeController),
+                    Obx(() => _categoriesController.isLoading.value 
+                        ? _buildShimmerResultsHeader(themeController) 
+                        : _buildResultsHeader(themeController)),
                     SizedBox(height: XSizes.spacingSm),
                     Expanded(
-                      child:
-                          _isLoading
-                              ? _buildShimmerCourseList(themeController)
-                              : _buildCourseList(themeController),
+                      child: Obx(() => _categoriesController.isLoading.value 
+                          ? _buildShimmerCourseList(themeController) 
+                          : _buildCourseList(themeController)),
                     ),
                   ],
                 ),
@@ -424,7 +413,7 @@ class _CourseListScreenState extends State<CourseListScreen>
       height: XSizes.paddingXl + XSizes.paddingXs,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: _categories.length,
+        itemCount: _categoriesController.displayCategories.length,
         itemBuilder: (context, index) {
           final isSelected = _selectedCategoryIndex == index;
           return GestureDetector(
@@ -450,7 +439,7 @@ class _CourseListScreenState extends State<CourseListScreen>
               ),
               child: Center(
                 child: Text(
-                  _categories[index],
+                  _categoriesController.displayCategories[index],
                   style: TextStyle(
                     color:
                         isSelected

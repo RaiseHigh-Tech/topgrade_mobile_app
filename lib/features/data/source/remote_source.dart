@@ -11,6 +11,7 @@ import '../model/verify_otp_response_model.dart';
 import '../model/phone_otp_response_model.dart';
 import '../model/phone_signin_response_model.dart';
 import '../model/area_of_interest_response_model.dart';
+import '../model/categories_response_model.dart';
 
 abstract class RemoteSource {
   final DioClient dio;
@@ -55,6 +56,8 @@ abstract class RemoteSource {
   Future<AreaOfInterestResponseModel> addAreaOfInterest({
     required String areaOfIntrest,
   });
+
+  Future<CategoriesResponseModel> getCategories();
 }
 
 class RemoteSourceImpl extends RemoteSource {
@@ -463,6 +466,47 @@ class RemoteSourceImpl extends RemoteSource {
       } else {
         throw ServerException(message: 'An unexpected error occurred');
       }
+    }
+  }
+
+  @override
+  Future<CategoriesResponseModel> getCategories() async {
+    try {
+      final response = await dio.get(ApiEndpoints.categoriesUrl);
+
+      if (response.statusCode == 200) {
+        return CategoriesResponseModel.fromJson(response.data);
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 404:
+              // Categories not found
+              final message = responseData['message'] ?? 'Categories not found';
+              throw ResponseException(message: message);
+            case 500:
+              // Server error
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          // Network error
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
+      // Other exceptions
+      throw ServerException(message: e.toString());
     }
   }
 }

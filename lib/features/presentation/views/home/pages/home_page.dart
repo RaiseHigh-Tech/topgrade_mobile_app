@@ -49,11 +49,11 @@ class HomePage extends StatelessWidget {
                       SizedBox(height: XSizes.spacingSm),
                       _buildCategories(),
                       SizedBox(height: XSizes.spacingMd),
-                      _buildSectionHeader("Suggestions for You"),
+                      _buildSectionHeader("Suggestions for You", showViewAll: true),
                       const SizedBox(height: 16),
                       _buildHorizontalCourseList(),
                       const SizedBox(height: 24),
-                      _buildSectionHeader("Top Courses"),
+                      _buildSectionHeader("Top Courses", showViewAll: true),
                       const SizedBox(height: 16),
                       _buildHorizontalCourseList(isTopCourse: true),
                     ],
@@ -431,10 +431,12 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, {bool showViewAll = false}) {
     return GetBuilder<XThemeController>(
-      builder:
-          (themeController) => Text(
+      builder: (themeController) => Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
             title,
             style: TextStyle(
               fontSize: XSizes.textSizeLg,
@@ -443,6 +445,23 @@ class HomePage extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
+          if (showViewAll)
+            GestureDetector(
+              onTap: () {
+                Get.toNamed('/course-list');
+              },
+              child: Text(
+                'View All',
+                style: TextStyle(
+                  fontSize: XSizes.textSizeSm,
+                  fontFamily: XFonts.lexend,
+                  color: themeController.primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

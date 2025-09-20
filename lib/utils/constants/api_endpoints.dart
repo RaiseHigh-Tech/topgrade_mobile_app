@@ -17,4 +17,7 @@ class ApiEndpoints {
   
   // Categories endpoints
   static const String categoriesUrl = '${baseUrl}api/categories';
+  
+  // Programs endpoints
+  static const String programsFilterUrl = '${baseUrl}api/programs/filter';
 }

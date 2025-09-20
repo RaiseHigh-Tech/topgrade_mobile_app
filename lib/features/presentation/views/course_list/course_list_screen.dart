@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/theme_controller.dart';
 import '../../controllers/categories_controller.dart';
+import '../../controllers/programs_controller.dart';
 import '../../../../utils/constants/sizes.dart';
 import '../../../../utils/constants/fonts.dart';
 
@@ -47,6 +49,18 @@ class _CourseListScreenState extends State<CourseListScreen>
   final List<String> _sortOptions = ["Popular", "Rating", "Price", "Recent"];
   
   final CategoriesController _categoriesController = Get.put(CategoriesController());
+  final ProgramsController _programsController = Get.put(ProgramsController());
+  
+  // Temporary filter states (for preview before applying)
+  String? _tempProgramType;
+  double? _tempMinPrice;
+  double? _tempMaxPrice;
+  double? _tempMinRating;
+  bool? _tempIsBestSeller;
+  String? _tempSortBy;
+  
+  // Search functionality
+  Timer? _debounceTimer;
 
   late AnimationController _searchAnimationController;
   late AnimationController _shimmerAnimationController;
@@ -98,9 +112,15 @@ class _CourseListScreenState extends State<CourseListScreen>
       if (mounted) {
         _shimmerAnimationController.repeat();
         
-        // Listen to categories controller loading state
+        // Listen to both controllers loading state
         ever(_categoriesController.isLoading, (isLoading) {
-          if (!isLoading) {
+          if (!isLoading && !_programsController.isLoading.value) {
+            _shimmerAnimationController.stop();
+          }
+        });
+        
+        ever(_programsController.isLoading, (isLoading) {
+          if (!isLoading && !_categoriesController.isLoading.value) {
             _shimmerAnimationController.stop();
           }
         });
@@ -112,6 +132,7 @@ class _CourseListScreenState extends State<CourseListScreen>
   void dispose() {
     _searchAnimationController.dispose();
     _shimmerAnimationController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
@@ -129,66 +150,19 @@ class _CourseListScreenState extends State<CourseListScreen>
     }
   }
 
-  void _showSortOptions(XThemeController themeController) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: themeController.backgroundColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(XSizes.borderRadiusMd),
-        ),
-      ),
-      builder: (context) {
-        return Container(
-          padding: EdgeInsets.all(XSizes.paddingMd),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Sort by',
-                style: TextStyle(
-                  fontSize: XSizes.textSizeLg,
-                  fontWeight: FontWeight.bold,
-                  color: themeController.textColor,
-                  fontFamily: XFonts.lexend,
-                ),
-              ),
-              SizedBox(height: XSizes.spacingMd),
-              ..._sortOptions.map(
-                (option) => ListTile(
-                  title: Text(
-                    option,
-                    style: TextStyle(
-                      color: themeController.textColor,
-                      fontFamily: XFonts.lexend,
-                    ),
-                  ),
-                  leading: Radio<String>(
-                    value: option,
-                    groupValue: _sortBy,
-                    onChanged: (value) {
-                      setState(() {
-                        _sortBy = value!;
-                      });
-                      Navigator.pop(context);
-                    },
-                    activeColor: themeController.primaryColor,
-                  ),
-                  onTap: () {
-                    setState(() {
-                      _sortBy = option;
-                    });
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
-              SizedBox(height: XSizes.spacingMd),
-            ],
-          ),
-        );
-      },
-    );
+  void _debounceSearch(String query) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      _performSearch(query);
+    });
+  }
+
+  void _performSearch(String query) {
+    _programsController.searchPrograms(query.trim());
+  }
+
+  void _clearSearch() {
+    _programsController.searchPrograms('');
   }
 
   // Sample course data
@@ -355,9 +329,9 @@ class _CourseListScreenState extends State<CourseListScreen>
                   ),
                 ),
                 IconButton(
-                  onPressed: () => _showSortOptions(themeController),
+                  onPressed: () => _showFilterOptions(themeController),
                   icon: Icon(
-                    Icons.sort,
+                    Icons.tune,
                     color: themeController.textColor,
                     size: XSizes.iconSizeMd,
                   ),
@@ -387,18 +361,22 @@ class _CourseListScreenState extends State<CourseListScreen>
                       },
                     ),
                     SizedBox(height: XSizes.spacingMd),
-                    Obx(() => _categoriesController.isLoading.value 
+                    Obx(() => (_categoriesController.isLoading.value || _programsController.isLoading.value)
                         ? _buildShimmerCategoryTabs(themeController) 
                         : _buildCategoryTabs(themeController)),
                     SizedBox(height: XSizes.spacingMd),
-                    Obx(() => _categoriesController.isLoading.value 
+                    Obx(() => (_categoriesController.isLoading.value || _programsController.isLoading.value)
                         ? _buildShimmerResultsHeader(themeController) 
                         : _buildResultsHeader(themeController)),
                     SizedBox(height: XSizes.spacingSm),
+                    Obx(() => _programsController.hasActiveFilters 
+                        ? _buildActiveFiltersChips(themeController) 
+                        : const SizedBox.shrink()),
+                    SizedBox(height: XSizes.spacingSm),
                     Expanded(
-                      child: Obx(() => _categoriesController.isLoading.value 
+                      child: Obx(() => (_categoriesController.isLoading.value || _programsController.isLoading.value)
                           ? _buildShimmerCourseList(themeController) 
-                          : _buildCourseList(themeController)),
+                          : _buildProgramsList(themeController)),
                     ),
                   ],
                 ),
@@ -421,6 +399,17 @@ class _CourseListScreenState extends State<CourseListScreen>
               setState(() {
                 _selectedCategoryIndex = index;
               });
+              
+              // Filter programs by category
+              if (index == 0) {
+                // "All" selected - clear category filter
+                _programsController.filterByCategory(null);
+              } else {
+                // Get category ID and filter
+                final categoryName = _categoriesController.displayCategories[index];
+                final categoryId = _categoriesController.getCategoryIdByName(categoryName);
+                _programsController.filterByCategory(categoryId);
+              }
             },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
@@ -459,11 +448,11 @@ class _CourseListScreenState extends State<CourseListScreen>
   }
 
   Widget _buildResultsHeader(XThemeController themeController) {
-    return Row(
+    return Obx(() => Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          '${filteredCourses.length} courses found',
+          '${_programsController.programs.length} courses found',
           style: TextStyle(
             color: themeController.textColor.withValues(alpha: 0.6),
             fontSize: XSizes.textSizeSm,
@@ -479,7 +468,7 @@ class _CourseListScreenState extends State<CourseListScreen>
           ),
         ),
       ],
-    );
+    ));
   }
 
   Widget _buildCourseCard(Course course, XThemeController themeController) {
@@ -736,46 +725,882 @@ class _CourseListScreenState extends State<CourseListScreen>
     );
   }
 
-  Widget _buildCourseList(XThemeController themeController) {
-    final courses = filteredCourses;
+  Widget _buildProgramsList(XThemeController themeController) {
+    return Obx(() {
+      // Handle error state
+      if (_programsController.hasError.value) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: XSizes.iconSizeXxl,
+                color: themeController.textColor.withValues(alpha: 0.3),
+              ),
+              SizedBox(height: XSizes.spacingMd),
+              Text(
+                'Failed to load courses',
+                style: TextStyle(
+                  fontSize: XSizes.textSizeLg,
+                  color: themeController.textColor.withValues(alpha: 0.6),
+                  fontFamily: XFonts.lexend,
+                ),
+              ),
+              SizedBox(height: XSizes.spacingSm),
+              ElevatedButton(
+                onPressed: () => _programsController.retry(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: themeController.primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text('Retry'),
+              ),
+            ],
+          ),
+        );
+      }
+      
+      // Handle empty state
+      if (_programsController.programs.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.search_off,
+                size: XSizes.iconSizeXxl,
+                color: themeController.textColor.withValues(alpha: 0.3),
+              ),
+              SizedBox(height: XSizes.spacingMd),
+              Text(
+                'No courses found',
+                style: TextStyle(
+                  fontSize: XSizes.textSizeLg,
+                  color: themeController.textColor.withValues(alpha: 0.6),
+                  fontFamily: XFonts.lexend,
+                ),
+              ),
+              Text(
+                'Try adjusting your search or filters',
+                style: TextStyle(
+                  fontSize: XSizes.textSizeSm,
+                  color: themeController.textColor.withValues(alpha: 0.4),
+                  fontFamily: XFonts.lexend,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+      
+      // Display programs list
+      return ListView.builder(
+        itemCount: _programsController.programs.length,
+        itemBuilder: (context, index) {
+          return _buildProgramCard(_programsController.programs[index], themeController);
+        },
+      );
+    });
+  }
 
-    if (courses.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off,
-              size: XSizes.iconSizeXxl,
-              color: themeController.textColor.withValues(alpha: 0.3),
+  Widget _buildProgramCard(dynamic program, XThemeController themeController) {
+    return Container(
+      margin: EdgeInsets.only(bottom: XSizes.marginMd),
+      padding: EdgeInsets.all(XSizes.paddingSm),
+      decoration: BoxDecoration(
+        color: themeController.backgroundColor,
+        borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+        border: Border.all(
+          color: themeController.textColor.withValues(alpha: 0.2),
+          width: XSizes.borderSizeSm,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: themeController.textColor.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(XSizes.borderRadiusSm),
+            child: Stack(
+              children: [
+                Container(
+                  width: XSizes.iconSizeXxl + XSizes.paddingXl,
+                  height: XSizes.iconSizeXxl + XSizes.paddingXl,
+                  color: themeController.textColor.withValues(alpha: 0.1),
+                  child: program.image.isNotEmpty
+                      ? Image.network(
+                          program.image,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.play_circle_fill,
+                            size: XSizes.iconSizeXl,
+                            color: themeController.primaryColor,
+                          ),
+                        )
+                      : Icon(
+                          Icons.play_circle_fill,
+                          size: XSizes.iconSizeXl,
+                          color: themeController.primaryColor,
+                        ),
+                ),
+                Container(
+                  width: XSizes.iconSizeXxl + XSizes.paddingXl,
+                  height: XSizes.iconSizeXxl + XSizes.paddingXl,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        themeController.primaryColor.withValues(alpha: 0.1),
+                        themeController.primaryColor.withValues(alpha: 0.3),
+                      ],
+                    ),
+                  ),
+                ),
+                if (program.pricing.isFree || program.isBestSeller)
+                  Positioned(
+                    top: XSizes.paddingXs,
+                    right: XSizes.paddingXs,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: XSizes.paddingXs,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: program.pricing.isFree 
+                            ? Colors.green 
+                            : Colors.orange,
+                        borderRadius: BorderRadius.circular(XSizes.borderRadiusXs),
+                      ),
+                      child: Text(
+                        program.pricing.isFree 
+                            ? 'FREE' 
+                            : 'BESTSELLER',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: XFonts.lexend,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            SizedBox(height: XSizes.spacingMd),
-            Text(
-              'No courses found',
+          ),
+          SizedBox(width: XSizes.spacingMd),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  program.title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: XSizes.textSizeSm,
+                    color: themeController.textColor,
+                    fontFamily: XFonts.lexend,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: XSizes.spacingXxs),
+                Text(
+                  program.subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: themeController.textColor.withValues(alpha: 0.6),
+                    fontSize: XSizes.textSizeXs,
+                    fontFamily: XFonts.lexend,
+                  ),
+                ),
+                SizedBox(height: XSizes.spacingXs),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.star,
+                      color: Colors.amber.shade600,
+                      size: XSizes.iconSizeXs,
+                    ),
+                    SizedBox(width: XSizes.spacingXs),
+                    Text(
+                      program.programRating.toString(),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: XSizes.textSizeXs,
+                        color: themeController.textColor,
+                        fontFamily: XFonts.lexend,
+                      ),
+                    ),
+                    SizedBox(width: XSizes.spacingMd),
+                    Icon(
+                      Icons.access_time,
+                      color: themeController.textColor.withValues(alpha: 0.5),
+                      size: XSizes.iconSizeXs,
+                    ),
+                    SizedBox(width: XSizes.spacingXs),
+                    Text(
+                      program.duration,
+                      style: TextStyle(
+                        fontSize: XSizes.textSizeXs,
+                        color: themeController.textColor.withValues(alpha: 0.6),
+                        fontFamily: XFonts.lexend,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: XSizes.spacingXs),
+                Text(
+                  program.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: themeController.textColor.withValues(alpha: 0.6),
+                    fontSize: XSizes.textSizeXxs,
+                    fontFamily: XFonts.lexend,
+                  ),
+                ),
+                SizedBox(height: XSizes.spacingSm),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (program.pricing.isFree)
+                          Text(
+                            'FREE',
+                            style: TextStyle(
+                              fontSize: XSizes.textSizeSm,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                              fontFamily: XFonts.lexend,
+                            ),
+                          )
+                        else
+                          Text(
+                            '\$${program.pricing.finalPrice.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: XSizes.textSizeSm,
+                              fontWeight: FontWeight.bold,
+                              color: themeController.primaryColor,
+                              fontFamily: XFonts.lexend,
+                            ),
+                          ),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.group,
+                              color: themeController.textColor.withValues(alpha: 0.5),
+                              size: XSizes.iconSizeXs,
+                            ),
+                            SizedBox(width: XSizes.spacingXs),
+                            Text(
+                              '${program.enrolledStudents} students',
+                              style: TextStyle(
+                                color: themeController.textColor.withValues(alpha: 0.6),
+                                fontSize: XSizes.textSizeXxs,
+                                fontFamily: XFonts.lexend,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Get.toNamed('/course-details');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: themeController.primaryColor,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        minimumSize: const Size(90, 35),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+                        ),
+                      ),
+                      child: Text(
+                        program.pricing.isFree ? 'Enroll Free' : 'View Details',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontFamily: XFonts.lexend,
+                          fontSize: XSizes.textSizeXs,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFilterOptions(XThemeController themeController) {
+    // Initialize temp values with current filter values
+    _tempProgramType = _programsController.selectedProgramType.value;
+    _tempMinPrice = _programsController.selectedMinPrice.value;
+    _tempMaxPrice = _programsController.selectedMaxPrice.value;
+    _tempMinRating = _programsController.selectedMinRating.value;
+    _tempIsBestSeller = _programsController.selectedIsBestSeller.value;
+    _tempSortBy = _programsController.selectedSortBy.value;
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: themeController.backgroundColor,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(XSizes.borderRadiusMd)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          maxChildSize: 0.9,
+          minChildSize: 0.5,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              padding: EdgeInsets.all(XSizes.paddingMd),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Filters & Sort',
+                        style: TextStyle(
+                          fontSize: XSizes.textSizeXl,
+                          fontWeight: FontWeight.bold,
+                          color: themeController.textColor,
+                          fontFamily: XFonts.lexend,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _tempProgramType = null;
+                            _tempMinPrice = null;
+                            _tempMaxPrice = null;
+                            _tempMinRating = null;
+                            _tempIsBestSeller = null;
+                            _tempSortBy = 'most_relevant';
+                          });
+                        },
+                        child: Text(
+                          'Clear All',
+                          style: TextStyle(
+                            color: themeController.primaryColor,
+                            fontFamily: XFonts.lexend,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: XSizes.spacingMd),
+                  
+                  // Scrollable content
+                  Expanded(
+                    child: SingleChildScrollView(
+                      controller: scrollController,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSortByFilter(themeController),
+                          SizedBox(height: XSizes.spacingLg),
+                          _buildProgramTypeFilter(themeController),
+                          SizedBox(height: XSizes.spacingLg),
+                          _buildPriceRangeFilter(themeController),
+                          SizedBox(height: XSizes.spacingLg),
+                          _buildRatingFilter(themeController),
+                          SizedBox(height: XSizes.spacingLg),
+                          _buildBestSellerFilter(themeController),
+                          SizedBox(height: XSizes.spacingLg),
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  // Apply button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // Apply all temp filters to the controller
+                        _programsController.selectedProgramType.value = _tempProgramType;
+                        _programsController.selectedMinPrice.value = _tempMinPrice;
+                        _programsController.selectedMaxPrice.value = _tempMaxPrice;
+                        _programsController.selectedMinRating.value = _tempMinRating;
+                        _programsController.selectedIsBestSeller.value = _tempIsBestSeller;
+                        _programsController.selectedSortBy.value = _tempSortBy ?? 'most_relevant';
+                        
+                        // Update UI sort by value
+                        String uiSortBy;
+                        switch (_tempSortBy) {
+                          case 'top_rated':
+                            uiSortBy = 'Rating';
+                            break;
+                          case 'price':
+                            uiSortBy = 'Price';
+                            break;
+                          case 'recently_added':
+                            uiSortBy = 'Recent';
+                            break;
+                          case 'most_relevant':
+                          default:
+                            uiSortBy = 'Popular';
+                        }
+                        _sortBy = uiSortBy;
+                        
+                        // Fetch filtered programs
+                        _programsController.fetchFilteredPrograms();
+                        
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: themeController.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: XSizes.paddingMd),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+                        ),
+                      ),
+                      child: Text(
+                        'Apply Filters',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontFamily: XFonts.lexend,
+                          fontSize: XSizes.textSizeMd,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSortByFilter(XThemeController themeController) {
+    final sortOptions = [
+      {'label': 'Most Relevant', 'value': 'most_relevant'},
+      {'label': 'Top Rated', 'value': 'top_rated'},
+      {'label': 'Price: Low to High', 'value': 'price'},
+      {'label': 'Recently Added', 'value': 'recently_added'},
+    ];
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Sort By',
+          style: TextStyle(
+            fontSize: XSizes.textSizeMd,
+            fontWeight: FontWeight.bold,
+            color: themeController.textColor,
+            fontFamily: XFonts.lexend,
+          ),
+        ),
+        SizedBox(height: XSizes.spacingSm),
+        StatefulBuilder(
+          builder: (context, setFilterState) => Column(
+            children: sortOptions.map((option) {
+              final isSelected = _tempSortBy == option['value'];
+              
+              return RadioListTile<String>(
+                title: Text(
+                  option['label']!,
+                  style: TextStyle(
+                    fontFamily: XFonts.lexend,
+                    fontSize: XSizes.textSizeXs,
+                    color: themeController.textColor,
+                  ),
+                ),
+                value: option['value']!,
+                groupValue: _tempSortBy,
+                onChanged: (value) {
+                  setFilterState(() {
+                    _tempSortBy = value;
+                  });
+                },
+                activeColor: themeController.primaryColor,
+                contentPadding: EdgeInsets.zero,
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProgramTypeFilter(XThemeController themeController) {
+    final programTypes = ['All', 'Regular Programs', 'Advanced Programs'];
+    final apiValues = [null, 'program', 'advanced_program'];
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Program Type',
+          style: TextStyle(
+            fontSize: XSizes.textSizeMd,
+            fontWeight: FontWeight.bold,
+            color: themeController.textColor,
+            fontFamily: XFonts.lexend,
+          ),
+        ),
+        SizedBox(height: XSizes.spacingSm),
+        StatefulBuilder(
+          builder: (context, setFilterState) => Wrap(
+            spacing: XSizes.spacingSm,
+            children: programTypes.asMap().entries.map((entry) {
+              final index = entry.key;
+              final type = entry.value;
+              final isSelected = _tempProgramType == apiValues[index];
+              
+              return FilterChip(
+                label: Text(
+                  type,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : themeController.textColor,
+                    fontFamily: XFonts.lexend,
+                    fontSize: XSizes.textSizeXs,
+                  ),
+                ),
+                selected: isSelected,
+                onSelected: (selected) {
+                  setFilterState(() {
+                    _tempProgramType = selected ? apiValues[index] : null;
+                  });
+                },
+                selectedColor: themeController.primaryColor,
+                backgroundColor: Colors.transparent,
+                side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPriceRangeFilter(XThemeController themeController) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Price Range',
+          style: TextStyle(
+            fontSize: XSizes.textSizeMd,
+            fontWeight: FontWeight.bold,
+            color: themeController.textColor,
+            fontFamily: XFonts.lexend,
+          ),
+        ),
+        SizedBox(height: XSizes.spacingSm),
+        StatefulBuilder(
+          builder: (context, setFilterState) {
+            final minPrice = _tempMinPrice ?? 0.0;
+            final maxPrice = _tempMaxPrice ?? 200.0;
+            
+            return Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '\$${minPrice.toInt()}',
+                      style: TextStyle(
+                        color: themeController.textColor,
+                        fontFamily: XFonts.lexend,
+                      ),
+                    ),
+                    Text(
+                      '\$${maxPrice.toInt()}+',
+                      style: TextStyle(
+                        color: themeController.textColor,
+                        fontFamily: XFonts.lexend,
+                      ),
+                    ),
+                  ],
+                ),
+                RangeSlider(
+                  values: RangeValues(minPrice, maxPrice),
+                  min: 0,
+                  max: 200,
+                  divisions: 20,
+                  activeColor: themeController.primaryColor,
+                  inactiveColor: Colors.grey.withValues(alpha: 0.3),
+                  onChanged: (values) {
+                    setFilterState(() {
+                      _tempMinPrice = values.start;
+                      _tempMaxPrice = values.end;
+                    });
+                  },
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: CheckboxListTile(
+                        title: Text(
+                          'Free Only',
+                          style: TextStyle(
+                            fontFamily: XFonts.lexend,
+                            fontSize: XSizes.textSizeXs,
+                          ),
+                        ),
+                        value: minPrice == 0.0 && maxPrice == 0.0,
+                        onChanged: (value) {
+                          setFilterState(() {
+                            if (value == true) {
+                              _tempMinPrice = 0.0;
+                              _tempMaxPrice = 0.0;
+                            } else {
+                              _tempMinPrice = null;
+                              _tempMaxPrice = null;
+                            }
+                          });
+                        },
+                        activeColor: themeController.primaryColor,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRatingFilter(XThemeController themeController) {
+    final ratings = [4.5, 4.0, 3.5, 3.0];
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Minimum Rating',
+          style: TextStyle(
+            fontSize: XSizes.textSizeMd,
+            fontWeight: FontWeight.bold,
+            color: themeController.textColor,
+            fontFamily: XFonts.lexend,
+          ),
+        ),
+        SizedBox(height: XSizes.spacingSm),
+        StatefulBuilder(
+          builder: (context, setFilterState) => Column(
+            children: ratings.map((rating) {
+              final isSelected = _tempMinRating == rating;
+              
+              return RadioListTile<double>(
+                title: Row(
+                  children: [
+                    ...List.generate(5, (index) => Icon(
+                      Icons.star,
+                      size: 16,
+                      color: index < rating ? Colors.amber : Colors.grey.withValues(alpha: 0.3),
+                    )),
+                    SizedBox(width: XSizes.spacingXs),
+                    Text(
+                      '$rating & up',
+                      style: TextStyle(
+                        fontFamily: XFonts.lexend,
+                        fontSize: XSizes.textSizeXs,
+                      ),
+                    ),
+                  ],
+                ),
+                value: rating,
+                groupValue: _tempMinRating,
+                onChanged: (value) {
+                  setFilterState(() {
+                    _tempMinRating = value;
+                  });
+                },
+                activeColor: themeController.primaryColor,
+                contentPadding: EdgeInsets.zero,
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBestSellerFilter(XThemeController themeController) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Special Offers',
+          style: TextStyle(
+            fontSize: XSizes.textSizeMd,
+            fontWeight: FontWeight.bold,
+            color: themeController.textColor,
+            fontFamily: XFonts.lexend,
+          ),
+        ),
+        SizedBox(height: XSizes.spacingSm),
+        StatefulBuilder(
+          builder: (context, setFilterState) => CheckboxListTile(
+            title: Text(
+              'Best Sellers Only',
               style: TextStyle(
-                fontSize: XSizes.textSizeLg,
+                fontFamily: XFonts.lexend,
+                fontSize: XSizes.textSizeXs,
+              ),
+            ),
+            subtitle: Text(
+              'Show only top-rated courses',
+              style: TextStyle(
                 color: themeController.textColor.withValues(alpha: 0.6),
                 fontFamily: XFonts.lexend,
+                fontSize: XSizes.textSizeXxs,
               ),
             ),
-            Text(
-              'Try adjusting your search or filters',
-              style: TextStyle(
-                fontSize: XSizes.textSizeSm,
-                color: themeController.textColor.withValues(alpha: 0.4),
-                fontFamily: XFonts.lexend,
-              ),
-            ),
-          ],
+            value: _tempIsBestSeller == true,
+            onChanged: (value) {
+              setFilterState(() {
+                _tempIsBestSeller = value;
+              });
+            },
+            activeColor: themeController.primaryColor,
+            contentPadding: EdgeInsets.zero,
+          ),
         ),
-      );
-    }
+      ],
+    );
+  }
 
-    return ListView.builder(
-      itemCount: courses.length,
-      itemBuilder: (context, index) {
-        return _buildCourseCard(courses[index], themeController);
-      },
+  Widget _buildActiveFiltersChips(XThemeController themeController) {
+    return Obx(() {
+      List<Widget> chips = [];
+      
+      // Program type filter
+      if (_programsController.selectedProgramType.value != null) {
+        String displayText = _programsController.selectedProgramType.value == 'program' 
+            ? 'Regular Programs' 
+            : 'Advanced Programs';
+        chips.add(_buildFilterChip(displayText, () {
+          _programsController.filterByProgramType(null);
+        }, themeController));
+      }
+      
+      // Price range filter
+      if (_programsController.selectedMinPrice.value != null || _programsController.selectedMaxPrice.value != null) {
+        String priceText = 'Price: \$${(_programsController.selectedMinPrice.value ?? 0).toInt()}-\$${(_programsController.selectedMaxPrice.value ?? 200).toInt()}';
+        chips.add(_buildFilterChip(priceText, () {
+          _programsController.filterByPriceRange(null, null);
+        }, themeController));
+      }
+      
+      // Rating filter
+      if (_programsController.selectedMinRating.value != null) {
+        chips.add(_buildFilterChip('${_programsController.selectedMinRating.value}+ Rating', () {
+          _programsController.filterByRating(null);
+        }, themeController));
+      }
+      
+      // Best seller filter
+      if (_programsController.selectedIsBestSeller.value == true) {
+        chips.add(_buildFilterChip('Best Sellers', () {
+          _programsController.filterByBestSeller(null);
+        }, themeController));
+      }
+      
+      // Search filter
+      if (_programsController.searchQuery.value.isNotEmpty) {
+        chips.add(_buildFilterChip('Search: "${_programsController.searchQuery.value}"', () {
+          _programsController.searchPrograms('');
+        }, themeController));
+      }
+      
+      if (chips.isEmpty) return const SizedBox.shrink();
+      
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Active Filters:',
+                style: TextStyle(
+                  fontSize: XSizes.textSizeXs,
+                  color: themeController.textColor.withValues(alpha: 0.7),
+                  fontFamily: XFonts.lexend,
+                ),
+              ),
+              SizedBox(width: XSizes.spacingXs),
+              TextButton(
+                onPressed: () => _programsController.clearAllFilters(),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  'Clear All',
+                  style: TextStyle(
+                    fontSize: XSizes.textSizeXs,
+                    color: themeController.primaryColor,
+                    fontFamily: XFonts.lexend,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: XSizes.spacingXs),
+          Wrap(
+            spacing: XSizes.spacingXs,
+            runSpacing: XSizes.spacingXs,
+            children: chips,
+          ),
+          SizedBox(height: XSizes.spacingSm),
+        ],
+      );
+    });
+  }
+
+  Widget _buildFilterChip(String label, VoidCallback onRemove, XThemeController themeController) {
+    return Chip(
+      label: Text(
+        label,
+        style: TextStyle(
+          fontSize: XSizes.textSizeXxs,
+          color: themeController.textColor,
+          fontFamily: XFonts.lexend,
+        ),
+      ),
+      deleteIcon: Icon(
+        Icons.close,
+        size: 16,
+        color: themeController.textColor.withValues(alpha: 0.7),
+      ),
+      onDeleted: onRemove,
+      backgroundColor: themeController.textColor.withValues(alpha: 0.1),
+      side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
     );
   }
 
@@ -800,6 +1625,14 @@ class _CourseListScreenState extends State<CourseListScreen>
           Expanded(
             child: TextField(
               cursorColor: themeController.primaryColor,
+              onChanged: (value) {
+                // Debounce search to avoid too many API calls
+                _debounceSearch(value);
+              },
+              onSubmitted: (value) {
+                // Immediate search on submit
+                _performSearch(value);
+              },
               decoration: InputDecoration(
                 hintText: "Search courses...",
                 hintStyle: TextStyle(
@@ -815,6 +1648,18 @@ class _CourseListScreenState extends State<CourseListScreen>
               ),
             ),
           ),
+          Obx(() => _programsController.searchQuery.value.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    Icons.clear,
+                    color: Colors.grey[600],
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    _clearSearch();
+                  },
+                )
+              : const SizedBox.shrink()),
         ],
       ),
     );

@@ -12,6 +12,7 @@ import '../model/phone_otp_response_model.dart';
 import '../model/phone_signin_response_model.dart';
 import '../model/area_of_interest_response_model.dart';
 import '../model/categories_response_model.dart';
+import '../model/programs_filter_response_model.dart';
 
 abstract class RemoteSource {
   final DioClient dio;
@@ -58,6 +59,18 @@ abstract class RemoteSource {
   });
 
   Future<CategoriesResponseModel> getCategories();
+
+  Future<ProgramsFilterResponseModel> getFilteredPrograms({
+    String? programType,
+    int? categoryId,
+    bool? isBestSeller,
+    double? minPrice,
+    double? maxPrice,
+    double? minRating,
+    String? search,
+    String? sortBy,
+    String? sortOrder,
+  });
 }
 
 class RemoteSourceImpl extends RemoteSource {
@@ -491,6 +504,77 @@ class RemoteSourceImpl extends RemoteSource {
             case 404:
               // Categories not found
               final message = responseData['message'] ?? 'Categories not found';
+              throw ResponseException(message: message);
+            case 500:
+              // Server error
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          // Network error
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
+      // Other exceptions
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<ProgramsFilterResponseModel> getFilteredPrograms({
+    String? programType,
+    int? categoryId,
+    bool? isBestSeller,
+    double? minPrice,
+    double? maxPrice,
+    double? minRating,
+    String? search,
+    String? sortBy,
+    String? sortOrder,
+  }) async {
+    try {
+      // Build query parameters
+      Map<String, dynamic> queryParams = {};
+      
+      if (programType != null) queryParams['program_type'] = programType;
+      if (categoryId != null) queryParams['category_id'] = categoryId;
+      if (isBestSeller != null) queryParams['is_best_seller'] = isBestSeller;
+      if (minPrice != null) queryParams['min_price'] = minPrice;
+      if (maxPrice != null) queryParams['max_price'] = maxPrice;
+      if (minRating != null) queryParams['min_rating'] = minRating;
+      if (search != null && search.isNotEmpty) queryParams['search'] = search;
+      if (sortBy != null) queryParams['sort_by'] = sortBy;
+      if (sortOrder != null) queryParams['sort_order'] = sortOrder;
+
+      final response = await dio.get(
+        ApiEndpoints.programsFilterUrl,
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200) {
+        return ProgramsFilterResponseModel.fromJson(response.data);
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 400:
+              // Bad request - invalid parameters
+              final message = responseData['message'] ?? 'Invalid request parameters';
+              throw ResponseException(message: message);
+            case 404:
+              // Programs not found
+              final message = responseData['message'] ?? 'No programs found';
               throw ResponseException(message: message);
             case 500:
               // Server error

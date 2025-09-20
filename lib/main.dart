@@ -31,7 +31,7 @@ void main() async {
     }
   }
 
-  runApp(MyApp(initialRoute: XRoutes.home));
+  runApp(MyApp(initialRoute: initialRoute));
 }
 
 class MyApp extends StatelessWidget {

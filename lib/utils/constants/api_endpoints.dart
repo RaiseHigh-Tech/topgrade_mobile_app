@@ -23,4 +23,7 @@ class ApiEndpoints {
   
   // Landing endpoints
   static const String landingUrl = '${baseUrl}api/landing';
+  
+  // Bookmarks endpoints
+  static const String bookmarksUrl = '${baseUrl}api/bookmarks';
 }

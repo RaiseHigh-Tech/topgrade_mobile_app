@@ -14,6 +14,7 @@ import '../model/area_of_interest_response_model.dart';
 import '../model/categories_response_model.dart';
 import '../model/programs_filter_response_model.dart';
 import '../model/landing_response_model.dart';
+import '../model/bookmarks_response_model.dart';
 
 abstract class RemoteSource {
   final DioClient dio;
@@ -74,6 +75,8 @@ abstract class RemoteSource {
   });
 
   Future<LandingResponseModel> getLandingData();
+
+  Future<BookmarksResponseModel> getBookmarks();
 }
 
 class RemoteSourceImpl extends RemoteSource {
@@ -619,6 +622,51 @@ class RemoteSourceImpl extends RemoteSource {
             case 404:
               // Landing data not found
               final message = responseData['message'] ?? 'Landing data not found';
+              throw ResponseException(message: message);
+            case 500:
+              // Server error
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          // Network error
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
+      // Other exceptions
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<BookmarksResponseModel> getBookmarks() async {
+    try {
+      final response = await dio.get(ApiEndpoints.bookmarksUrl);
+
+      if (response.statusCode == 200) {
+        return BookmarksResponseModel.fromJson(response.data);
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 401:
+              // Unauthorized
+              final message = responseData['message'] ?? 'Authentication required';
+              throw ResponseException(message: message);
+            case 404:
+              // No bookmarks found
+              final message = responseData['message'] ?? 'No bookmarks found';
               throw ResponseException(message: message);
             case 500:
               // Server error

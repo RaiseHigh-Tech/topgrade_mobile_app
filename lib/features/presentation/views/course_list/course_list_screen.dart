@@ -8,7 +8,6 @@ import '../../../../utils/constants/sizes.dart';
 import '../../../../utils/constants/fonts.dart';
 import '../../../../utils/constants/api_endpoints.dart';
 
-
 class CourseListScreen extends StatefulWidget {
   const CourseListScreen({super.key});
 
@@ -20,11 +19,13 @@ class _CourseListScreenState extends State<CourseListScreen>
     with TickerProviderStateMixin {
   int _selectedCategoryIndex = 0;
   bool _isSearchVisible = false;
-  String _sortBy = 'Popular'; // Popular, Rating, Price, Recent
-  
-  final CategoriesController _categoriesController = Get.put(CategoriesController());
+  String _sortBy = 'Popular';
+
+  final CategoriesController _categoriesController = Get.put(
+    CategoriesController(),
+  );
   final ProgramsController _programsController = Get.put(ProgramsController());
-  
+
   // Temporary filter states (for preview before applying)
   String? _tempProgramType;
   double? _tempMinPrice;
@@ -32,7 +33,7 @@ class _CourseListScreenState extends State<CourseListScreen>
   double? _tempMinRating;
   bool? _tempIsBestSeller;
   String? _tempSortBy;
-  
+
   // Search functionality
   Timer? _debounceTimer;
 
@@ -45,13 +46,13 @@ class _CourseListScreenState extends State<CourseListScreen>
   @override
   void initState() {
     super.initState();
-    
+
     // Check if we came from home page with category filter
     final arguments = Get.arguments as Map<String, dynamic>?;
     if (arguments != null) {
       final categoryId = arguments['categoryId'] as int?;
       final categoryName = arguments['categoryName'] as String?;
-      
+
       if (categoryId != null && categoryName != null) {
         // Set the category filter and update selected index
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -67,7 +68,7 @@ class _CourseListScreenState extends State<CourseListScreen>
         });
       }
     }
-    
+
     _searchAnimationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -108,14 +109,14 @@ class _CourseListScreenState extends State<CourseListScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _shimmerAnimationController.repeat();
-        
+
         // Listen to both controllers loading state
         ever(_categoriesController.isLoading, (isLoading) {
           if (!isLoading && !_programsController.isLoading.value) {
             _shimmerAnimationController.stop();
           }
         });
-        
+
         ever(_programsController.isLoading, (isLoading) {
           if (!isLoading && !_categoriesController.isLoading.value) {
             _shimmerAnimationController.stop();
@@ -132,8 +133,6 @@ class _CourseListScreenState extends State<CourseListScreen>
     _debounceTimer?.cancel();
     super.dispose();
   }
-
-
 
   void _toggleSearch() {
     setState(() {
@@ -161,7 +160,6 @@ class _CourseListScreenState extends State<CourseListScreen>
   void _clearSearch() {
     _programsController.searchPrograms('');
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -228,22 +226,37 @@ class _CourseListScreenState extends State<CourseListScreen>
                       },
                     ),
                     SizedBox(height: XSizes.spacingMd),
-                    Obx(() => (_categoriesController.isLoading.value || _programsController.isLoading.value)
-                        ? _buildShimmerCategoryTabs(themeController) 
-                        : _buildCategoryTabs(themeController)),
+                    Obx(
+                      () =>
+                          (_categoriesController.isLoading.value ||
+                                  _programsController.isLoading.value)
+                              ? _buildShimmerCategoryTabs(themeController)
+                              : _buildCategoryTabs(themeController),
+                    ),
                     SizedBox(height: XSizes.spacingMd),
-                    Obx(() => (_categoriesController.isLoading.value || _programsController.isLoading.value)
-                        ? _buildShimmerResultsHeader(themeController) 
-                        : _buildResultsHeader(themeController)),
+                    Obx(
+                      () =>
+                          (_categoriesController.isLoading.value ||
+                                  _programsController.isLoading.value)
+                              ? _buildShimmerResultsHeader(themeController)
+                              : _buildResultsHeader(themeController),
+                    ),
                     SizedBox(height: XSizes.spacingSm),
-                    Obx(() => _programsController.hasActiveFilters 
-                        ? _buildActiveFiltersChips(themeController) 
-                        : const SizedBox.shrink()),
+                    Obx(
+                      () =>
+                          _programsController.hasActiveFilters
+                              ? _buildActiveFiltersChips(themeController)
+                              : const SizedBox.shrink(),
+                    ),
                     SizedBox(height: XSizes.spacingSm),
                     Expanded(
-                      child: Obx(() => (_categoriesController.isLoading.value || _programsController.isLoading.value)
-                          ? _buildShimmerCourseList(themeController) 
-                          : _buildProgramsList(themeController)),
+                      child: Obx(
+                        () =>
+                            (_categoriesController.isLoading.value ||
+                                    _programsController.isLoading.value)
+                                ? _buildShimmerCourseList(themeController)
+                                : _buildProgramsList(themeController),
+                      ),
                     ),
                   ],
                 ),
@@ -266,15 +279,18 @@ class _CourseListScreenState extends State<CourseListScreen>
               setState(() {
                 _selectedCategoryIndex = index;
               });
-              
+
               // Filter programs by category
               if (index == 0) {
                 // "All" selected - clear category filter
                 _programsController.filterByCategory(null);
               } else {
                 // Get category ID and filter
-                final categoryName = _categoriesController.displayCategories[index];
-                final categoryId = _categoriesController.getCategoryIdByName(categoryName);
+                final categoryName =
+                    _categoriesController.displayCategories[index];
+                final categoryId = _categoriesController.getCategoryIdByName(
+                  categoryName,
+                );
                 _programsController.filterByCategory(categoryId);
               }
             },
@@ -315,29 +331,30 @@ class _CourseListScreenState extends State<CourseListScreen>
   }
 
   Widget _buildResultsHeader(XThemeController themeController) {
-    return Obx(() => Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          '${_programsController.programs.length} courses found',
-          style: TextStyle(
-            color: themeController.textColor.withValues(alpha: 0.6),
-            fontSize: XSizes.textSizeSm,
-            fontFamily: XFonts.lexend,
+    return Obx(
+      () => Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            '${_programsController.programs.length} courses found',
+            style: TextStyle(
+              color: themeController.textColor.withValues(alpha: 0.6),
+              fontSize: XSizes.textSizeSm,
+              fontFamily: XFonts.lexend,
+            ),
           ),
-        ),
-        Text(
-          'Sorted by $_sortBy',
-          style: TextStyle(
-            color: themeController.textColor.withValues(alpha: 0.6),
-            fontSize: XSizes.textSizeSm,
-            fontFamily: XFonts.lexend,
+          Text(
+            'Sorted by $_sortBy',
+            style: TextStyle(
+              color: themeController.textColor.withValues(alpha: 0.6),
+              fontSize: XSizes.textSizeSm,
+              fontFamily: XFonts.lexend,
+            ),
           ),
-        ),
-      ],
-    ));
+        ],
+      ),
+    );
   }
-
 
   Widget _buildProgramsList(XThemeController themeController) {
     return Obx(() {
@@ -374,7 +391,7 @@ class _CourseListScreenState extends State<CourseListScreen>
           ),
         );
       }
-      
+
       // Handle empty state
       if (_programsController.programs.isEmpty) {
         return Center(
@@ -407,12 +424,15 @@ class _CourseListScreenState extends State<CourseListScreen>
           ),
         );
       }
-      
+
       // Display programs list
       return ListView.builder(
         itemCount: _programsController.programs.length,
         itemBuilder: (context, index) {
-          return _buildProgramCard(_programsController.programs[index], themeController);
+          return _buildProgramCard(
+            _programsController.programs[index],
+            themeController,
+          );
         },
       );
     });
@@ -448,96 +468,112 @@ class _CourseListScreenState extends State<CourseListScreen>
                   width: XSizes.iconSizeXxl + XSizes.paddingXl,
                   height: XSizes.iconSizeXxl + XSizes.paddingXl,
                   color: themeController.textColor.withValues(alpha: 0.1),
-                  child: program.image.isNotEmpty
-                      ? Image.network(
-                          program.image.startsWith('http') 
-                              ? program.image 
-                              : '${ApiEndpoints.baseUrl}${program.image}',
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) {
-                              return child;
-                            }
-                            return Container(
-                              width: XSizes.iconSizeXxl + XSizes.paddingXl,
-                              height: XSizes.iconSizeXxl + XSizes.paddingXl,
-                              color: themeController.textColor.withValues(alpha: 0.05),
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: themeController.primaryColor,
-                                        value: loadingProgress.expectedTotalBytes != null
-                                            ? loadingProgress.cumulativeBytesLoaded / 
-                                              loadingProgress.expectedTotalBytes!
-                                            : null,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      loadingProgress.expectedTotalBytes != null
-                                          ? '${((loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!) * 100).toInt()}%'
-                                          : 'Loading...',
-                                      style: TextStyle(
-                                        fontSize: 8,
-                                        color: themeController.textColor.withValues(alpha: 0.6),
-                                        fontFamily: XFonts.lexend,
-                                      ),
-                                    ),
-                                  ],
+                  child:
+                      program.image.isNotEmpty
+                          ? Image.network(
+                            program.image.startsWith('http')
+                                ? program.image
+                                : '${ApiEndpoints.baseUrl}${program.image}',
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) {
+                                return child;
+                              }
+                              return Container(
+                                width: XSizes.iconSizeXxl + XSizes.paddingXl,
+                                height: XSizes.iconSizeXxl + XSizes.paddingXl,
+                                color: themeController.textColor.withValues(
+                                  alpha: 0.05,
                                 ),
-                              ),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) => Container(
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: themeController.primaryColor,
+                                          value:
+                                              loadingProgress
+                                                          .expectedTotalBytes !=
+                                                      null
+                                                  ? loadingProgress
+                                                          .cumulativeBytesLoaded /
+                                                      loadingProgress
+                                                          .expectedTotalBytes!
+                                                  : null,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        loadingProgress.expectedTotalBytes !=
+                                                null
+                                            ? '${((loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!) * 100).toInt()}%'
+                                            : 'Loading...',
+                                        style: TextStyle(
+                                          fontSize: 8,
+                                          color: themeController.textColor
+                                              .withValues(alpha: 0.6),
+                                          fontFamily: XFonts.lexend,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder:
+                                (context, error, stackTrace) => Container(
+                                  width: XSizes.iconSizeXxl + XSizes.paddingXl,
+                                  height: XSizes.iconSizeXxl + XSizes.paddingXl,
+                                  color: themeController.textColor.withValues(
+                                    alpha: 0.05,
+                                  ),
+                                  child: Icon(
+                                    Icons.image_not_supported,
+                                    size: XSizes.iconSizeXl,
+                                    color: themeController.textColor.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                  ),
+                                ),
+                          )
+                          : Container(
                             width: XSizes.iconSizeXxl + XSizes.paddingXl,
                             height: XSizes.iconSizeXxl + XSizes.paddingXl,
-                            color: themeController.textColor.withValues(alpha: 0.05),
+                            color: themeController.textColor.withValues(
+                              alpha: 0.05,
+                            ),
                             child: Icon(
-                              Icons.image_not_supported,
+                              Icons.play_circle_fill,
                               size: XSizes.iconSizeXl,
-                              color: themeController.textColor.withValues(alpha: 0.3),
+                              color: themeController.primaryColor,
                             ),
                           ),
-                        )
-                      : Container(
-                          width: XSizes.iconSizeXxl + XSizes.paddingXl,
-                          height: XSizes.iconSizeXxl + XSizes.paddingXl,
-                          color: themeController.textColor.withValues(alpha: 0.05),
-                          child: Icon(
-                            Icons.play_circle_fill,
-                            size: XSizes.iconSizeXl,
-                            color: themeController.primaryColor,
-                          ),
-                        ),
                 ),
                 if (program.pricing.isFree || program.isBestSeller)
                   Positioned(
-                    top: XSizes.paddingXs,
-                    right: XSizes.paddingXs,
+                    top: 8,
+                    right: 8,
                     child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: XSizes.paddingXs,
-                        vertical: 2,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: program.pricing.isFree 
-                            ? Colors.green 
-                            : Colors.orange,
-                        borderRadius: BorderRadius.circular(XSizes.borderRadiusXs),
+                        color:
+                            program.pricing.isFree
+                                ? Colors.green
+                                : Colors.orange,
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        program.pricing.isFree 
-                            ? 'FREE' 
-                            : 'BESTSELLER',
+                        program.pricing.isFree ? 'FREE' : 'BEST',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 8,
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
                           fontFamily: XFonts.lexend,
                         ),
@@ -640,14 +676,18 @@ class _CourseListScreenState extends State<CourseListScreen>
                           children: [
                             Icon(
                               Icons.group,
-                              color: themeController.textColor.withValues(alpha: 0.5),
+                              color: themeController.textColor.withValues(
+                                alpha: 0.5,
+                              ),
                               size: XSizes.iconSizeXs,
                             ),
                             SizedBox(width: XSizes.spacingXs),
                             Text(
                               '${program.enrolledStudents} students',
                               style: TextStyle(
-                                color: themeController.textColor.withValues(alpha: 0.6),
+                                color: themeController.textColor.withValues(
+                                  alpha: 0.6,
+                                ),
                                 fontSize: XSizes.textSizeXxs,
                                 fontFamily: XFonts.lexend,
                               ),
@@ -669,7 +709,9 @@ class _CourseListScreenState extends State<CourseListScreen>
                         visualDensity: VisualDensity.compact,
                         padding: EdgeInsets.zero,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+                          borderRadius: BorderRadius.circular(
+                            XSizes.borderRadiusMd,
+                          ),
                         ),
                       ),
                       child: Text(
@@ -699,13 +741,15 @@ class _CourseListScreenState extends State<CourseListScreen>
     _tempMinRating = _programsController.selectedMinRating.value;
     _tempIsBestSeller = _programsController.selectedIsBestSeller.value;
     _tempSortBy = _programsController.selectedSortBy.value;
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: themeController.backgroundColor,
       isScrollControlled: true,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(XSizes.borderRadiusMd)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(XSizes.borderRadiusMd),
+        ),
       ),
       builder: (context) {
         return DraggableScrollableSheet(
@@ -754,7 +798,7 @@ class _CourseListScreenState extends State<CourseListScreen>
                     ],
                   ),
                   SizedBox(height: XSizes.spacingMd),
-                  
+
                   // Scrollable content
                   Expanded(
                     child: SingleChildScrollView(
@@ -776,20 +820,26 @@ class _CourseListScreenState extends State<CourseListScreen>
                       ),
                     ),
                   ),
-                  
+
                   // Apply button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
                         // Apply all temp filters to the controller
-                        _programsController.selectedProgramType.value = _tempProgramType;
-                        _programsController.selectedMinPrice.value = _tempMinPrice;
-                        _programsController.selectedMaxPrice.value = _tempMaxPrice;
-                        _programsController.selectedMinRating.value = _tempMinRating;
-                        _programsController.selectedIsBestSeller.value = _tempIsBestSeller;
-                        _programsController.selectedSortBy.value = _tempSortBy ?? 'most_relevant';
-                        
+                        _programsController.selectedProgramType.value =
+                            _tempProgramType;
+                        _programsController.selectedMinPrice.value =
+                            _tempMinPrice;
+                        _programsController.selectedMaxPrice.value =
+                            _tempMaxPrice;
+                        _programsController.selectedMinRating.value =
+                            _tempMinRating;
+                        _programsController.selectedIsBestSeller.value =
+                            _tempIsBestSeller;
+                        _programsController.selectedSortBy.value =
+                            _tempSortBy ?? 'most_relevant';
+
                         // Update UI sort by value
                         String uiSortBy;
                         switch (_tempSortBy) {
@@ -807,18 +857,22 @@ class _CourseListScreenState extends State<CourseListScreen>
                             uiSortBy = 'Popular';
                         }
                         _sortBy = uiSortBy;
-                        
+
                         // Fetch filtered programs
                         _programsController.fetchFilteredPrograms();
-                        
+
                         Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: themeController.primaryColor,
                         foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: XSizes.paddingMd),
+                        padding: EdgeInsets.symmetric(
+                          vertical: XSizes.paddingMd,
+                        ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+                          borderRadius: BorderRadius.circular(
+                            XSizes.borderRadiusMd,
+                          ),
                         ),
                       ),
                       child: Text(
@@ -847,7 +901,7 @@ class _CourseListScreenState extends State<CourseListScreen>
       {'label': 'Price: Low to High', 'value': 'price'},
       {'label': 'Recently Added', 'value': 'recently_added'},
     ];
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -862,31 +916,33 @@ class _CourseListScreenState extends State<CourseListScreen>
         ),
         SizedBox(height: XSizes.spacingSm),
         StatefulBuilder(
-          builder: (context, setFilterState) => Column(
-            children: sortOptions.map((option) {
-              final isSelected = _tempSortBy == option['value'];
-              
-              return RadioListTile<String>(
-                title: Text(
-                  option['label']!,
-                  style: TextStyle(
-                    fontFamily: XFonts.lexend,
-                    fontSize: XSizes.textSizeXs,
-                    color: themeController.textColor,
-                  ),
-                ),
-                value: option['value']!,
-                groupValue: _tempSortBy,
-                onChanged: (value) {
-                  setFilterState(() {
-                    _tempSortBy = value;
-                  });
-                },
-                activeColor: themeController.primaryColor,
-                contentPadding: EdgeInsets.zero,
-              );
-            }).toList(),
-          ),
+          builder:
+              (context, setFilterState) => Column(
+                children:
+                    sortOptions.map((option) {
+                      final isSelected = _tempSortBy == option['value'];
+
+                      return RadioListTile<String>(
+                        title: Text(
+                          option['label']!,
+                          style: TextStyle(
+                            fontFamily: XFonts.lexend,
+                            fontSize: XSizes.textSizeXs,
+                            color: themeController.textColor,
+                          ),
+                        ),
+                        value: option['value']!,
+                        groupValue: _tempSortBy,
+                        onChanged: (value) {
+                          setFilterState(() {
+                            _tempSortBy = value;
+                          });
+                        },
+                        activeColor: themeController.primaryColor,
+                        contentPadding: EdgeInsets.zero,
+                      );
+                    }).toList(),
+              ),
         ),
       ],
     );
@@ -895,7 +951,7 @@ class _CourseListScreenState extends State<CourseListScreen>
   Widget _buildProgramTypeFilter(XThemeController themeController) {
     final programTypes = ['All', 'Regular Programs', 'Advanced Programs'];
     final apiValues = [null, 'program', 'advanced_program'];
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -910,34 +966,42 @@ class _CourseListScreenState extends State<CourseListScreen>
         ),
         SizedBox(height: XSizes.spacingSm),
         StatefulBuilder(
-          builder: (context, setFilterState) => Wrap(
-            spacing: XSizes.spacingSm,
-            children: programTypes.asMap().entries.map((entry) {
-              final index = entry.key;
-              final type = entry.value;
-              final isSelected = _tempProgramType == apiValues[index];
-              
-              return FilterChip(
-                label: Text(
-                  type,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : themeController.textColor,
-                    fontFamily: XFonts.lexend,
-                    fontSize: XSizes.textSizeXs,
-                  ),
-                ),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setFilterState(() {
-                    _tempProgramType = selected ? apiValues[index] : null;
-                  });
-                },
-                selectedColor: themeController.primaryColor,
-                backgroundColor: Colors.transparent,
-                side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
-              );
-            }).toList(),
-          ),
+          builder:
+              (context, setFilterState) => Wrap(
+                spacing: XSizes.spacingSm,
+                children:
+                    programTypes.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final type = entry.value;
+                      final isSelected = _tempProgramType == apiValues[index];
+
+                      return FilterChip(
+                        label: Text(
+                          type,
+                          style: TextStyle(
+                            color:
+                                isSelected
+                                    ? Colors.white
+                                    : themeController.textColor,
+                            fontFamily: XFonts.lexend,
+                            fontSize: XSizes.textSizeXs,
+                          ),
+                        ),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setFilterState(() {
+                            _tempProgramType =
+                                selected ? apiValues[index] : null;
+                          });
+                        },
+                        selectedColor: themeController.primaryColor,
+                        backgroundColor: Colors.transparent,
+                        side: BorderSide(
+                          color: Colors.grey.withValues(alpha: 0.3),
+                        ),
+                      );
+                    }).toList(),
+              ),
         ),
       ],
     );
@@ -961,7 +1025,7 @@ class _CourseListScreenState extends State<CourseListScreen>
           builder: (context, setFilterState) {
             final minPrice = _tempMinPrice ?? 0.0;
             final maxPrice = _tempMaxPrice ?? 200.0;
-            
+
             return Column(
               children: [
                 Row(
@@ -1036,7 +1100,7 @@ class _CourseListScreenState extends State<CourseListScreen>
 
   Widget _buildRatingFilter(XThemeController themeController) {
     final ratings = [4.5, 4.0, 3.5, 3.0];
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1051,40 +1115,48 @@ class _CourseListScreenState extends State<CourseListScreen>
         ),
         SizedBox(height: XSizes.spacingSm),
         StatefulBuilder(
-          builder: (context, setFilterState) => Column(
-            children: ratings.map((rating) {
-              final isSelected = _tempMinRating == rating;
-              
-              return RadioListTile<double>(
-                title: Row(
-                  children: [
-                    ...List.generate(5, (index) => Icon(
-                      Icons.star,
-                      size: 16,
-                      color: index < rating ? Colors.amber : Colors.grey.withValues(alpha: 0.3),
-                    )),
-                    SizedBox(width: XSizes.spacingXs),
-                    Text(
-                      '$rating & up',
-                      style: TextStyle(
-                        fontFamily: XFonts.lexend,
-                        fontSize: XSizes.textSizeXs,
-                      ),
-                    ),
-                  ],
-                ),
-                value: rating,
-                groupValue: _tempMinRating,
-                onChanged: (value) {
-                  setFilterState(() {
-                    _tempMinRating = value;
-                  });
-                },
-                activeColor: themeController.primaryColor,
-                contentPadding: EdgeInsets.zero,
-              );
-            }).toList(),
-          ),
+          builder:
+              (context, setFilterState) => Column(
+                children:
+                    ratings.map((rating) {
+                      final isSelected = _tempMinRating == rating;
+
+                      return RadioListTile<double>(
+                        title: Row(
+                          children: [
+                            ...List.generate(
+                              5,
+                              (index) => Icon(
+                                Icons.star,
+                                size: 16,
+                                color:
+                                    index < rating
+                                        ? Colors.amber
+                                        : Colors.grey.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            SizedBox(width: XSizes.spacingXs),
+                            Text(
+                              '$rating & up',
+                              style: TextStyle(
+                                fontFamily: XFonts.lexend,
+                                fontSize: XSizes.textSizeXs,
+                              ),
+                            ),
+                          ],
+                        ),
+                        value: rating,
+                        groupValue: _tempMinRating,
+                        onChanged: (value) {
+                          setFilterState(() {
+                            _tempMinRating = value;
+                          });
+                        },
+                        activeColor: themeController.primaryColor,
+                        contentPadding: EdgeInsets.zero,
+                      );
+                    }).toList(),
+              ),
         ),
       ],
     );
@@ -1105,31 +1177,32 @@ class _CourseListScreenState extends State<CourseListScreen>
         ),
         SizedBox(height: XSizes.spacingSm),
         StatefulBuilder(
-          builder: (context, setFilterState) => CheckboxListTile(
-            title: Text(
-              'Best Sellers Only',
-              style: TextStyle(
-                fontFamily: XFonts.lexend,
-                fontSize: XSizes.textSizeXs,
+          builder:
+              (context, setFilterState) => CheckboxListTile(
+                title: Text(
+                  'Best Sellers Only',
+                  style: TextStyle(
+                    fontFamily: XFonts.lexend,
+                    fontSize: XSizes.textSizeXs,
+                  ),
+                ),
+                subtitle: Text(
+                  'Show only top-rated courses',
+                  style: TextStyle(
+                    color: themeController.textColor.withValues(alpha: 0.6),
+                    fontFamily: XFonts.lexend,
+                    fontSize: XSizes.textSizeXxs,
+                  ),
+                ),
+                value: _tempIsBestSeller == true,
+                onChanged: (value) {
+                  setFilterState(() {
+                    _tempIsBestSeller = value;
+                  });
+                },
+                activeColor: themeController.primaryColor,
+                contentPadding: EdgeInsets.zero,
               ),
-            ),
-            subtitle: Text(
-              'Show only top-rated courses',
-              style: TextStyle(
-                color: themeController.textColor.withValues(alpha: 0.6),
-                fontFamily: XFonts.lexend,
-                fontSize: XSizes.textSizeXxs,
-              ),
-            ),
-            value: _tempIsBestSeller == true,
-            onChanged: (value) {
-              setFilterState(() {
-                _tempIsBestSeller = value;
-              });
-            },
-            activeColor: themeController.primaryColor,
-            contentPadding: EdgeInsets.zero,
-          ),
         ),
       ],
     );
@@ -1138,48 +1211,69 @@ class _CourseListScreenState extends State<CourseListScreen>
   Widget _buildActiveFiltersChips(XThemeController themeController) {
     return Obx(() {
       List<Widget> chips = [];
-      
+
       // Program type filter
       if (_programsController.selectedProgramType.value != null) {
-        String displayText = _programsController.selectedProgramType.value == 'program' 
-            ? 'Regular Programs' 
-            : 'Advanced Programs';
-        chips.add(_buildFilterChip(displayText, () {
-          _programsController.filterByProgramType(null);
-        }, themeController));
+        String displayText =
+            _programsController.selectedProgramType.value == 'program'
+                ? 'Regular Programs'
+                : 'Advanced Programs';
+        chips.add(
+          _buildFilterChip(displayText, () {
+            _programsController.filterByProgramType(null);
+          }, themeController),
+        );
       }
-      
+
       // Price range filter
-      if (_programsController.selectedMinPrice.value != null || _programsController.selectedMaxPrice.value != null) {
-        String priceText = 'Price: \$${(_programsController.selectedMinPrice.value ?? 0).toInt()}-\$${(_programsController.selectedMaxPrice.value ?? 200).toInt()}';
-        chips.add(_buildFilterChip(priceText, () {
-          _programsController.filterByPriceRange(null, null);
-        }, themeController));
+      if (_programsController.selectedMinPrice.value != null ||
+          _programsController.selectedMaxPrice.value != null) {
+        String priceText =
+            'Price: \$${(_programsController.selectedMinPrice.value ?? 0).toInt()}-\$${(_programsController.selectedMaxPrice.value ?? 200).toInt()}';
+        chips.add(
+          _buildFilterChip(priceText, () {
+            _programsController.filterByPriceRange(null, null);
+          }, themeController),
+        );
       }
-      
+
       // Rating filter
       if (_programsController.selectedMinRating.value != null) {
-        chips.add(_buildFilterChip('${_programsController.selectedMinRating.value}+ Rating', () {
-          _programsController.filterByRating(null);
-        }, themeController));
+        chips.add(
+          _buildFilterChip(
+            '${_programsController.selectedMinRating.value}+ Rating',
+            () {
+              _programsController.filterByRating(null);
+            },
+            themeController,
+          ),
+        );
       }
-      
+
       // Best seller filter
       if (_programsController.selectedIsBestSeller.value == true) {
-        chips.add(_buildFilterChip('Best Sellers', () {
-          _programsController.filterByBestSeller(null);
-        }, themeController));
+        chips.add(
+          _buildFilterChip('Best Sellers', () {
+            _programsController.filterByBestSeller(null);
+          }, themeController),
+        );
       }
-      
+
       // Search filter
       if (_programsController.searchQuery.value.isNotEmpty) {
-        chips.add(_buildFilterChip('Search: "${_programsController.searchQuery.value}"', () {
-          _programsController.searchPrograms('');
-        }, themeController));
+        chips.add(
+          _buildFilterChip(
+            'Search: "${_programsController.searchQuery.value}"',
+            () {
+              _programsController.searchPrograms('');
+            },
+            themeController,
+          ),
+        );
       }
-      
+
       if (chips.isEmpty) return const SizedBox.shrink();
-      
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1224,7 +1318,11 @@ class _CourseListScreenState extends State<CourseListScreen>
     });
   }
 
-  Widget _buildFilterChip(String label, VoidCallback onRemove, XThemeController themeController) {
+  Widget _buildFilterChip(
+    String label,
+    VoidCallback onRemove,
+    XThemeController themeController,
+  ) {
     return Chip(
       label: Text(
         label,
@@ -1289,18 +1387,21 @@ class _CourseListScreenState extends State<CourseListScreen>
               ),
             ),
           ),
-          Obx(() => _programsController.searchQuery.value.isNotEmpty
-              ? IconButton(
-                  icon: Icon(
-                    Icons.clear,
-                    color: Colors.grey[600],
-                    size: 20,
-                  ),
-                  onPressed: () {
-                    _clearSearch();
-                  },
-                )
-              : const SizedBox.shrink()),
+          Obx(
+            () =>
+                _programsController.searchQuery.value.isNotEmpty
+                    ? IconButton(
+                      icon: Icon(
+                        Icons.clear,
+                        color: Colors.grey[600],
+                        size: 20,
+                      ),
+                      onPressed: () {
+                        _clearSearch();
+                      },
+                    )
+                    : const SizedBox.shrink(),
+          ),
         ],
       ),
     );

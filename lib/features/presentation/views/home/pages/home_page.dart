@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:topgrade/utils/constants/colors.dart';
 import '../../../controllers/theme_controller.dart';
 import '../../../controllers/categories_controller.dart';
 import '../../../controllers/landing_controller.dart';
-import '../../../../../utils/constants/colors.dart';
 import '../../../../../utils/constants/sizes.dart';
 import '../../../../../utils/constants/fonts.dart';
 import '../../../../../utils/constants/api_endpoints.dart';
@@ -18,14 +18,16 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late AnimationController _shimmerAnimationController;
   late Animation<double> _shimmerAnimation;
-  
-  final CategoriesController _categoriesController = Get.put(CategoriesController());
+
+  final CategoriesController _categoriesController = Get.put(
+    CategoriesController(),
+  );
   final LandingController _landingController = Get.put(LandingController());
 
   @override
   void initState() {
     super.initState();
-    
+
     _shimmerAnimationController = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
@@ -42,17 +44,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _shimmerAnimationController.repeat();
-        
+
         // Listen to controllers' loading states
         ever(_landingController.isLoading, (isLoading) {
-          if (!isLoading && !_categoriesController.isLoading.value) {
-            _shimmerAnimationController.stop();
+          if (!isLoading && !_categoriesController.isLoading.value && mounted) {
+            if (_shimmerAnimationController.isAnimating) {
+              _shimmerAnimationController.stop();
+            }
           }
         });
-        
+
         ever(_categoriesController.isLoading, (isLoading) {
-          if (!isLoading && !_landingController.isLoading.value) {
-            _shimmerAnimationController.stop();
+          if (!isLoading && !_landingController.isLoading.value && mounted) {
+            if (_shimmerAnimationController.isAnimating) {
+              _shimmerAnimationController.stop();
+            }
           }
         });
       }
@@ -66,7 +72,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   // Get combined loading state from controllers
-  bool get isLoading => _landingController.isLoading.value || _categoriesController.isLoading.value;
+  bool get isLoading =>
+      _landingController.isLoading.value ||
+      _categoriesController.isLoading.value;
+
+  // Refresh landing data
+  Future<void> _refreshLandingData() async {
+    // Refresh both landing data and categories
+    await Future.wait([
+      _landingController.fetchLandingData(),
+      _categoriesController.fetchCategories(),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,51 +92,115 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           (themeController) => Scaffold(
             backgroundColor: themeController.backgroundColor,
             body: SafeArea(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: EdgeInsets.all(XSizes.paddingMd),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Obx(() => isLoading ? _buildShimmerAppBar() : _buildAppBar()),
-                      SizedBox(height: XSizes.spacingMd),
-                      Obx(() => isLoading ? _buildShimmerSearchBar() : _buildSearchBar()),
-                      SizedBox(height: XSizes.spacingMd),
-                      // Continue Watching Section - only show if data exists
-                      Obx(() => _landingController.continueWatching.isNotEmpty
-                          ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildSectionHeader("Continue Watching"),
-                                SizedBox(height: XSizes.spacingSm),
-                                ..._landingController.continueWatching.map((program) => 
-                                  Padding(
-                                    padding: EdgeInsets.only(bottom: XSizes.spacingSm),
-                                    child: _buildContinueWatchingProgramCard(program),
+              child: RefreshIndicator(
+                onRefresh: _refreshLandingData,
+                color: themeController.primaryColor,
+                backgroundColor: themeController.backgroundColor,
+                strokeWidth: 2.5,
+                displacement: 60,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Padding(
+                    padding: EdgeInsets.all(XSizes.paddingMd),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Obx(
+                          () =>
+                              isLoading
+                                  ? _buildShimmerAppBar()
+                                  : _buildAppBar(),
+                        ),
+                        SizedBox(height: XSizes.spacingMd),
+                        Obx(
+                          () =>
+                              isLoading
+                                  ? _buildShimmerSearchBar()
+                                  : _buildSearchBar(),
+                        ),
+                        SizedBox(height: XSizes.spacingMd),
+                        // Continue Watching Section - only show if data exists
+                        Obx(
+                          () =>
+                              _landingController.continueWatching.isNotEmpty
+                                  ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _buildSectionHeader("Continue Watching"),
+                                      SizedBox(height: XSizes.spacingSm),
+                                      ..._landingController.continueWatching.map(
+                                        (program) => Padding(
+                                          padding: EdgeInsets.only(
+                                            bottom: XSizes.spacingSm,
+                                          ),
+                                          child:
+                                              _buildContinueWatchingProgramCard(
+                                                program,
+                                              ),
+                                        ),
+                                      ),
+                                      SizedBox(height: XSizes.spacingMd),
+                                    ],
+                                  )
+                                  : const SizedBox.shrink(),
+                        ),
+                        Obx(
+                          () =>
+                              isLoading
+                                  ? _buildShimmerSectionHeader()
+                                  : _buildSectionHeader("Categories"),
+                        ),
+                        SizedBox(height: XSizes.spacingSm),
+                        Obx(
+                          () =>
+                              isLoading
+                                  ? _buildShimmerCategories()
+                                  : _buildRealCategories(),
+                        ),
+                        SizedBox(height: XSizes.spacingMd),
+                        Obx(
+                          () =>
+                              isLoading
+                                  ? _buildShimmerSectionHeader()
+                                  : _buildSectionHeader(
+                                    "Suggestions for You",
+                                    showViewAll: true,
                                   ),
-                                ),
-                                SizedBox(height: XSizes.spacingMd),
-                              ],
-                            )
-                          : const SizedBox.shrink()),
-                      Obx(() => isLoading ? _buildShimmerSectionHeader() : _buildSectionHeader("Categories")),
-                      SizedBox(height: XSizes.spacingSm),
-                      Obx(() => isLoading
-                          ? _buildShimmerCategories() 
-                          : _buildRealCategories()),
-                      SizedBox(height: XSizes.spacingMd),
-                      Obx(() => isLoading ? _buildShimmerSectionHeader() : _buildSectionHeader("Suggestions for You", showViewAll: true)),
-                      const SizedBox(height: 16),
-                      Obx(() => isLoading
-                          ? _buildShimmerHorizontalCourseList() 
-                          : _buildRealHorizontalCourseList(_landingController.suggestionsForYou)),
-                      const SizedBox(height: 24),
-                      Obx(() => isLoading ? _buildShimmerSectionHeader() : _buildSectionHeader("Top Courses", showViewAll: true)),
-                      const SizedBox(height: 16),
-                      Obx(() => isLoading
-                          ? _buildShimmerHorizontalCourseList() 
-                          : _buildRealHorizontalCourseList(_landingController.topCourses)),
-                    ],
+                        ),
+                        const SizedBox(height: 16),
+                        Obx(
+                          () =>
+                              isLoading
+                                  ? _buildShimmerHorizontalCourseList()
+                                  : _buildRealHorizontalCourseList(
+                                    _landingController.suggestionsForYou,
+                                  ),
+                        ),
+                        const SizedBox(height: 24),
+                        Obx(
+                          () =>
+                              isLoading
+                                  ? _buildShimmerSectionHeader()
+                                  : _buildSectionHeader(
+                                    "Top Courses",
+                                    showViewAll: true,
+                                  ),
+                        ),
+                        const SizedBox(height: 16),
+                        Obx(
+                          () =>
+                              isLoading
+                                  ? _buildShimmerHorizontalCourseList()
+                                  : _buildRealHorizontalCourseList(
+                                    _landingController.topCourses,
+                                  ),
+                        ),
+                        SizedBox(
+                          height: XSizes.spacingMd,
+                        ), // Extra bottom padding
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -314,45 +395,59 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Widget _buildRealCategories() {
     return GetBuilder<XThemeController>(
-      builder: (themeController) => Obx(() {
-        if (_categoriesController.isLoading.value) {
-          return _buildShimmerCategories();
-        }
-        
-        if (_categoriesController.hasError.value) {
-          return Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: XSizes.paddingMd,
-              vertical: XSizes.paddingSm,
-            ),
-            child: Text(
-              'Unable to load categories',
-              style: TextStyle(
-                fontFamily: XFonts.lexend,
-                color: themeController.textColor.withValues(alpha: 0.5),
-                fontSize: XSizes.textSizeXs,
+      builder:
+          (themeController) => Obx(() {
+            if (_categoriesController.isLoading.value) {
+              return _buildShimmerCategories();
+            }
+            if (_categoriesController.hasError.value) {
+              return Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: XSizes.paddingMd,
+                  vertical: XSizes.paddingSm,
+                ),
+                child: Text(
+                  'Unable to load categories',
+                  style: TextStyle(
+                    fontFamily: XFonts.lexend,
+                    color: themeController.textColor.withValues(alpha: 0.5),
+                    fontSize: XSizes.textSizeXs,
+                  ),
+                ),
+              );
+            }
+
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children:
+                    _categoriesController.categories
+                        .map(
+                          (category) => _buildCategoryChip(
+                            category.name,
+                            category.id,
+                            themeController,
+                          ),
+                        )
+                        .toList(),
               ),
-            ),
-          );
-        }
-        
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: _categoriesController.categories
-                .map((category) => _buildCategoryChip(category.name, category.id, themeController))
-                .toList(),
-          ),
-        );
-      }),
+            );
+          }),
     );
   }
 
-  Widget _buildCategoryChip(String label, int categoryId, XThemeController themeController) {
+  Widget _buildCategoryChip(
+    String label,
+    int categoryId,
+    XThemeController themeController,
+  ) {
     return GestureDetector(
       onTap: () {
         // Navigate to course list with category filter applied
-        Get.toNamed('/course-list', arguments: {'categoryId': categoryId, 'categoryName': label});
+        Get.toNamed(
+          '/course-list',
+          arguments: {'categoryId': categoryId, 'categoryName': label},
+        );
       },
       child: Container(
         margin: EdgeInsets.only(right: XSizes.marginSm),
@@ -386,14 +481,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         height: 220,
         child: Center(
           child: GetBuilder<XThemeController>(
-            builder: (themeController) => Text(
-              'No courses available',
-              style: TextStyle(
-                color: themeController.textColor.withValues(alpha: 0.6),
-                fontFamily: XFonts.lexend,
-                fontSize: XSizes.textSizeSm,
-              ),
-            ),
+            builder:
+                (themeController) => Text(
+                  'No courses available',
+                  style: TextStyle(
+                    color: themeController.textColor.withValues(alpha: 0.6),
+                    fontFamily: XFonts.lexend,
+                    fontSize: XSizes.textSizeSm,
+                  ),
+                ),
           ),
         ),
       );
@@ -414,241 +510,177 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Widget _buildRealSuggestionCard(dynamic program) {
     return GetBuilder<XThemeController>(
-      builder: (themeController) => GestureDetector(
-        onTap: () {
-          Get.toNamed('/course-details', arguments: {
-            'programId': program.id,
-            'programType': program.type,
-          });
-        },
-        child: Container(
-          width: 160,
-          margin: EdgeInsets.only(right: XSizes.marginSm + XSizes.marginXs),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Stack(
+      builder:
+          (themeController) => GestureDetector(
+            onTap: () {
+              Get.toNamed(
+                '/course-details',
+                arguments: {
+                  'programId': program.id,
+                  'programType': program.type,
+                },
+              );
+            },
+            child: Container(
+              width: 160,
+              margin: EdgeInsets.only(right: XSizes.marginSm + XSizes.marginXs),
+              padding: EdgeInsets.symmetric(
+                horizontal: XSizes.paddingXs,
+                vertical: XSizes.paddingXs,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    height: 110,
-                    width: 160,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(XSizes.borderRadiusLg),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
-                      child: program.image.isNotEmpty
-                          ? Image.network(
-                              program.image.startsWith('http') 
-                                  ? program.image 
-                                  : '${ApiEndpoints.baseUrl}${program.image}',
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Container(
-                                  color: themeController.textColor.withValues(alpha: 0.1),
-                                  child: Center(
-                                    child: SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: themeController.primaryColor,
-                                      ),
+                  Stack(
+                    children: [
+                      Container(
+                        height: 110,
+                        width: 160,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(
+                            XSizes.borderRadiusMd,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                            XSizes.borderRadiusMd,
+                          ),
+                          child:
+                              program.image.isNotEmpty
+                                  ? Image.network(
+                                    program.image.startsWith('http')
+                                        ? program.image
+                                        : '${ApiEndpoints.baseUrl}${program.image}',
+                                    fit: BoxFit.cover,
+                                    loadingBuilder: (
+                                      context,
+                                      child,
+                                      loadingProgress,
+                                    ) {
+                                      if (loadingProgress == null) return child;
+                                      return Container(
+                                        color: themeController.textColor
+                                            .withValues(alpha: 0.1),
+                                        child: Center(
+                                          child: SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color:
+                                                  themeController.primaryColor,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            Container(
+                                              color: themeController.textColor
+                                                  .withValues(alpha: 0.1),
+                                              child: Icon(
+                                                Icons.image_not_supported,
+                                                color: themeController.textColor
+                                                    .withValues(alpha: 0.3),
+                                              ),
+                                            ),
+                                  )
+                                  : Container(
+                                    color: themeController.textColor.withValues(
+                                      alpha: 0.1,
+                                    ),
+                                    child: Icon(
+                                      Icons.play_circle_fill,
+                                      size: XSizes.iconSizeXl,
+                                      color: themeController.primaryColor,
                                     ),
                                   ),
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: themeController.textColor.withValues(alpha: 0.1),
-                                child: Icon(
-                                  Icons.image_not_supported,
-                                  color: themeController.textColor.withValues(alpha: 0.3),
-                                ),
-                              ),
-                            )
-                          : Container(
-                              color: themeController.textColor.withValues(alpha: 0.1),
-                              child: Icon(
-                                Icons.play_circle_fill,
-                                size: XSizes.iconSizeXl,
-                                color: themeController.primaryColor,
+                        ),
+                      ),
+                      if (program.isBestSeller)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'BEST',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: XFonts.lexend,
                               ),
                             ),
-                    ),
+                          ),
+                        ),
+                    ],
                   ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: themeController.backgroundColor,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Icon(
-                        program.isBestSeller ? Icons.bookmark : Icons.bookmark_border,
-                        color: program.isBestSeller ? XColors.primaryColor : Colors.grey,
-                        size: XSizes.iconSizeSm,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                program.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: XSizes.textSizeSm,
-                  fontFamily: XFonts.lexend,
-                  color: themeController.textColor,
-                ),
-              ),
-              SizedBox(height: XSizes.spacingXs),
-              Text(
-                program.category?.name ?? 'General',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: themeController.textColor.withValues(alpha: 0.6),
-                  fontSize: XSizes.textSizeXs,
-                  fontFamily: XFonts.lexend,
-                ),
-              ),
-              SizedBox(height: XSizes.spacingXxs),
-              Text(
-                '${program.enrolledStudents} students',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: themeController.textColor.withValues(alpha: 0.5),
-                  fontSize: XSizes.textSizeXxs,
-                  fontFamily: XFonts.lexend,
-                ),
-              ),
-              const Spacer(),
-              Row(
-                children: [
-                  Icon(
-                    Icons.star,
-                    color: Colors.amber,
-                    size: XSizes.iconSizeSm,
-                  ),
-                  const SizedBox(width: 4),
+                  const SizedBox(height: 8),
                   Text(
-                    program.programRating.toString(),
+                    program.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: XSizes.textSizeXs,
+                      fontSize: XSizes.textSizeSm,
                       fontFamily: XFonts.lexend,
                       color: themeController.textColor,
                     ),
                   ),
+                  SizedBox(height: XSizes.spacingXs),
+                  Text(
+                    program.category?.name ?? 'General',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: themeController.textColor.withValues(alpha: 0.6),
+                      fontSize: XSizes.textSizeXs,
+                      fontFamily: XFonts.lexend,
+                    ),
+                  ),
+                  SizedBox(height: XSizes.spacingXxs),
+                  Text(
+                    '${program.enrolledStudents} students',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: themeController.textColor.withValues(alpha: 0.5),
+                      fontSize: XSizes.textSizeXxs,
+                      fontFamily: XFonts.lexend,
+                    ),
+                  ),
+                  const Spacer(),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.star,
+                        color: Colors.amber,
+                        size: XSizes.iconSizeSm,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        program.programRating.toString(),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: XSizes.textSizeXs,
+                          fontFamily: XFonts.lexend,
+                          color: themeController.textColor,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSuggestionCard({
-    required String title,
-    required String college,
-    required double rating,
-    required bool isBookmarked,
-    required String imageUrl,
-  }) {
-    return GetBuilder<XThemeController>(
-      builder:
-          (themeController) => Container(
-            width: 160,
-            margin: EdgeInsets.only(right: XSizes.marginSm + XSizes.marginXs),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Stack(
-                  children: [
-                    Container(
-                      height: 110,
-                      width: 160,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(
-                          XSizes.borderRadiusLg,
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          XSizes.borderRadiusMd,
-                        ),
-                        child: Image.network(imageUrl, fit: BoxFit.cover),
-                      ),
-                    ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: themeController.backgroundColor,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Icon(
-                          isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                          color:
-                              isBookmarked ? XColors.primaryColor : Colors.grey,
-                          size: XSizes.iconSizeSm,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: XSizes.textSizeSm,
-                    fontFamily: XFonts.lexend,
-                  ),
-                ),
-                SizedBox(height: XSizes.spacingXs),
-                Text(
-                  college,
-                  style: TextStyle(
-                    color: themeController.textColor,
-                    fontSize: XSizes.textSizeXs,
-                    fontFamily: XFonts.lexend,
-                  ),
-                ),
-                const Spacer(),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.star,
-                      color: Colors.amber,
-                      size: XSizes.iconSizeSm,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      rating.toString(),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: XSizes.textSizeXs,
-                        fontFamily: XFonts.lexend,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ),
           ),
     );
@@ -656,180 +688,206 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Widget _buildContinueWatchingProgramCard(dynamic program) {
     return GetBuilder<XThemeController>(
-      builder: (themeController) => GestureDetector(
-        onTap: () {
-          Get.toNamed('/course-details', arguments: {
-            'programId': program.id,
-            'programType': program.type,
-          });
-        },
-        child: Container(
-          padding: EdgeInsets.all(XSizes.paddingSm),
-          decoration: BoxDecoration(
-            color: themeController.backgroundColor,
-            borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
-                  child: program.image.isNotEmpty
-                      ? Image.network(
-                          program.image.startsWith('http') 
-                              ? program.image 
-                              : '${ApiEndpoints.baseUrl}${program.image}',
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              color: themeController.textColor.withValues(alpha: 0.1),
-                              child: Center(
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: themeController.primaryColor,
-                                  ),
+      builder:
+          (themeController) => GestureDetector(
+            onTap: () {
+              Get.toNamed(
+                '/course-details',
+                arguments: {
+                  'programId': program.id,
+                  'programType': program.type,
+                },
+              );
+            },
+            child: Container(
+              padding: EdgeInsets.all(XSizes.paddingSm),
+              decoration: BoxDecoration(
+                color: themeController.backgroundColor,
+                borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(
+                        XSizes.borderRadiusMd,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(
+                        XSizes.borderRadiusMd,
+                      ),
+                      child:
+                          program.image.isNotEmpty
+                              ? Image.network(
+                                program.image.startsWith('http')
+                                    ? program.image
+                                    : '${ApiEndpoints.baseUrl}${program.image}',
+                                fit: BoxFit.cover,
+                                loadingBuilder: (
+                                  context,
+                                  child,
+                                  loadingProgress,
+                                ) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    color: themeController.textColor.withValues(
+                                      alpha: 0.1,
+                                    ),
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: themeController.primaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                errorBuilder:
+                                    (context, error, stackTrace) => Container(
+                                      color: themeController.textColor
+                                          .withValues(alpha: 0.1),
+                                      child: Icon(
+                                        Icons.image_not_supported,
+                                        color: themeController.textColor
+                                            .withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                              )
+                              : Container(
+                                color: themeController.textColor.withValues(
+                                  alpha: 0.1,
+                                ),
+                                child: Icon(
+                                  Icons.play_circle_fill,
+                                  size: XSizes.iconSizeXl,
+                                  color: themeController.primaryColor,
                                 ),
                               ),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            color: themeController.textColor.withValues(alpha: 0.1),
-                            child: Icon(
-                              Icons.image_not_supported,
-                              color: themeController.textColor.withValues(alpha: 0.3),
-                            ),
-                          ),
-                        )
-                      : Container(
-                          color: themeController.textColor.withValues(alpha: 0.1),
-                          child: Icon(
-                            Icons.play_circle_fill,
-                            size: XSizes.iconSizeXl,
-                            color: themeController.primaryColor,
-                          ),
-                        ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      program.title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: XSizes.textSizeMd,
-                        fontFamily: XFonts.lexend,
-                        color: themeController.textColor,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      program.category?.name ?? 'General',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: XSizes.textSizeXs,
-                        fontFamily: XFonts.lexend,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.star, color: Colors.amber, size: 16),
-                        const SizedBox(width: 4),
                         Text(
-                          program.programRating.toString(),
+                          program.title,
                           style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: XSizes.textSizeMd,
                             fontFamily: XFonts.lexend,
                             color: themeController.textColor,
-                            fontSize: XSizes.textSizeXs,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          program.category?.name ?? 'General',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: XSizes.textSizeXs,
+                            fontFamily: XFonts.lexend,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              program.programRating.toString(),
+                              style: TextStyle(
+                                fontFamily: XFonts.lexend,
+                                color: themeController.textColor,
+                                fontSize: XSizes.textSizeXs,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: LinearProgressIndicator(
+                                value:
+                                    0.75, // Default progress - you can add progress field to program model
+                                backgroundColor: Colors.grey[300],
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  themeController.primaryColor,
+                                ),
+                                minHeight: 6,
+                                borderRadius: BorderRadius.circular(
+                                  XSizes.borderRadiusXxl,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '75%', // Default progress - you can add progress field to program model
+                              style: TextStyle(
+                                fontSize: XSizes.textSizeXs,
+                                color: themeController.textColor,
+                                fontFamily: XFonts.lexend,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: LinearProgressIndicator(
-                            value: 0.75, // Default progress - you can add progress field to program model
-                            backgroundColor: Colors.grey[300],
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              themeController.primaryColor,
-                            ),
-                            minHeight: 6,
-                            borderRadius: BorderRadius.circular(
-                              XSizes.borderRadiusXxl,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '75%', // Default progress - you can add progress field to program model
-                          style: TextStyle(
-                            fontSize: XSizes.textSizeXs,
-                            color: themeController.textColor,
-                            fontFamily: XFonts.lexend,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
   Widget _buildSectionHeader(String title, {bool showViewAll = false}) {
     return GetBuilder<XThemeController>(
-      builder: (themeController) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: XSizes.textSizeLg,
-              fontFamily: XFonts.lexend,
-              color: themeController.textColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          if (showViewAll)
-            GestureDetector(
-              onTap: () {
-                Get.toNamed('/course-list');
-              },
-              child: Text(
-                'View All',
+      builder:
+          (themeController) => Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
                 style: TextStyle(
-                  fontSize: XSizes.textSizeSm,
+                  fontSize: XSizes.textSizeLg,
                   fontFamily: XFonts.lexend,
-                  color: themeController.primaryColor,
-                  fontWeight: FontWeight.w600,
+                  color: themeController.textColor,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-        ],
-      ),
+              if (showViewAll)
+                GestureDetector(
+                  onTap: () {
+                    Get.toNamed('/course-list');
+                  },
+                  child: Text(
+                    'View All',
+                    style: TextStyle(
+                      fontSize: XSizes.textSizeSm,
+                      fontFamily: XFonts.lexend,
+                      color: themeController.primaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
     );
   }
 
@@ -864,16 +922,81 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Widget _buildShimmerAppBar() {
     return GetBuilder<XThemeController>(
-      builder: (themeController) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      builder:
+          (themeController) => Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildShimmerWrapper(
+                    Container(
+                      width: 100,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: themeController.textColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    themeController,
+                  ),
+                  SizedBox(height: 4),
+                  _buildShimmerWrapper(
+                    Container(
+                      width: 80,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: themeController.textColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    themeController,
+                  ),
+                ],
+              ),
+              _buildShimmerWrapper(
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: themeController.textColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                themeController,
+              ),
+            ],
+          ),
+    );
+  }
+
+  Widget _buildShimmerSearchBar() {
+    return GetBuilder<XThemeController>(
+      builder:
+          (themeController) => _buildShimmerWrapper(
+            Container(
+              height: 50,
+              padding: EdgeInsets.symmetric(horizontal: XSizes.paddingMd),
+              decoration: BoxDecoration(
+                color: themeController.textColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+              ),
+            ),
+            themeController,
+          ),
+    );
+  }
+
+  Widget _buildShimmerSectionHeader() {
+    return GetBuilder<XThemeController>(
+      builder:
+          (themeController) => Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildShimmerWrapper(
                 Container(
-                  width: 100,
-                  height: 16,
+                  width: 150,
+                  height: 20,
                   decoration: BoxDecoration(
                     color: themeController.textColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
@@ -881,11 +1004,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 ),
                 themeController,
               ),
-              SizedBox(height: 4),
               _buildShimmerWrapper(
                 Container(
-                  width: 80,
-                  height: 20,
+                  width: 60,
+                  height: 16,
                   decoration: BoxDecoration(
                     color: themeController.textColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
@@ -895,79 +1017,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ),
             ],
           ),
-          _buildShimmerWrapper(
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: themeController.textColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-            ),
-            themeController,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildShimmerSearchBar() {
-    return GetBuilder<XThemeController>(
-      builder: (themeController) => _buildShimmerWrapper(
-        Container(
-          height: 50,
-          padding: EdgeInsets.symmetric(horizontal: XSizes.paddingMd),
-          decoration: BoxDecoration(
-            color: themeController.textColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
-          ),
-        ),
-        themeController,
-      ),
-    );
-  }
-
-  Widget _buildShimmerSectionHeader() {
-    return GetBuilder<XThemeController>(
-      builder: (themeController) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildShimmerWrapper(
-            Container(
-              width: 150,
-              height: 20,
-              decoration: BoxDecoration(
-                color: themeController.textColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            themeController,
-          ),
-          _buildShimmerWrapper(
-            Container(
-              width: 60,
-              height: 16,
-              decoration: BoxDecoration(
-                color: themeController.textColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            themeController,
-          ),
-        ],
-      ),
     );
   }
 
   Widget _buildShimmerContinueWatchingCards() {
     return GetBuilder<XThemeController>(
-      builder: (themeController) => Column(
-        children: [
-          _buildShimmerContinueWatchingCard(themeController),
-          SizedBox(height: XSizes.spacingSm),
-          _buildShimmerContinueWatchingCard(themeController),
-        ],
-      ),
+      builder:
+          (themeController) => Column(
+            children: [
+              _buildShimmerContinueWatchingCard(themeController),
+              SizedBox(height: XSizes.spacingSm),
+              _buildShimmerContinueWatchingCard(themeController),
+            ],
+          ),
     );
   }
 
@@ -1040,8 +1102,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         Container(
                           height: 6,
                           decoration: BoxDecoration(
-                            color: themeController.textColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(XSizes.borderRadiusXxl),
+                            color: themeController.textColor.withValues(
+                              alpha: 0.1,
+                            ),
+                            borderRadius: BorderRadius.circular(
+                              XSizes.borderRadiusXxl,
+                            ),
                           ),
                         ),
                         themeController,
@@ -1053,7 +1119,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         width: 30,
                         height: 12,
                         decoration: BoxDecoration(
-                          color: themeController.textColor.withValues(alpha: 0.1),
+                          color: themeController.textColor.withValues(
+                            alpha: 0.1,
+                          ),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -1071,48 +1139,50 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Widget _buildShimmerCategories() {
     return GetBuilder<XThemeController>(
-      builder: (themeController) => SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const NeverScrollableScrollPhysics(),
-        child: Row(
-          children: List.generate(3, (index) => 
-            _buildShimmerWrapper(
-              Container(
-                margin: EdgeInsets.only(right: XSizes.marginSm),
-                padding: EdgeInsets.symmetric(
-                  horizontal: XSizes.paddingLg,
-                  vertical: XSizes.paddingSm,
-                ),
-                decoration: BoxDecoration(
-                  color: themeController.textColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(XSizes.borderRadiusXl),
-                ),
-                child: SizedBox(
-                  width: 80 + (index * 15.0),
-                  height: 16,
+      builder:
+          (themeController) => SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const NeverScrollableScrollPhysics(),
+            child: Row(
+              children: List.generate(
+                3,
+                (index) => _buildShimmerWrapper(
+                  Container(
+                    margin: EdgeInsets.only(right: XSizes.marginSm),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: XSizes.paddingLg,
+                      vertical: XSizes.paddingSm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: themeController.textColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(
+                        XSizes.borderRadiusXl,
+                      ),
+                    ),
+                    child: SizedBox(width: 80 + (index * 15.0), height: 16),
+                  ),
+                  themeController,
                 ),
               ),
-              themeController,
             ),
           ),
-        ),
-      ),
     );
   }
 
   Widget _buildShimmerHorizontalCourseList() {
     return GetBuilder<XThemeController>(
-      builder: (themeController) => SizedBox(
-        height: 220,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: 3,
-          itemBuilder: (context, index) {
-            return _buildShimmerCourseCard(themeController);
-          },
-        ),
-      ),
+      builder:
+          (themeController) => SizedBox(
+            height: 220,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 3,
+              itemBuilder: (context, index) {
+                return _buildShimmerCourseCard(themeController);
+              },
+            ),
+          ),
     );
   }
 
@@ -1150,6 +1220,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           _buildShimmerWrapper(
             Container(
               width: 120,
+              height: 12,
+              decoration: BoxDecoration(
+                color: themeController.textColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            themeController,
+          ),
+          const SizedBox(height: 8),
+          _buildShimmerWrapper(
+            Container(
+              width: 80,
               height: 12,
               decoration: BoxDecoration(
                 color: themeController.textColor.withValues(alpha: 0.1),

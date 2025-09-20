@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/theme_controller.dart';
 import '../../../controllers/categories_controller.dart';
+import '../../../controllers/landing_controller.dart';
 import '../../../../../utils/constants/colors.dart';
 import '../../../../../utils/constants/sizes.dart';
 import '../../../../../utils/constants/fonts.dart';
+import '../../../../../utils/constants/api_endpoints.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,11 +16,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  bool _isLoading = true;
   late AnimationController _shimmerAnimationController;
   late Animation<double> _shimmerAnimation;
   
   final CategoriesController _categoriesController = Get.put(CategoriesController());
+  final LandingController _landingController = Get.put(LandingController());
 
   @override
   void initState() {
@@ -40,7 +42,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _shimmerAnimationController.repeat();
-        _simulateLoading();
+        
+        // Listen to controllers' loading states
+        ever(_landingController.isLoading, (isLoading) {
+          if (!isLoading && !_categoriesController.isLoading.value) {
+            _shimmerAnimationController.stop();
+          }
+        });
+        
+        ever(_categoriesController.isLoading, (isLoading) {
+          if (!isLoading && !_landingController.isLoading.value) {
+            _shimmerAnimationController.stop();
+          }
+        });
       }
     });
   }
@@ -51,16 +65,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  void _simulateLoading() {
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        _shimmerAnimationController.stop();
-      }
-    });
-  }
+  // Get combined loading state from controllers
+  bool get isLoading => _landingController.isLoading.value || _categoriesController.isLoading.value;
 
   @override
   Widget build(BuildContext context) {
@@ -75,41 +81,44 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _isLoading ? _buildShimmerAppBar() : _buildAppBar(),
+                      Obx(() => isLoading ? _buildShimmerAppBar() : _buildAppBar()),
                       SizedBox(height: XSizes.spacingMd),
-                      _isLoading ? _buildShimmerSearchBar() : _buildSearchBar(),
+                      Obx(() => isLoading ? _buildShimmerSearchBar() : _buildSearchBar()),
                       SizedBox(height: XSizes.spacingMd),
-                      _isLoading ? _buildShimmerSectionHeader() : _buildSectionHeader("Continue Watching"),
+                      // Continue Watching Section - only show if data exists
+                      Obx(() => _landingController.continueWatching.isNotEmpty
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildSectionHeader("Continue Watching"),
+                                SizedBox(height: XSizes.spacingSm),
+                                ..._landingController.continueWatching.map((program) => 
+                                  Padding(
+                                    padding: EdgeInsets.only(bottom: XSizes.spacingSm),
+                                    child: _buildContinueWatchingProgramCard(program),
+                                  ),
+                                ),
+                                SizedBox(height: XSizes.spacingMd),
+                              ],
+                            )
+                          : const SizedBox.shrink()),
+                      Obx(() => isLoading ? _buildShimmerSectionHeader() : _buildSectionHeader("Categories")),
                       SizedBox(height: XSizes.spacingSm),
-                      _isLoading ? _buildShimmerContinueWatchingCards() : _buildContinueWatchingCard(
-                        title: "UI/UX Design Essentials",
-                        university: "Tech Innovations University",
-                        rating: 4.9,
-                        progress: 0.79,
-                        imageUrl:
-                            "https://images.unsplash.com/photo-1558655146-364adaf1fcc9?w=500",
-                      ),
-                      SizedBox(height: XSizes.spacingSm),
-                      if (!_isLoading) _buildContinueWatchingCard(
-                        title: "Graphic Design Fundamentals",
-                        university: "Creative Arts Institute",
-                        rating: 4.7,
-                        progress: 0.55,
-                        imageUrl:
-                            "https://images.unsplash.com/photo-1580327344181-c1163234e5a0?w=500",
-                      ),
+                      Obx(() => isLoading
+                          ? _buildShimmerCategories() 
+                          : _buildRealCategories()),
                       SizedBox(height: XSizes.spacingMd),
-                      _isLoading ? _buildShimmerSectionHeader() : _buildSectionHeader("Categories"),
-                      SizedBox(height: XSizes.spacingSm),
-                      _isLoading ? _buildShimmerCategories() : _buildRealCategories(),
-                      SizedBox(height: XSizes.spacingMd),
-                      _isLoading ? _buildShimmerSectionHeader() : _buildSectionHeader("Suggestions for You", showViewAll: true),
+                      Obx(() => isLoading ? _buildShimmerSectionHeader() : _buildSectionHeader("Suggestions for You", showViewAll: true)),
                       const SizedBox(height: 16),
-                      _isLoading ? _buildShimmerHorizontalCourseList() : _buildHorizontalCourseList(),
+                      Obx(() => isLoading
+                          ? _buildShimmerHorizontalCourseList() 
+                          : _buildRealHorizontalCourseList(_landingController.suggestionsForYou)),
                       const SizedBox(height: 24),
-                      _isLoading ? _buildShimmerSectionHeader() : _buildSectionHeader("Top Courses", showViewAll: true),
+                      Obx(() => isLoading ? _buildShimmerSectionHeader() : _buildSectionHeader("Top Courses", showViewAll: true)),
                       const SizedBox(height: 16),
-                      _isLoading ? _buildShimmerHorizontalCourseList() : _buildHorizontalCourseList(isTopCourse: true),
+                      Obx(() => isLoading
+                          ? _buildShimmerHorizontalCourseList() 
+                          : _buildRealHorizontalCourseList(_landingController.topCourses)),
                     ],
                   ),
                 ),
@@ -348,89 +357,202 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       child: Container(
         margin: EdgeInsets.only(right: XSizes.marginSm),
         padding: EdgeInsets.symmetric(
-          horizontal: XSizes.paddingLg,
+          horizontal: XSizes.paddingMd,
           vertical: XSizes.paddingSm,
         ),
         decoration: BoxDecoration(
-          color: themeController.backgroundColor,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(XSizes.borderRadiusXl),
           border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-          boxShadow: [
-            BoxShadow(
-              color: themeController.textColor.withValues(alpha: 0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: XFonts.lexend,
-                color: themeController.textColor,
-                fontSize: XSizes.textSizeXs,
-                fontWeight: FontWeight.w500,
-              ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: themeController.textColor.withValues(alpha: 0.6),
+              fontWeight: FontWeight.w400,
+              fontSize: XSizes.textSizeSm,
+              fontFamily: XFonts.lexend,
             ),
-            SizedBox(width: XSizes.spacingXs),
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 10,
-              color: themeController.textColor.withValues(alpha: 0.5),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHorizontalCourseList({bool isTopCourse = false}) {
-    // Dummy data
-    final courses = [
-      {
-        "title": "Typography and Layout Design",
-        "college": "Visual Communication College",
-        "rating": 4.7,
-        "bookmarked": false,
-        "imageUrl":
-            "https://images.unsplash.com/photo-1580327344181-c1163234e5a0?w=500",
-      },
-      {
-        "title": "Branding and Identity Design",
-        "college": "Innovation and Design School",
-        "rating": 4.4,
-        "bookmarked": true,
-        "imageUrl":
-            "https://images.unsplash.com/photo-1558655146-364adaf1fcc9?w=500",
-      },
-      {
-        "title": "Web Design Fundamentals",
-        "college": "Web Development Uni",
-        "rating": 4.9,
-        "bookmarked": false,
-        "imageUrl":
-            "https://images.unsplash.com/photo-1579566346927-c68383817a25?w=500",
-      },
-    ];
+  Widget _buildRealHorizontalCourseList(List<dynamic> programs) {
+    if (programs.isEmpty) {
+      return SizedBox(
+        height: 220,
+        child: Center(
+          child: GetBuilder<XThemeController>(
+            builder: (themeController) => Text(
+              'No courses available',
+              style: TextStyle(
+                color: themeController.textColor.withValues(alpha: 0.6),
+                fontFamily: XFonts.lexend,
+                fontSize: XSizes.textSizeSm,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return SizedBox(
       height: 220,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: courses.length,
+        itemCount: programs.length,
         itemBuilder: (context, index) {
-          final course = courses[index];
-          return _buildSuggestionCard(
-            title: course['title'] as String,
-            college: course['college'] as String,
-            rating: course['rating'] as double,
-            isBookmarked: isTopCourse ? true : course['bookmarked'] as bool,
-            imageUrl: course['imageUrl'] as String,
-          );
+          final program = programs[index];
+          return _buildRealSuggestionCard(program);
         },
+      ),
+    );
+  }
+
+  Widget _buildRealSuggestionCard(dynamic program) {
+    return GetBuilder<XThemeController>(
+      builder: (themeController) => GestureDetector(
+        onTap: () {
+          Get.toNamed('/course-details', arguments: {
+            'programId': program.id,
+            'programType': program.type,
+          });
+        },
+        child: Container(
+          width: 160,
+          margin: EdgeInsets.only(right: XSizes.marginSm + XSizes.marginXs),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                children: [
+                  Container(
+                    height: 110,
+                    width: 160,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(XSizes.borderRadiusLg),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+                      child: program.image.isNotEmpty
+                          ? Image.network(
+                              program.image.startsWith('http') 
+                                  ? program.image 
+                                  : '${ApiEndpoints.baseUrl}${program.image}',
+                              fit: BoxFit.cover,
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Container(
+                                  color: themeController.textColor.withValues(alpha: 0.1),
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: themeController.primaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                color: themeController.textColor.withValues(alpha: 0.1),
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  color: themeController.textColor.withValues(alpha: 0.3),
+                                ),
+                              ),
+                            )
+                          : Container(
+                              color: themeController.textColor.withValues(alpha: 0.1),
+                              child: Icon(
+                                Icons.play_circle_fill,
+                                size: XSizes.iconSizeXl,
+                                color: themeController.primaryColor,
+                              ),
+                            ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: themeController.backgroundColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Icon(
+                        program.isBestSeller ? Icons.bookmark : Icons.bookmark_border,
+                        color: program.isBestSeller ? XColors.primaryColor : Colors.grey,
+                        size: XSizes.iconSizeSm,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                program.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: XSizes.textSizeSm,
+                  fontFamily: XFonts.lexend,
+                  color: themeController.textColor,
+                ),
+              ),
+              SizedBox(height: XSizes.spacingXs),
+              Text(
+                program.category?.name ?? 'General',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: themeController.textColor.withValues(alpha: 0.6),
+                  fontSize: XSizes.textSizeXs,
+                  fontFamily: XFonts.lexend,
+                ),
+              ),
+              SizedBox(height: XSizes.spacingXxs),
+              Text(
+                '${program.enrolledStudents} students',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: themeController.textColor.withValues(alpha: 0.5),
+                  fontSize: XSizes.textSizeXxs,
+                  fontFamily: XFonts.lexend,
+                ),
+              ),
+              const Spacer(),
+              Row(
+                children: [
+                  Icon(
+                    Icons.star,
+                    color: Colors.amber,
+                    size: XSizes.iconSizeSm,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    program.programRating.toString(),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: XSizes.textSizeXs,
+                      fontFamily: XFonts.lexend,
+                      color: themeController.textColor,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -529,6 +651,151 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ],
             ),
           ),
+    );
+  }
+
+  Widget _buildContinueWatchingProgramCard(dynamic program) {
+    return GetBuilder<XThemeController>(
+      builder: (themeController) => GestureDetector(
+        onTap: () {
+          Get.toNamed('/course-details', arguments: {
+            'programId': program.id,
+            'programType': program.type,
+          });
+        },
+        child: Container(
+          padding: EdgeInsets.all(XSizes.paddingSm),
+          decoration: BoxDecoration(
+            color: themeController.backgroundColor,
+            borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+                  child: program.image.isNotEmpty
+                      ? Image.network(
+                          program.image.startsWith('http') 
+                              ? program.image 
+                              : '${ApiEndpoints.baseUrl}${program.image}',
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: themeController.textColor.withValues(alpha: 0.1),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: themeController.primaryColor,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: themeController.textColor.withValues(alpha: 0.1),
+                            child: Icon(
+                              Icons.image_not_supported,
+                              color: themeController.textColor.withValues(alpha: 0.3),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          color: themeController.textColor.withValues(alpha: 0.1),
+                          child: Icon(
+                            Icons.play_circle_fill,
+                            size: XSizes.iconSizeXl,
+                            color: themeController.primaryColor,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      program.title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: XSizes.textSizeMd,
+                        fontFamily: XFonts.lexend,
+                        color: themeController.textColor,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      program.category?.name ?? 'General',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: XSizes.textSizeXs,
+                        fontFamily: XFonts.lexend,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.amber, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          program.programRating.toString(),
+                          style: TextStyle(
+                            fontFamily: XFonts.lexend,
+                            color: themeController.textColor,
+                            fontSize: XSizes.textSizeXs,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: LinearProgressIndicator(
+                            value: 0.75, // Default progress - you can add progress field to program model
+                            backgroundColor: Colors.grey[300],
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              themeController.primaryColor,
+                            ),
+                            minHeight: 6,
+                            borderRadius: BorderRadius.circular(
+                              XSizes.borderRadiusXxl,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '75%', // Default progress - you can add progress field to program model
+                          style: TextStyle(
+                            fontSize: XSizes.textSizeXs,
+                            color: themeController.textColor,
+                            fontFamily: XFonts.lexend,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

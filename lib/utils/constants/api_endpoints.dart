@@ -20,4 +20,7 @@ class ApiEndpoints {
   
   // Programs endpoints
   static const String programsFilterUrl = '${baseUrl}api/programs/filter';
+  
+  // Landing endpoints
+  static const String landingUrl = '${baseUrl}api/landing';
 }

@@ -565,7 +565,7 @@ class _CourseListScreenState extends State<CourseListScreen>
                 ),
                 SizedBox(height: XSizes.spacingXxs),
                 Text(
-                  program.subtitle,
+                  program.category?.name ?? 'General',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -608,17 +608,6 @@ class _CourseListScreenState extends State<CourseListScreen>
                       ),
                     ),
                   ],
-                ),
-                SizedBox(height: XSizes.spacingXs),
-                Text(
-                  program.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: themeController.textColor.withValues(alpha: 0.6),
-                    fontSize: XSizes.textSizeXxs,
-                    fontFamily: XFonts.lexend,
-                  ),
                 ),
                 SizedBox(height: XSizes.spacingSm),
                 Row(

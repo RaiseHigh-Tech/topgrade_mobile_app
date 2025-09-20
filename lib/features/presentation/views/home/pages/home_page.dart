@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/theme_controller.dart';
+import '../../../controllers/categories_controller.dart';
 import '../../../../../utils/constants/colors.dart';
 import '../../../../../utils/constants/sizes.dart';
 import '../../../../../utils/constants/fonts.dart';
@@ -16,6 +17,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   bool _isLoading = true;
   late AnimationController _shimmerAnimationController;
   late Animation<double> _shimmerAnimation;
+  
+  final CategoriesController _categoriesController = Get.put(CategoriesController());
 
   @override
   void initState() {
@@ -98,7 +101,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       SizedBox(height: XSizes.spacingMd),
                       _isLoading ? _buildShimmerSectionHeader() : _buildSectionHeader("Categories"),
                       SizedBox(height: XSizes.spacingSm),
-                      _isLoading ? _buildShimmerCategories() : _buildCategories(),
+                      _isLoading ? _buildShimmerCategories() : _buildRealCategories(),
                       SizedBox(height: XSizes.spacingMd),
                       _isLoading ? _buildShimmerSectionHeader() : _buildSectionHeader("Suggestions for You", showViewAll: true),
                       const SizedBox(height: 16),
@@ -300,40 +303,87 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildCategories() {
-    final categories = ["Graphic Design", "User Interface", "User Experience"];
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children:
-            categories.map((category) => _buildCategoryChip(category)).toList(),
-      ),
+  Widget _buildRealCategories() {
+    return GetBuilder<XThemeController>(
+      builder: (themeController) => Obx(() {
+        if (_categoriesController.isLoading.value) {
+          return _buildShimmerCategories();
+        }
+        
+        if (_categoriesController.hasError.value) {
+          return Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: XSizes.paddingMd,
+              vertical: XSizes.paddingSm,
+            ),
+            child: Text(
+              'Unable to load categories',
+              style: TextStyle(
+                fontFamily: XFonts.lexend,
+                color: themeController.textColor.withValues(alpha: 0.5),
+                fontSize: XSizes.textSizeXs,
+              ),
+            ),
+          );
+        }
+        
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: _categoriesController.categories
+                .map((category) => _buildCategoryChip(category.name, category.id, themeController))
+                .toList(),
+          ),
+        );
+      }),
     );
   }
 
-  Widget _buildCategoryChip(String label) {
-    return GetBuilder<XThemeController>(
-      builder:
-          (themeController) => Container(
-            margin: EdgeInsets.only(right: XSizes.marginSm),
-            padding: EdgeInsets.symmetric(
-              horizontal: XSizes.paddingLg,
-              vertical: XSizes.paddingSm,
+  Widget _buildCategoryChip(String label, int categoryId, XThemeController themeController) {
+    return GestureDetector(
+      onTap: () {
+        // Navigate to course list with category filter applied
+        Get.toNamed('/course-list', arguments: {'categoryId': categoryId, 'categoryName': label});
+      },
+      child: Container(
+        margin: EdgeInsets.only(right: XSizes.marginSm),
+        padding: EdgeInsets.symmetric(
+          horizontal: XSizes.paddingLg,
+          vertical: XSizes.paddingSm,
+        ),
+        decoration: BoxDecoration(
+          color: themeController.backgroundColor,
+          borderRadius: BorderRadius.circular(XSizes.borderRadiusXl),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: themeController.textColor.withValues(alpha: 0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
-            decoration: BoxDecoration(
-              color: themeController.backgroundColor,
-              borderRadius: BorderRadius.circular(XSizes.borderRadiusXl),
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-            ),
-            child: Text(
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
               label,
               style: TextStyle(
                 fontFamily: XFonts.lexend,
                 color: themeController.textColor,
                 fontSize: XSizes.textSizeXs,
+                fontWeight: FontWeight.w500,
               ),
             ),
-          ),
+            SizedBox(width: XSizes.spacingXs),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 10,
+              color: themeController.textColor.withValues(alpha: 0.5),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

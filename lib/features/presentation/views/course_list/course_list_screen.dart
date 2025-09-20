@@ -45,6 +45,29 @@ class _CourseListScreenState extends State<CourseListScreen>
   @override
   void initState() {
     super.initState();
+    
+    // Check if we came from home page with category filter
+    final arguments = Get.arguments as Map<String, dynamic>?;
+    if (arguments != null) {
+      final categoryId = arguments['categoryId'] as int?;
+      final categoryName = arguments['categoryName'] as String?;
+      
+      if (categoryId != null && categoryName != null) {
+        // Set the category filter and update selected index
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _programsController.filterByCategory(categoryId);
+          // Find and set the correct category index
+          final categories = _categoriesController.displayCategories;
+          final index = categories.indexOf(categoryName);
+          if (index != -1) {
+            setState(() {
+              _selectedCategoryIndex = index;
+            });
+          }
+        });
+      }
+    }
+    
     _searchAnimationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,

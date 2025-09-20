@@ -42,6 +42,7 @@ class _CourseListScreenState extends State<CourseListScreen>
     with TickerProviderStateMixin {
   int _selectedCategoryIndex = 0;
   bool _isSearchVisible = false;
+  bool _isLoading = true;
   String _sortBy = 'Popular'; // Popular, Rating, Price, Recent
   final List<String> _categories = [
     "All",
@@ -54,14 +55,23 @@ class _CourseListScreenState extends State<CourseListScreen>
   final List<String> _sortOptions = ["Popular", "Rating", "Price", "Recent"];
 
   late AnimationController _searchAnimationController;
+  late AnimationController _shimmerAnimationController;
   late Animation<Offset> _searchSlideAnimation;
   late Animation<double> _searchFadeAnimation;
+  late Animation<double> _shimmerAnimation;
 
   @override
   void initState() {
     super.initState();
     _searchAnimationController = AnimationController(
       duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _shimmerAnimationController = AnimationController(
+      duration: const Duration(
+        milliseconds: 2000,
+      ), // Slower animation for better performance
       vsync: this,
     );
 
@@ -81,12 +91,40 @@ class _CourseListScreenState extends State<CourseListScreen>
         curve: Curves.easeInOut,
       ),
     );
+
+    _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
+      CurvedAnimation(
+        parent: _shimmerAnimationController,
+        curve: Curves.easeInOutSine,
+      ),
+    );
+
+    // Start shimmer animation after a short delay to prevent navigation lag
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _shimmerAnimationController.repeat();
+        _simulateLoading();
+      }
+    });
   }
 
   @override
   void dispose() {
     _searchAnimationController.dispose();
+    _shimmerAnimationController.dispose();
     super.dispose();
+  }
+
+  void _simulateLoading() {
+    // Simulate a 1.5-second loading delay (reduced for better UX)
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        _shimmerAnimationController.stop();
+      }
+    });
   }
 
   void _toggleSearch() {
@@ -359,11 +397,20 @@ class _CourseListScreenState extends State<CourseListScreen>
                       },
                     ),
                     SizedBox(height: XSizes.spacingMd),
-                    _buildCategoryTabs(themeController),
+                    _isLoading
+                        ? _buildShimmerCategoryTabs(themeController)
+                        : _buildCategoryTabs(themeController),
                     SizedBox(height: XSizes.spacingMd),
-                    _buildResultsHeader(themeController),
+                    _isLoading
+                        ? _buildShimmerResultsHeader(themeController)
+                        : _buildResultsHeader(themeController),
                     SizedBox(height: XSizes.spacingSm),
-                    Expanded(child: _buildCourseList(themeController)),
+                    Expanded(
+                      child:
+                          _isLoading
+                              ? _buildShimmerCourseList(themeController)
+                              : _buildCourseList(themeController),
+                    ),
                   ],
                 ),
               ),
@@ -781,6 +828,277 @@ class _CourseListScreenState extends State<CourseListScreen>
           ),
         ],
       ),
+    );
+  }
+
+  // Shimmer effect methods
+  Widget _buildShimmerWrapper(Widget child, XThemeController themeController) {
+    return AnimatedBuilder(
+      animation: _shimmerAnimation,
+      builder: (context, child) {
+        return ShaderMask(
+          shaderCallback: (rect) {
+            return LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                themeController.textColor.withValues(alpha: 0.1),
+                themeController.textColor.withValues(alpha: 0.3),
+                themeController.textColor.withValues(alpha: 0.1),
+              ],
+              stops: [
+                (_shimmerAnimation.value - 0.3).clamp(0.0, 1.0),
+                _shimmerAnimation.value.clamp(0.0, 1.0),
+                (_shimmerAnimation.value + 0.3).clamp(0.0, 1.0),
+              ],
+            ).createShader(rect);
+          },
+          child: child,
+        );
+      },
+      child: child,
+    );
+  }
+
+  Widget _buildShimmerCategoryTabs(XThemeController themeController) {
+    return SizedBox(
+      height: XSizes.paddingXl + XSizes.paddingXs,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: 6,
+        itemBuilder: (context, index) {
+          return _buildShimmerWrapper(
+            Container(
+              margin: EdgeInsets.only(right: XSizes.marginSm),
+              padding: EdgeInsets.symmetric(
+                horizontal: XSizes.paddingMd,
+                vertical: XSizes.paddingSm,
+              ),
+              decoration: BoxDecoration(
+                color: themeController.textColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(XSizes.borderRadiusXl),
+              ),
+              child: SizedBox(
+                width: 60 + (index * 10.0), // Varying widths
+                height: 20,
+              ),
+            ),
+            themeController,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildShimmerResultsHeader(XThemeController themeController) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _buildShimmerWrapper(
+          Container(
+            width: 120,
+            height: 16,
+            decoration: BoxDecoration(
+              color: themeController.textColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          themeController,
+        ),
+        _buildShimmerWrapper(
+          Container(
+            width: 100,
+            height: 16,
+            decoration: BoxDecoration(
+              color: themeController.textColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          themeController,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildShimmerCourseCard(XThemeController themeController) {
+    return Container(
+      margin: EdgeInsets.only(bottom: XSizes.marginMd),
+      padding: EdgeInsets.all(XSizes.paddingSm),
+      decoration: BoxDecoration(
+        color: themeController.backgroundColor,
+        borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+        border: Border.all(
+          color: themeController.textColor.withValues(alpha: 0.05),
+          width: XSizes.borderSizeSm,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildShimmerWrapper(
+            Container(
+              width: XSizes.iconSizeXxl + XSizes.paddingXl,
+              height: XSizes.iconSizeXxl + XSizes.paddingXl,
+              decoration: BoxDecoration(
+                color: themeController.textColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(XSizes.borderRadiusSm),
+              ),
+            ),
+            themeController,
+          ),
+          SizedBox(width: XSizes.spacingMd),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildShimmerWrapper(
+                  Container(
+                    width: double.infinity,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: themeController.textColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  themeController,
+                ),
+                SizedBox(height: XSizes.spacingXxs),
+                _buildShimmerWrapper(
+                  Container(
+                    width: 150,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: themeController.textColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  themeController,
+                ),
+                SizedBox(height: XSizes.spacingXs),
+                Row(
+                  children: [
+                    _buildShimmerWrapper(
+                      Container(
+                        width: 60,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: themeController.textColor.withValues(
+                            alpha: 0.1,
+                          ),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      themeController,
+                    ),
+                    SizedBox(width: XSizes.spacingMd),
+                    _buildShimmerWrapper(
+                      Container(
+                        width: 70,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: themeController.textColor.withValues(
+                            alpha: 0.1,
+                          ),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      themeController,
+                    ),
+                  ],
+                ),
+                SizedBox(height: XSizes.spacingXs),
+                _buildShimmerWrapper(
+                  Container(
+                    width: double.infinity,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: themeController.textColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  themeController,
+                ),
+                SizedBox(height: 4),
+                _buildShimmerWrapper(
+                  Container(
+                    width: 200,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: themeController.textColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  themeController,
+                ),
+                SizedBox(height: XSizes.spacingSm),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildShimmerWrapper(
+                          Container(
+                            width: 60,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: themeController.textColor.withValues(
+                                alpha: 0.1,
+                              ),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          themeController,
+                        ),
+                        SizedBox(height: 4),
+                        _buildShimmerWrapper(
+                          Container(
+                            width: 80,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: themeController.textColor.withValues(
+                                alpha: 0.1,
+                              ),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          themeController,
+                        ),
+                      ],
+                    ),
+                    _buildShimmerWrapper(
+                      Container(
+                        width: 90,
+                        height: 35,
+                        decoration: BoxDecoration(
+                          color: themeController.textColor.withValues(
+                            alpha: 0.1,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            XSizes.borderRadiusMd,
+                          ),
+                        ),
+                      ),
+                      themeController,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShimmerCourseList(XThemeController themeController) {
+    return ListView.builder(
+      itemCount: 5, // Reduced from 6 to 5 for better performance
+      physics:
+          const NeverScrollableScrollPhysics(), // Disable scrolling during loading
+      itemBuilder: (context, index) {
+        return _buildShimmerCourseCard(themeController);
+      },
     );
   }
 }

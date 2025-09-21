@@ -1,5 +1,4 @@
 import 'program_model.dart';
-import 'categories_response_model.dart';
 
 class LandingResponseModel {
   final bool success;

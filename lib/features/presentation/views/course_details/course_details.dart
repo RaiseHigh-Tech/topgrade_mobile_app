@@ -4,11 +4,22 @@ import 'package:get/get.dart';
 import 'package:topgrade/features/presentation/views/course_details/tabs/lession_tab.dart';
 import 'package:topgrade/features/presentation/widgets/primary_button.dart';
 import '../../controllers/theme_controller.dart';
+import '../../controllers/course_details_controller.dart';
 import '../../../../utils/constants/sizes.dart';
 import '../../../../utils/constants/fonts.dart';
+import '../../../../utils/constants/api_endpoints.dart';
 
-class CourseDetailsScreen extends StatelessWidget {
+class CourseDetailsScreen extends StatefulWidget {
   const CourseDetailsScreen({super.key});
+
+  @override
+  State<CourseDetailsScreen> createState() => _CourseDetailsScreenState();
+}
+
+class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
+  final CourseDetailsController _controller = Get.put(
+    CourseDetailsController(),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -64,272 +75,321 @@ class CourseDetailsScreen extends StatelessWidget {
               ),
             ],
           ),
-          body: DefaultTabController(
-            length: 2,
-            child: Column(
-              children: [
-                // Fixed Header Section (Non-scrollable)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Image.network(
-                          'https://images.unsplash.com/photo-1521185496955-15097b20c5fe?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fGRlc2lnbnxlbnwwfHwwfHx8MA%3D%3D',
-                          height: 230,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
+          body: Obx(() {
+            if (_controller.isLoading.value) {
+              return _buildLoadingState(themeController);
+            }
+
+            if (_controller.hasError.value) {
+              return _buildErrorState(themeController);
+            }
+
+            if (!_controller.hasData) {
+              return _buildNotFoundState(themeController);
+            }
+
+            final program = _controller.program!;
+
+            return DefaultTabController(
+              length: 3, // Changed to 3 tabs
+              child: Column(
+                children: [
+                  // Fixed Header Section (Non-scrollable)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Image.network(
+                            program.image.startsWith('http')
+                                ? program.image
+                                : '${ApiEndpoints.baseUrl}${program.image}',
+                            height: 230,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder:
+                                (context, error, stackTrace) => Container(
+                                  height: 230,
+                                  width: double.infinity,
+                                  color: themeController.textColor.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  child: Icon(
+                                    Icons.image_not_supported,
+                                    size: 60,
+                                    color: themeController.textColor.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                  ),
+                                ),
+                          ),
+                          Icon(
+                            Icons.play_circle_fill,
+                            color: Colors.white.withValues(alpha: 0.8),
+                            size: XSizes.iconSizeXxl,
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: XSizes.spacingLg),
+                      // Course Title and Info
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: XSizes.paddingMd,
                         ),
-                        Icon(
-                          Icons.play_circle_fill,
-                          color: Colors.white.withValues(alpha: 0.8),
-                          size: XSizes.iconSizeXxl,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              program.title,
+                              style: TextStyle(
+                                fontSize: XSizes.textSizeXl,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: XFonts.lexend,
+                                color: themeController.textColor,
+                              ),
+                            ),
+                            SizedBox(height: XSizes.spacingXs),
+                            Text(
+                              program.subtitle,
+                              style: TextStyle(
+                                fontSize: XSizes.textSizeSm,
+                                color: themeController.primaryColor,
+                                fontFamily: XFonts.lexend,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: XSizes.spacingMd),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.people_outline,
+                                      color: themeController.textColor
+                                          .withValues(alpha: 0.6),
+                                      size: XSizes.iconSizeSm,
+                                    ),
+                                    SizedBox(width: XSizes.spacingXs),
+                                    Text(
+                                      '${program.enrolledStudents} students enrolled',
+                                      style: TextStyle(
+                                        fontSize: XSizes.textSizeXs,
+                                        fontFamily: XFonts.lexend,
+                                        color: themeController.textColor
+                                            .withValues(alpha: 0.6),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    if (program.pricing.discountPercentage >
+                                        0) ...[
+                                      Text(
+                                        '₹ ${program.pricing.originalPrice.toStringAsFixed(0)}',
+                                        style: TextStyle(
+                                          fontSize: XSizes.textSizeSm,
+                                          fontFamily: XFonts.lexend,
+                                          color: themeController.textColor
+                                              .withValues(alpha: 0.5),
+                                          decoration:
+                                              TextDecoration.lineThrough,
+                                        ),
+                                      ),
+                                      Text(
+                                        '₹ ${program.pricing.discountedPrice.toStringAsFixed(0)}',
+                                        style: TextStyle(
+                                          fontSize: XSizes.textSizeLg,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: XFonts.lexend,
+                                          color: themeController.textColor,
+                                        ),
+                                      ),
+                                    ] else ...[
+                                      Text(
+                                        '₹ ${program.pricing.originalPrice.toStringAsFixed(0)}',
+                                        style: TextStyle(
+                                          fontSize: XSizes.textSizeLg,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: XFonts.lexend,
+                                          color: themeController.textColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    SizedBox(height: XSizes.spacingLg),
-                    // Course Title and Info
-                    Padding(
+                      ),
+                      SizedBox(height: XSizes.spacingSm),
+                      // Fixed Tab Bar
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: XSizes.paddingMd,
+                        ),
+                        child: TabBar(
+                          isScrollable: false,
+                          labelColor: themeController.primaryColor,
+                          unselectedLabelColor: themeController.textColor
+                              .withValues(alpha: 0.6),
+                          indicatorColor: themeController.primaryColor,
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          labelStyle: TextStyle(
+                            fontFamily: XFonts.lexend,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          unselectedLabelStyle: TextStyle(
+                            fontFamily: XFonts.lexend,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          tabs: const [
+                            Tab(text: 'Overview'),
+                            Tab(text: 'Lessons'),
+                            Tab(text: 'Reviews'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Scrollable Tab Content
+                  Expanded(
+                    child: Padding(
                       padding: EdgeInsets.symmetric(
                         horizontal: XSizes.paddingMd,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: TabBarView(
                         children: [
-                          Text(
-                            'Typography and Layout Design',
-                            style: TextStyle(
-                              fontSize: XSizes.textSizeXl,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: XFonts.lexend,
-                              color: themeController.textColor,
+                          // Overview Tab - Scrollable
+                          SingleChildScrollView(
+                            padding: EdgeInsets.only(
+                              top: XSizes.spacingLg,
+                              bottom: XSizes.spacingXxl,
                             ),
-                          ),
-                          SizedBox(height: XSizes.spacingXs),
-                          Text(
-                            'Visual Communication College',
-                            style: TextStyle(
-                              fontSize: XSizes.textSizeSm,
-                              color: themeController.primaryColor,
-                              fontFamily: XFonts.lexend,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(height: XSizes.spacingMd),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.people_outline,
-                                    color: themeController.textColor.withValues(
-                                      alpha: 0.6,
-                                    ),
-                                    size: XSizes.iconSizeSm,
-                                  ),
-                                  SizedBox(width: XSizes.spacingXs),
-                                  Text(
-                                    '3.4k students already enrolled',
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                RichText(
+                                  text: TextSpan(
                                     style: TextStyle(
-                                      fontSize: XSizes.textSizeXs,
+                                      fontSize: XSizes.textSizeSm,
                                       fontFamily: XFonts.lexend,
                                       color: themeController.textColor
                                           .withValues(alpha: 0.6),
+                                      height: 1.5,
                                     ),
+                                    children: [
+                                      TextSpan(text: program.description),
+                                      TextSpan(
+                                        text: ' Read More...',
+                                        style: TextStyle(
+                                          color: themeController.primaryColor,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: XFonts.lexend,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                              Text(
-                                '₹ 4,999',
-                                style: TextStyle(
-                                  fontSize: XSizes.textSizeLg,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: XFonts.lexend,
-                                  color: themeController.textColor,
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: XSizes.spacingSm),
-                    // Fixed Tab Bar
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: XSizes.paddingMd,
-                      ),
-                      child: TabBar(
-                        isScrollable: false,
-                        labelColor: themeController.primaryColor,
-                        unselectedLabelColor: themeController.textColor
-                            .withValues(alpha: 0.6),
-                        indicatorColor: themeController.primaryColor,
-                        indicatorSize: TabBarIndicatorSize.tab,
-                        labelStyle: TextStyle(
-                          fontFamily: XFonts.lexend,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        unselectedLabelStyle: TextStyle(
-                          fontFamily: XFonts.lexend,
-                          fontWeight: FontWeight.w400,
-                        ),
-                        tabs: const [
-                          Tab(text: 'Overview'),
-                          Tab(text: 'Lessons'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                // Scrollable Tab Content
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: XSizes.paddingMd),
-                    child: TabBarView(
-                      children: [
-                        // Overview Tab - Scrollable
-                        SingleChildScrollView(
-                          padding: EdgeInsets.only(
-                            top: XSizes.spacingLg,
-                            bottom: XSizes.spacingXxl,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              RichText(
-                                text: TextSpan(
+                                SizedBox(height: XSizes.spacingLg),
+                                // Skills Section
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Skills',
+                                      style: TextStyle(
+                                        fontSize: XSizes.textSizeXl,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: XFonts.lexend,
+                                        color: themeController.textColor,
+                                      ),
+                                    ),
+                                    SizedBox(height: XSizes.spacingSm),
+                                    Wrap(
+                                      spacing: XSizes.spacingSm,
+                                      runSpacing: XSizes.spacingXs,
+                                      children:
+                                          _controller.staticSkills
+                                              .map(
+                                                (skill) => _buildSkillChip(
+                                                  themeController,
+                                                  skill,
+                                                ),
+                                              )
+                                              .toList(),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: XSizes.spacingLg),
+                                // Course Details Section
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildDetailRow(
+                                      themeController: themeController,
+                                      icon: Icons.library_books,
+                                      label: 'Lectures',
+                                      value: '50+ Lectures',
+                                    ),
+                                    SizedBox(height: XSizes.spacingLg),
+                                    _buildDetailRow(
+                                      themeController: themeController,
+                                      icon: Icons.access_time_filled,
+                                      label: 'Learning Time',
+                                      value: '4 Weeks',
+                                    ),
+                                    SizedBox(height: XSizes.spacingLg),
+                                    _buildDetailRow(
+                                      themeController: themeController,
+                                      icon: Icons.workspace_premium,
+                                      label: 'Certification',
+                                      value: 'Online Certificate',
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: XSizes.spacingLg),
+                                // Reviews Section
+                                Text(
+                                  'Reviews',
+                                  style: TextStyle(
+                                    fontSize: XSizes.textSizeXl,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: XFonts.lexend,
+                                    color: themeController.textColor,
+                                  ),
+                                ),
+                                SizedBox(height: XSizes.spacingSm),
+                                // Add some sample reviews for demonstration
+                                Text(
+                                  'Great course! Very comprehensive and well-structured.',
                                   style: TextStyle(
                                     fontSize: XSizes.textSizeSm,
                                     fontFamily: XFonts.lexend,
                                     color: themeController.textColor.withValues(
                                       alpha: 0.6,
                                     ),
-                                    height: 1.5,
-                                  ),
-                                  children: [
-                                    const TextSpan(
-                                      text:
-                                          "Visual Communication College's Typography and Layout Design course explores the art and science of typography and layout composition. Learn how to effectively use typefaces, hierarchy, alignment, and grid systems to create visually compelling designs. Gain hands-on experience in editorial design, branding, and digital layouts. ",
-                                    ),
-                                    TextSpan(
-                                      text: 'Read More...',
-                                      style: TextStyle(
-                                        color: themeController.primaryColor,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: XFonts.lexend,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(height: XSizes.spacingLg),
-                              // Skills Section
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Skills',
-                                    style: TextStyle(
-                                      fontSize: XSizes.textSizeXl,
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: XFonts.lexend,
-                                      color: themeController.textColor,
-                                    ),
-                                  ),
-                                  SizedBox(height: XSizes.spacingSm),
-                                  Wrap(
-                                    spacing: XSizes.spacingSm,
-                                    runSpacing: XSizes.spacingXs,
-                                    children: [
-                                      _buildSkillChip(
-                                        themeController,
-                                        'Typography',
-                                      ),
-                                      _buildSkillChip(
-                                        themeController,
-                                        'Editorial design',
-                                      ),
-                                      _buildSkillChip(
-                                        themeController,
-                                        'Branding',
-                                      ),
-                                      _buildSkillChip(
-                                        themeController,
-                                        'Layout composition',
-                                      ),
-                                      _buildSkillChip(
-                                        themeController,
-                                        'Visual communication',
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: XSizes.spacingLg),
-                              // Course Details Section
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _buildDetailRow(
-                                    themeController: themeController,
-                                    icon: Icons.library_books,
-                                    label: 'Lectures',
-                                    value: '50+ Lectures',
-                                  ),
-                                  SizedBox(height: XSizes.spacingLg),
-                                  _buildDetailRow(
-                                    themeController: themeController,
-                                    icon: Icons.access_time_filled,
-                                    label: 'Learning Time',
-                                    value: '4 Weeks',
-                                  ),
-                                  SizedBox(height: XSizes.spacingLg),
-                                  _buildDetailRow(
-                                    themeController: themeController,
-                                    icon: Icons.workspace_premium,
-                                    label: 'Certification',
-                                    value: 'Online Certificate',
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: XSizes.spacingLg),
-                              // Reviews Section
-                              Text(
-                                'Reviews',
-                                style: TextStyle(
-                                  fontSize: XSizes.textSizeXl,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: XFonts.lexend,
-                                  color: themeController.textColor,
-                                ),
-                              ),
-                              SizedBox(height: XSizes.spacingSm),
-                              // Add some sample reviews for demonstration
-                              Text(
-                                'Great course! Very comprehensive and well-structured.',
-                                style: TextStyle(
-                                  fontSize: XSizes.textSizeSm,
-                                  fontFamily: XFonts.lexend,
-                                  color: themeController.textColor.withValues(
-                                    alpha: 0.6,
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        // Lessons Tab - Scrollable
-                        LessonsTab(),
-                      ],
+                          // Lessons Tab - Scrollable
+                          LessonsTab(),
+                          // Reviews Tab
+                          _buildReviewsTab(themeController),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
+                ],
+              ),
+            );
+          }),
           // Enroll Now Button
           bottomNavigationBar: Padding(
             padding: EdgeInsets.all(XSizes.paddingMd),
@@ -405,5 +465,257 @@ class CourseDetailsScreen extends StatelessWidget {
         vertical: XSizes.paddingXs,
       ),
     );
+  }
+
+  // Loading state
+  Widget _buildLoadingState(XThemeController themeController) {
+    return Center(
+      child: CircularProgressIndicator(color: themeController.primaryColor),
+    );
+  }
+
+  // Error state
+  Widget _buildErrorState(XThemeController themeController) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 64,
+            color: themeController.textColor.withValues(alpha: 0.5),
+          ),
+          SizedBox(height: XSizes.spacingMd),
+          Text(
+            'Error Loading Course',
+            style: TextStyle(
+              fontSize: XSizes.textSizeLg,
+              fontWeight: FontWeight.bold,
+              fontFamily: XFonts.lexend,
+              color: themeController.textColor,
+            ),
+          ),
+          SizedBox(height: XSizes.spacingSm),
+          Text(
+            _controller.errorMessage.value,
+            style: TextStyle(
+              fontSize: XSizes.textSizeSm,
+              fontFamily: XFonts.lexend,
+              color: themeController.textColor.withValues(alpha: 0.6),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: XSizes.spacingLg),
+          ElevatedButton(
+            onPressed: () => _controller.retry(),
+            child: Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Not found state
+  Widget _buildNotFoundState(XThemeController themeController) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_off,
+            size: 64,
+            color: themeController.textColor.withValues(alpha: 0.5),
+          ),
+          SizedBox(height: XSizes.spacingMd),
+          Text(
+            'Course Not Found',
+            style: TextStyle(
+              fontSize: XSizes.textSizeLg,
+              fontWeight: FontWeight.bold,
+              fontFamily: XFonts.lexend,
+              color: themeController.textColor,
+            ),
+          ),
+          SizedBox(height: XSizes.spacingSm),
+          Text(
+            'The course you are looking for does not exist.',
+            style: TextStyle(
+              fontSize: XSizes.textSizeSm,
+              fontFamily: XFonts.lexend,
+              color: themeController.textColor.withValues(alpha: 0.6),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Reviews tab content
+  Widget _buildReviewsTab(XThemeController themeController) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.only(
+        top: XSizes.spacingLg,
+        bottom: XSizes.spacingXxl,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Reviews header with rating
+          Row(
+            children: [
+              Text(
+                'Reviews',
+                style: TextStyle(
+                  fontSize: XSizes.textSizeXl,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: XFonts.lexend,
+                  color: themeController.textColor,
+                ),
+              ),
+              Spacer(),
+              Row(
+                children: [
+                  Icon(
+                    Icons.star,
+                    color: Colors.amber.shade600,
+                    size: XSizes.iconSizeSm,
+                  ),
+                  SizedBox(width: XSizes.spacingXs),
+                  Text(
+                    _controller.program?.programRating.toString() ?? '0.0',
+                    style: TextStyle(
+                      fontSize: XSizes.textSizeMd,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: XFonts.lexend,
+                      color: themeController.textColor,
+                    ),
+                  ),
+                  SizedBox(width: XSizes.spacingXs),
+                  Text(
+                    '(${_controller.staticReviews.length} reviews)',
+                    style: TextStyle(
+                      fontSize: XSizes.textSizeSm,
+                      fontFamily: XFonts.lexend,
+                      color: themeController.textColor.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          SizedBox(height: XSizes.spacingLg),
+          // Reviews list
+          ...(_controller.staticReviews
+              .map((review) => _buildReviewCard(themeController, review))
+              .toList()),
+        ],
+      ),
+    );
+  }
+
+  // Individual review card
+  Widget _buildReviewCard(XThemeController themeController, dynamic review) {
+    return Container(
+      margin: EdgeInsets.only(bottom: XSizes.spacingLg),
+      padding: EdgeInsets.all(XSizes.paddingMd),
+      decoration: BoxDecoration(
+        color: themeController.backgroundColor,
+        borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+        border: Border.all(
+          color: themeController.textColor.withValues(alpha: 0.1),
+          width: XSizes.borderSizeSm,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundImage: NetworkImage(review.userAvatar),
+                backgroundColor: themeController.textColor.withValues(
+                  alpha: 0.1,
+                ),
+              ),
+              SizedBox(width: XSizes.spacingMd),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review.userName,
+                      style: TextStyle(
+                        fontSize: XSizes.textSizeMd,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: XFonts.lexend,
+                        color: themeController.textColor,
+                      ),
+                    ),
+                    SizedBox(height: XSizes.spacingXxs),
+                    Row(
+                      children: [
+                        Row(
+                          children: List.generate(
+                            5,
+                            (index) => Icon(
+                              index < review.rating.floor()
+                                  ? Icons.star
+                                  : Icons.star_border,
+                              color: Colors.amber.shade600,
+                              size: XSizes.iconSizeXs,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: XSizes.spacingSm),
+                        Text(
+                          _formatReviewDate(review.reviewDate),
+                          style: TextStyle(
+                            fontSize: XSizes.textSizeXs,
+                            fontFamily: XFonts.lexend,
+                            color: themeController.textColor.withValues(
+                              alpha: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: XSizes.spacingMd),
+          Text(
+            review.reviewText,
+            style: TextStyle(
+              fontSize: XSizes.textSizeSm,
+              fontFamily: XFonts.lexend,
+              color: themeController.textColor.withValues(alpha: 0.8),
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method to format review date
+  String _formatReviewDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date).inDays;
+
+    if (difference == 0) {
+      return 'Today';
+    } else if (difference == 1) {
+      return 'Yesterday';
+    } else if (difference < 7) {
+      return '$difference days ago';
+    } else if (difference < 30) {
+      return '${(difference / 7).floor()} weeks ago';
+    } else {
+      return '${(difference / 30).floor()} months ago';
+    }
   }
 }

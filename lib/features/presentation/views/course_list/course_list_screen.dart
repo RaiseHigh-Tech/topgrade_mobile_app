@@ -439,296 +439,320 @@ class _CourseListScreenState extends State<CourseListScreen>
   }
 
   Widget _buildProgramCard(dynamic program, XThemeController themeController) {
-    return Container(
-      margin: EdgeInsets.only(bottom: XSizes.marginMd),
-      padding: EdgeInsets.all(XSizes.paddingSm),
-      decoration: BoxDecoration(
-        color: themeController.backgroundColor,
-        borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
-        border: Border.all(
-          color: themeController.textColor.withValues(alpha: 0.2),
-          width: XSizes.borderSizeSm,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: themeController.textColor.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () {
+        Get.toNamed(
+          '/course-details',
+          arguments: {'programId': program.id, 'programType': program.type},
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.only(bottom: XSizes.marginMd),
+        padding: EdgeInsets.all(XSizes.paddingSm),
+        decoration: BoxDecoration(
+          color: themeController.backgroundColor,
+          borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+          border: Border.all(
+            color: themeController.textColor.withValues(alpha: 0.2),
+            width: XSizes.borderSizeSm,
           ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(XSizes.borderRadiusSm),
-            child: Stack(
-              children: [
-                Container(
-                  width: XSizes.iconSizeXxl + XSizes.paddingXl,
-                  height: XSizes.iconSizeXxl + XSizes.paddingXl,
-                  color: themeController.textColor.withValues(alpha: 0.1),
-                  child:
-                      program.image.isNotEmpty
-                          ? Image.network(
-                            program.image.startsWith('http')
-                                ? program.image
-                                : '${ApiEndpoints.baseUrl}${program.image}',
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) {
-                                return child;
-                              }
-                              return Container(
-                                width: XSizes.iconSizeXxl + XSizes.paddingXl,
-                                height: XSizes.iconSizeXxl + XSizes.paddingXl,
-                                color: themeController.textColor.withValues(
-                                  alpha: 0.05,
-                                ),
-                                child: Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: themeController.primaryColor,
-                                          value:
-                                              loadingProgress
-                                                          .expectedTotalBytes !=
-                                                      null
-                                                  ? loadingProgress
-                                                          .cumulativeBytesLoaded /
-                                                      loadingProgress
-                                                          .expectedTotalBytes!
-                                                  : null,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        loadingProgress.expectedTotalBytes !=
-                                                null
-                                            ? '${((loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!) * 100).toInt()}%'
-                                            : 'Loading...',
-                                        style: TextStyle(
-                                          fontSize: 8,
-                                          color: themeController.textColor
-                                              .withValues(alpha: 0.6),
-                                          fontFamily: XFonts.lexend,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                            errorBuilder:
-                                (context, error, stackTrace) => Container(
+          boxShadow: [
+            BoxShadow(
+              color: themeController.textColor.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(XSizes.borderRadiusSm),
+              child: Stack(
+                children: [
+                  Container(
+                    width: XSizes.iconSizeXxl + XSizes.paddingXl,
+                    height: XSizes.iconSizeXxl + XSizes.paddingXl,
+                    color: themeController.textColor.withValues(alpha: 0.1),
+                    child:
+                        program.image.isNotEmpty
+                            ? Image.network(
+                              program.image.startsWith('http')
+                                  ? program.image
+                                  : '${ApiEndpoints.baseUrl}${program.image}',
+                              fit: BoxFit.cover,
+                              loadingBuilder: (
+                                context,
+                                child,
+                                loadingProgress,
+                              ) {
+                                if (loadingProgress == null) {
+                                  return child;
+                                }
+                                return Container(
                                   width: XSizes.iconSizeXxl + XSizes.paddingXl,
                                   height: XSizes.iconSizeXxl + XSizes.paddingXl,
                                   color: themeController.textColor.withValues(
                                     alpha: 0.05,
                                   ),
-                                  child: Icon(
-                                    Icons.image_not_supported,
-                                    size: XSizes.iconSizeXl,
-                                    color: themeController.textColor.withValues(
-                                      alpha: 0.3,
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: themeController.primaryColor,
+                                            value:
+                                                loadingProgress
+                                                            .expectedTotalBytes !=
+                                                        null
+                                                    ? loadingProgress
+                                                            .cumulativeBytesLoaded /
+                                                        loadingProgress
+                                                            .expectedTotalBytes!
+                                                    : null,
+                                          ),
+                                        ),
+                                        SizedBox(height: 4),
+                                        Text(
+                                          loadingProgress.expectedTotalBytes !=
+                                                  null
+                                              ? '${((loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!) * 100).toInt()}%'
+                                              : 'Loading...',
+                                          style: TextStyle(
+                                            fontSize: 8,
+                                            color: themeController.textColor
+                                                .withValues(alpha: 0.6),
+                                            fontFamily: XFonts.lexend,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                          )
-                          : Container(
-                            width: XSizes.iconSizeXxl + XSizes.paddingXl,
-                            height: XSizes.iconSizeXxl + XSizes.paddingXl,
-                            color: themeController.textColor.withValues(
-                              alpha: 0.05,
+                                );
+                              },
+                              errorBuilder:
+                                  (context, error, stackTrace) => Container(
+                                    width:
+                                        XSizes.iconSizeXxl + XSizes.paddingXl,
+                                    height:
+                                        XSizes.iconSizeXxl + XSizes.paddingXl,
+                                    color: themeController.textColor.withValues(
+                                      alpha: 0.05,
+                                    ),
+                                    child: Icon(
+                                      Icons.image_not_supported,
+                                      size: XSizes.iconSizeXl,
+                                      color: themeController.textColor
+                                          .withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                            )
+                            : Container(
+                              width: XSizes.iconSizeXxl + XSizes.paddingXl,
+                              height: XSizes.iconSizeXxl + XSizes.paddingXl,
+                              color: themeController.textColor.withValues(
+                                alpha: 0.05,
+                              ),
+                              child: Icon(
+                                Icons.play_circle_fill,
+                                size: XSizes.iconSizeXl,
+                                color: themeController.primaryColor,
+                              ),
                             ),
-                            child: Icon(
-                              Icons.play_circle_fill,
-                              size: XSizes.iconSizeXl,
-                              color: themeController.primaryColor,
-                            ),
+                  ),
+                  if (program.pricing.isFree || program.isBestSeller)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              program.pricing.isFree
+                                  ? Colors.green
+                                  : Colors.orange,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          program.pricing.isFree ? 'FREE' : 'BEST',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: XFonts.lexend,
                           ),
-                ),
-                if (program.pricing.isFree || program.isBestSeller)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            program.pricing.isFree
-                                ? Colors.green
-                                : Colors.orange,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        program.pricing.isFree ? 'FREE' : 'BEST',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: XFonts.lexend,
                         ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-          SizedBox(width: XSizes.spacingMd),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  program.title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: XSizes.textSizeSm,
-                    color: themeController.textColor,
-                    fontFamily: XFonts.lexend,
+            SizedBox(width: XSizes.spacingMd),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    program.title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: XSizes.textSizeSm,
+                      color: themeController.textColor,
+                      fontFamily: XFonts.lexend,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: XSizes.spacingXxs),
-                Text(
-                  program.category?.name ?? 'General',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: themeController.textColor.withValues(alpha: 0.6),
-                    fontSize: XSizes.textSizeXs,
-                    fontFamily: XFonts.lexend,
+                  SizedBox(height: XSizes.spacingXxs),
+                  Text(
+                    program.category?.name ?? 'General',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: themeController.textColor.withValues(alpha: 0.6),
+                      fontSize: XSizes.textSizeXs,
+                      fontFamily: XFonts.lexend,
+                    ),
                   ),
-                ),
-                SizedBox(height: XSizes.spacingXs),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.star,
-                      color: Colors.amber.shade600,
-                      size: XSizes.iconSizeXs,
-                    ),
-                    SizedBox(width: XSizes.spacingXs),
-                    Text(
-                      program.programRating.toString(),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: XSizes.textSizeXs,
-                        color: themeController.textColor,
-                        fontFamily: XFonts.lexend,
+                  SizedBox(height: XSizes.spacingXs),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.star,
+                        color: Colors.amber.shade600,
+                        size: XSizes.iconSizeXs,
                       ),
-                    ),
-                    SizedBox(width: XSizes.spacingMd),
-                    Icon(
-                      Icons.access_time,
-                      color: themeController.textColor.withValues(alpha: 0.5),
-                      size: XSizes.iconSizeXs,
-                    ),
-                    SizedBox(width: XSizes.spacingXs),
-                    Text(
-                      program.duration,
-                      style: TextStyle(
-                        fontSize: XSizes.textSizeXs,
-                        color: themeController.textColor.withValues(alpha: 0.6),
-                        fontFamily: XFonts.lexend,
+                      SizedBox(width: XSizes.spacingXs),
+                      Text(
+                        program.programRating.toString(),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: XSizes.textSizeXs,
+                          color: themeController.textColor,
+                          fontFamily: XFonts.lexend,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: XSizes.spacingSm),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (program.pricing.isFree)
-                          Text(
-                            'FREE',
-                            style: TextStyle(
-                              fontSize: XSizes.textSizeSm,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                              fontFamily: XFonts.lexend,
-                            ),
-                          )
-                        else
-                          Text(
-                            '\$${program.pricing.finalPrice.toStringAsFixed(2)}',
-                            style: TextStyle(
-                              fontSize: XSizes.textSizeSm,
-                              fontWeight: FontWeight.bold,
-                              color: themeController.primaryColor,
-                              fontFamily: XFonts.lexend,
-                            ),
+                      SizedBox(width: XSizes.spacingMd),
+                      Icon(
+                        Icons.access_time,
+                        color: themeController.textColor.withValues(alpha: 0.5),
+                        size: XSizes.iconSizeXs,
+                      ),
+                      SizedBox(width: XSizes.spacingXs),
+                      Text(
+                        program.duration,
+                        style: TextStyle(
+                          fontSize: XSizes.textSizeXs,
+                          color: themeController.textColor.withValues(
+                            alpha: 0.6,
                           ),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.group,
-                              color: themeController.textColor.withValues(
-                                alpha: 0.5,
-                              ),
-                              size: XSizes.iconSizeXs,
-                            ),
-                            SizedBox(width: XSizes.spacingXs),
+                          fontFamily: XFonts.lexend,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: XSizes.spacingSm),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (program.pricing.isFree)
                             Text(
-                              '${program.enrolledStudents} students',
+                              'FREE',
                               style: TextStyle(
-                                color: themeController.textColor.withValues(
-                                  alpha: 0.6,
-                                ),
-                                fontSize: XSizes.textSizeXxs,
+                                fontSize: XSizes.textSizeSm,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                                fontFamily: XFonts.lexend,
+                              ),
+                            )
+                          else
+                            Text(
+                              '\$${program.pricing.finalPrice.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: XSizes.textSizeSm,
+                                fontWeight: FontWeight.bold,
+                                color: themeController.primaryColor,
                                 fontFamily: XFonts.lexend,
                               ),
                             ),
-                          ],
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.group,
+                                color: themeController.textColor.withValues(
+                                  alpha: 0.5,
+                                ),
+                                size: XSizes.iconSizeXs,
+                              ),
+                              SizedBox(width: XSizes.spacingXs),
+                              Text(
+                                '${program.enrolledStudents} students',
+                                style: TextStyle(
+                                  color: themeController.textColor.withValues(
+                                    alpha: 0.6,
+                                  ),
+                                  fontSize: XSizes.textSizeXxs,
+                                  fontFamily: XFonts.lexend,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Get.toNamed(
+                            '/course-details',
+                            arguments: {
+                              'programId': program.id,
+                              'programType': program.type,
+                            },
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: themeController.primaryColor,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          minimumSize: const Size(90, 35),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              XSizes.borderRadiusMd,
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Get.toNamed('/course-details');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: themeController.primaryColor,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        minimumSize: const Size(90, 35),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            XSizes.borderRadiusMd,
+                        child: Text(
+                          program.pricing.isFree
+                              ? 'Enroll Free'
+                              : 'View Details',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontFamily: XFonts.lexend,
+                            fontSize: XSizes.textSizeXs,
                           ),
                         ),
                       ),
-                      child: Text(
-                        program.pricing.isFree ? 'Enroll Free' : 'View Details',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontFamily: XFonts.lexend,
-                          fontSize: XSizes.textSizeXs,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -15,6 +15,8 @@ import '../model/categories_response_model.dart';
 import '../model/programs_filter_response_model.dart';
 import '../model/landing_response_model.dart';
 import '../model/bookmarks_response_model.dart';
+import '../model/my_learnings_response_model.dart';
+import '../model/program_details_response_model.dart';
 
 abstract class RemoteSource {
   final DioClient dio;
@@ -77,6 +79,13 @@ abstract class RemoteSource {
   Future<LandingResponseModel> getLandingData();
 
   Future<BookmarksResponseModel> getBookmarks();
+
+  Future<MyLearningsResponseModel> getMyLearnings({String? status});
+  
+  Future<ProgramDetailsResponseModel> getProgramDetails({
+    required String programType,
+    required int programId,
+  });
 }
 
 class RemoteSourceImpl extends RemoteSource {
@@ -667,6 +676,108 @@ class RemoteSourceImpl extends RemoteSource {
             case 404:
               // No bookmarks found
               final message = responseData['message'] ?? 'No bookmarks found';
+              throw ResponseException(message: message);
+            case 500:
+              // Server error
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          // Network error
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
+      // Other exceptions
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<MyLearningsResponseModel> getMyLearnings({String? status}) async {
+    try {
+      String url = ApiEndpoints.myLearningsUrl;
+      
+      // Add status query parameter if provided
+      if (status != null && status.isNotEmpty) {
+        url += '?status=$status';
+      }
+      
+      final response = await dio.get(url);
+
+      if (response.statusCode == 200) {
+        return MyLearningsResponseModel.fromJson(response.data);
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 401:
+              // Unauthorized
+              final message = responseData['message'] ?? 'Authentication required';
+              throw ResponseException(message: message);
+            case 404:
+              // No learnings found
+              final message = responseData['message'] ?? 'No learnings found';
+              throw ResponseException(message: message);
+            case 500:
+              // Server error
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          // Network error
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
+      // Other exceptions
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<ProgramDetailsResponseModel> getProgramDetails({
+    required String programType,
+    required int programId,
+  }) async {
+    try {
+      final url = '${ApiEndpoints.baseUrl}api/program/$programType/$programId/details';
+      
+      final response = await dio.get(url);
+
+      if (response.statusCode == 200) {
+        return ProgramDetailsResponseModel.fromJson(response.data);
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 401:
+              // Unauthorized
+              final message = responseData['message'] ?? 'Authentication required';
+              throw ResponseException(message: message);
+            case 404:
+              // Program not found
+              final message = responseData['message'] ?? 'Program not found';
               throw ResponseException(message: message);
             case 500:
               // Server error

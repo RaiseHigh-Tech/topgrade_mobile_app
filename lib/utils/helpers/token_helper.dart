@@ -61,4 +61,25 @@ class TokenHelper {
            refreshToken != null && 
            refreshToken.isNotEmpty;
   }
+  
+  /// Update only the access token (keep refresh token unchanged)
+  static Future<void> updateAccessToken(String newAccessToken) async {
+    await _secureStorage.write(key: _accessTokenKey, value: newAccessToken);
+  }
+  
+  /// Check if refresh token exists
+  static Future<bool> hasRefreshToken() async {
+    final refreshToken = await getRefreshToken();
+    return refreshToken != null && refreshToken.isNotEmpty;
+  }
+  
+  /// Get all stored tokens as a map
+  static Future<Map<String, String?>> getAllTokens() async {
+    final accessToken = await getAccessToken();
+    final refreshToken = await getRefreshToken();
+    return {
+      'access_token': accessToken,
+      'refresh_token': refreshToken,
+    };
+  }
 }

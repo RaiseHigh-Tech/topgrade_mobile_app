@@ -40,6 +40,7 @@ class ProgramDetailsModel {
   final String duration;
   final double programRating;
   final bool isBestSeller;
+  final bool isBookmarked;
   final int enrolledStudents;
   final PricingModel pricing;
 
@@ -54,6 +55,7 @@ class ProgramDetailsModel {
     required this.duration,
     required this.programRating,
     required this.isBestSeller,
+    required this.isBookmarked,
     required this.enrolledStudents,
     required this.pricing,
   });
@@ -70,6 +72,7 @@ class ProgramDetailsModel {
       duration: json['duration'] ?? '',
       programRating: (json['program_rating'] ?? 0.0).toDouble(),
       isBestSeller: json['is_best_seller'] ?? false,
+      isBookmarked: json['is_bookmarked'] ?? false,
       enrolledStudents: json['enrolled_students'] ?? 0,
       pricing: PricingModel.fromJson(json['pricing'] ?? {}),
     );
@@ -87,6 +90,7 @@ class ProgramDetailsModel {
       'duration': duration,
       'program_rating': programRating,
       'is_best_seller': isBestSeller,
+      'is_bookmarked': isBookmarked,
       'enrolled_students': enrolledStudents,
       'pricing': pricing.toJson(),
     };
@@ -160,28 +164,22 @@ class ModuleModel {
 class TopicModel {
   final int id;
   final String topicTitle;
-  final bool isFreeTrail;
-  final bool isIntro;
-  final bool isLocked;
   final String videoUrl;
+  final String? videoDuration;
 
   TopicModel({
     required this.id,
     required this.topicTitle,
-    required this.isFreeTrail,
-    required this.isIntro,
-    required this.isLocked,
     required this.videoUrl,
+    this.videoDuration,
   });
 
   factory TopicModel.fromJson(Map<String, dynamic> json) {
     return TopicModel(
       id: json['id'] ?? 0,
       topicTitle: json['topic_title'] ?? '',
-      isFreeTrail: json['is_free_trail'] ?? false,
-      isIntro: json['is_intro'] ?? false,
-      isLocked: json['is_locked'] ?? false,
       videoUrl: json['video_url'] ?? '',
+      videoDuration: json['video_duration'],
     );
   }
 
@@ -189,10 +187,9 @@ class TopicModel {
     return {
       'id': id,
       'topic_title': topicTitle,
-      'is_free_trail': isFreeTrail,
-      'is_intro': isIntro,
-      'is_locked': isLocked,
       'video_url': videoUrl,
+      'video_duration': videoDuration,
+
     };
   }
 }

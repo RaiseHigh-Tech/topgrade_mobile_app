@@ -19,13 +19,13 @@ class CourseDetailsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    
+
     // Get arguments from navigation
     final args = Get.arguments as Map<String, dynamic>?;
     if (args != null) {
       programType = args['programType'] ?? 'program';
       programId = args['programId'] ?? 0;
-      
+
       if (programId > 0) {
         fetchProgramDetails();
       } else {
@@ -50,7 +50,7 @@ class CourseDetailsController extends GetxController {
         programType: programType,
         programId: programId,
       );
-      
+
       if (response.success) {
         programDetails.value = response;
       } else {
@@ -74,11 +74,12 @@ class CourseDetailsController extends GetxController {
   bool get hasData => programDetails.value != null;
   ProgramDetailsModel? get program => programDetails.value?.program;
   SyllabusModel? get syllabus => programDetails.value?.syllabus;
-  
+  bool get isBookmarked => program?.isBookmarked ?? false;
+
+
   // Get static skills data (will be replaced with API data later)
   List<String> get staticSkills => [
     'Typography',
-    'Layout Design',
     'Grid Systems',
     'Color Theory',
     'Visual Hierarchy',
@@ -90,25 +91,31 @@ class CourseDetailsController extends GetxController {
     ReviewModel(
       id: 1,
       userName: 'Sarah Johnson',
-      userAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b593?w=150&h=150&fit=crop&crop=face',
+      userAvatar:
+          'https://images.unsplash.com/photo-1494790108755-2616b612b593?w=150&h=150&fit=crop&crop=face',
       rating: 5.0,
-      reviewText: 'Excellent course! The instructor explains complex typography concepts in a very clear and practical way.',
+      reviewText:
+          'Excellent course! The instructor explains complex typography concepts in a very clear and practical way.',
       reviewDate: DateTime.now().subtract(Duration(days: 7)),
     ),
     ReviewModel(
       id: 2,
       userName: 'Michael Chen',
-      userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+      userAvatar:
+          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
       rating: 4.5,
-      reviewText: 'Great content and hands-on projects. Really helped me improve my design skills.',
+      reviewText:
+          'Great content and hands-on projects. Really helped me improve my design skills.',
       reviewDate: DateTime.now().subtract(Duration(days: 14)),
     ),
     ReviewModel(
       id: 3,
       userName: 'Emily Rodriguez',
-      userAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+      userAvatar:
+          'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
       rating: 5.0,
-      reviewText: 'The best typography course I\'ve taken. Highly recommend for both beginners and advanced designers.',
+      reviewText:
+          'The best typography course I\'ve taken. Highly recommend for both beginners and advanced designers.',
       reviewDate: DateTime.now().subtract(Duration(days: 21)),
     ),
   ];

@@ -32,7 +32,7 @@ class CategoriesController extends GetxController {
       errorMessage.value = '';
 
       final response = await _remoteSource.getCategories();
-      
+
       if (response.success) {
         categories.value = response.categories;
       } else {
@@ -42,7 +42,6 @@ class CategoriesController extends GetxController {
     } catch (e) {
       hasError.value = true;
       errorMessage.value = e.toString();
-      print('Error fetching categories: $e');
     } finally {
       isLoading.value = false;
     }

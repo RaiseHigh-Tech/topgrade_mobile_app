@@ -7,25 +7,6 @@ import '../../../../../utils/constants/sizes.dart';
 import '../../../../../utils/constants/fonts.dart';
 import '../../../../../utils/constants/api_endpoints.dart';
 
-// A simple data model for a course
-class Course {
-  final String title;
-  final String institution;
-  final double rating;
-  final String description;
-  final int studentCount;
-  final String imageUrl;
-
-  Course({
-    required this.title,
-    required this.institution,
-    required this.rating,
-    required this.description,
-    required this.studentCount,
-    required this.imageUrl,
-  });
-}
-
 class MyLearningPage extends StatefulWidget {
   const MyLearningPage({super.key});
 
@@ -34,7 +15,7 @@ class MyLearningPage extends StatefulWidget {
 }
 
 class _MyLearningPageState extends State<MyLearningPage>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   final BookmarksController _bookmarksController = Get.put(
     BookmarksController(),
   );
@@ -42,26 +23,12 @@ class _MyLearningPageState extends State<MyLearningPage>
     MyLearningsController(),
   );
 
-  // Refresh my learning data
-  Future<void> _refreshMyLearningData() async {
-    // Refresh both bookmarks and my learnings data
-    await Future.wait([
-      _bookmarksController.refreshBookmarks(),
-      _myLearningsController.refreshLearnings(),
-    ]);
-  }
-
-  int _selectedFilterIndex = 0;
-  bool _isSearchVisible = false;
-  final List<String> _filters = ["Saved Courses", "In Progress", "Completed"];
-
-  late AnimationController _searchAnimationController;
-  late Animation<Offset> _searchSlideAnimation;
-  late Animation<double> _searchFadeAnimation;
-
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    
+    // Initialize search animation controller
     _searchAnimationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -83,13 +50,52 @@ class _MyLearningPageState extends State<MyLearningPage>
         curve: Curves.easeInOut,
       ),
     );
+    
+    // Refresh data when the page is initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshMyLearningData();
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchAnimationController.dispose();
     super.dispose();
   }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Refresh when app comes to foreground
+      _bookmarksController.fetchBookmarks();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh bookmarks when returning to this page
+    _bookmarksController.fetchBookmarks();
+  }
+
+  // Refresh my learning data
+  Future<void> _refreshMyLearningData() async {
+    // Refresh both bookmarks and my learnings data
+    await Future.wait([
+      _bookmarksController.refreshBookmarks(),
+      _myLearningsController.refreshLearnings(),
+    ]);
+  }
+
+  int _selectedFilterIndex = 0;
+  bool _isSearchVisible = false;
+  final List<String> _filters = ["Saved Courses", "In Progress", "Completed"];
+
+  late AnimationController _searchAnimationController;
+  late Animation<Offset> _searchSlideAnimation;
+  late Animation<double> _searchFadeAnimation;
+
 
   void _toggleSearch() {
     setState(() {
@@ -102,41 +108,6 @@ class _MyLearningPageState extends State<MyLearningPage>
       _searchAnimationController.reverse();
     }
   }
-
-  // Dummy data representing
-  // the list of courses
-  final List<Course> courses = [
-    Course(
-      title: 'Branding and Identity Design',
-      institution: 'Brand Strategy College',
-      rating: 4.4,
-      description:
-          'This course explores the fundamentals of branding, brand strategy, and visual identity design. Learn how to ...',
-      studentCount: 1457,
-      imageUrl:
-          'https://images.unsplash.com/photo-1558655146-364adaf1fcc9?w=500',
-    ),
-    Course(
-      title: 'Game Design and Development',
-      institution: 'Game Development Academy',
-      rating: 4.4,
-      description:
-          'Visual Communication College\'s Typography and Layout Design course explores the art and science of...',
-      studentCount: 5679,
-      imageUrl:
-          'https://images.unsplash.com/photo-1580327344181-c1163234e5a0?w=500', // Placeholder
-    ),
-    Course(
-      title: 'Animation and Motion Graphics',
-      institution: 'Animation Institute of Digital Arts',
-      rating: 4.7,
-      description:
-          'This course in Animation and Motion Graphics. Learn the principles of animation, 2D and 3D animation...',
-      studentCount: 2679,
-      imageUrl:
-          'https://images.unsplash.com/photo-1579566346927-c68383817a25?w=500', // Placeholder
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -264,7 +235,6 @@ class _MyLearningPageState extends State<MyLearningPage>
       ),
     );
   }
-
 
   Widget _buildCourseList(XThemeController themeController) {
     // Check which tab is selected

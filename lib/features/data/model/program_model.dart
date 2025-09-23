@@ -11,8 +11,10 @@ class ProgramModel {
   final String duration;
   final double programRating;
   final bool isBestSeller;
+  final bool isBookmarked;
   final int enrolledStudents;
   final PricingModel pricing;
+  final ProgressModel? progress;
 
   ProgramModel({
     required this.id,
@@ -25,8 +27,10 @@ class ProgramModel {
     required this.duration,
     required this.programRating,
     required this.isBestSeller,
+    required this.isBookmarked,
     required this.enrolledStudents,
     required this.pricing,
+    this.progress,
   });
 
   factory ProgramModel.fromJson(Map<String, dynamic> json) {
@@ -43,8 +47,12 @@ class ProgramModel {
       duration: json['duration'] ?? '',
       programRating: (json['program_rating'] ?? 0.0).toDouble(),
       isBestSeller: json['is_best_seller'] ?? false,
+      isBookmarked: json['is_bookmarked'] ?? false,
       enrolledStudents: json['enrolled_students'] ?? 0,
       pricing: PricingModel.fromJson(json['pricing'] ?? {}),
+      progress: json['progress'] != null 
+          ? ProgressModel.fromJson(json['progress']) 
+          : null,
     );
   }
 
@@ -60,8 +68,10 @@ class ProgramModel {
       'duration': duration,
       'program_rating': programRating,
       'is_best_seller': isBestSeller,
+      'is_bookmarked': isBookmarked,
       'enrolled_students': enrolledStudents,
       'pricing': pricing.toJson(),
+      'progress': progress?.toJson(),
     };
   }
 }
@@ -100,4 +110,48 @@ class PricingModel {
   bool get isFree => originalPrice == 0.0 && discountedPrice == 0.0;
   
   double get finalPrice => discountedPrice > 0 ? discountedPrice : originalPrice;
+}
+
+class ProgressModel {
+  final double percentage;
+  final String status;
+  final String? lastWatchedAt;
+  final String? lastWatchedTopic;
+  final int? completedTopics;
+  final int? totalTopics;
+
+  ProgressModel({
+    required this.percentage,
+    required this.status,
+    this.lastWatchedAt,
+    this.lastWatchedTopic,
+    this.completedTopics,
+    this.totalTopics,
+  });
+
+  factory ProgressModel.fromJson(Map<String, dynamic> json) {
+    return ProgressModel(
+      percentage: (json['percentage'] ?? 0.0).toDouble(),
+      status: json['status'] ?? '',
+      lastWatchedAt: json['last_watched_at'],
+      lastWatchedTopic: json['last_watched_topic'],
+      completedTopics: json['completed_topics'],
+      totalTopics: json['total_topics'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'percentage': percentage,
+      'status': status,
+      'last_watched_at': lastWatchedAt,
+      'last_watched_topic': lastWatchedTopic,
+      'completed_topics': completedTopics,
+      'total_topics': totalTopics,
+    };
+  }
+
+  bool get isCompleted => percentage >= 100.0;
+  bool get isInProgress => percentage > 0.0 && percentage < 100.0;
+  bool get isNotStarted => percentage == 0.0;
 }

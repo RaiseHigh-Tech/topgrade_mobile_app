@@ -534,7 +534,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    program.title,
+                    program.subtitle,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(

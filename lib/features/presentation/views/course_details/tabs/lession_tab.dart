@@ -3,27 +3,8 @@ import 'package:get/get.dart';
 import '../../../../../utils/constants/fonts.dart';
 import '../../../../../utils/constants/sizes.dart';
 import '../../../controllers/theme_controller.dart';
-
-class SubTopic {
-  final String title;
-  final String duration;
-  final bool isLocked;
-
-  SubTopic({required this.title, required this.duration, this.isLocked = true});
-}
-
-/// Represents a main lesson section, which can be expanded.
-class Lesson {
-  final String title;
-  final List<SubTopic> subTopics;
-  bool isExpanded;
-
-  Lesson({
-    required this.title,
-    required this.subTopics,
-    this.isExpanded = false,
-  });
-}
+import '../../../controllers/course_details_controller.dart';
+import '../../../../data/model/program_details_response_model.dart';
 
 class LessonsTab extends StatefulWidget {
   const LessonsTab({super.key});
@@ -33,28 +14,104 @@ class LessonsTab extends StatefulWidget {
 }
 
 class _LessonsTabState extends State<LessonsTab> {
-  late final List<Lesson> _lessons;
+  late final CourseDetailsController _controller;
 
   @override
   void initState() {
     super.initState();
-    _lessons = _getLessonsData();
+    _controller = Get.find<CourseDetailsController>();
   }
 
   @override
   Widget build(BuildContext context) {
     return GetBuilder<XThemeController>(
-      builder:
-          (themeController) => SingleChildScrollView(
-            padding: EdgeInsets.only(
-              top: XSizes.spacingLg,
-              bottom: XSizes.spacingXxl,
+      builder: (themeController) => Obx(() {
+        // Show loading state
+        if (_controller.isLoading.value) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(XSizes.spacingXl),
+              child: CircularProgressIndicator(
+                color: themeController.primaryColor,
+              ),
             ),
-            child: Column(
-              children:
-                  _lessons.asMap().entries.map((entry) {
-                    int index = entry.key;
-                    Lesson lesson = entry.value;
+          );
+        }
+
+        // Show error state
+        if (_controller.hasError.value) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(XSizes.spacingXl),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: themeController.textColor.withValues(alpha: 0.5),
+                  ),
+                  SizedBox(height: XSizes.spacingMd),
+                  Text(
+                    'Failed to load syllabus',
+                    style: TextStyle(
+                      fontSize: XSizes.textSizeSm,
+                      fontFamily: XFonts.lexend,
+                      fontWeight: FontWeight.w500,
+                      color: themeController.textColor.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  SizedBox(height: XSizes.spacingSm),
+                  ElevatedButton(
+                    onPressed: () => _controller.retry(),
+                    child: Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Show syllabus data
+        final syllabus = _controller.syllabus;
+        if (syllabus == null || syllabus.modules.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(XSizes.spacingXl),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.school_outlined,
+                    size: 48,
+                    color: themeController.textColor.withValues(alpha: 0.5),
+                  ),
+                  SizedBox(height: XSizes.spacingMd),
+                  Text(
+                    'No syllabus available',
+                    style: TextStyle(
+                      fontSize: XSizes.textSizeSm,
+                      fontFamily: XFonts.lexend,
+                      fontWeight: FontWeight.w500,
+                      color: themeController.textColor.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return SingleChildScrollView(
+          padding: EdgeInsets.only(
+            top: XSizes.spacingLg,
+            bottom: XSizes.spacingXxl,
+          ),
+          child: Column(
+            children:
+                  syllabus.modules.asMap().entries.map((entry) {
+                    int moduleIndex = entry.key;
+                    ModuleModel module = entry.value;
                     return Container(
                       margin: EdgeInsets.only(bottom: XSizes.spacingMd),
                       decoration: BoxDecoration(
@@ -73,11 +130,9 @@ class _LessonsTabState extends State<LessonsTab> {
                           ),
                         ),
                         child: ExpansionTile(
-                          initiallyExpanded: lesson.isExpanded,
+                          initiallyExpanded: moduleIndex == 0, // First module expanded
                           onExpansionChanged: (bool expanded) {
-                            setState(() {
-                              lesson.isExpanded = expanded;
-                            });
+                            // Remove setState since we're not tracking expansion state
                           },
                           tilePadding: EdgeInsets.symmetric(
                             horizontal: XSizes.paddingMd,
@@ -107,7 +162,7 @@ class _LessonsTabState extends State<LessonsTab> {
                                 ),
                                 child: Center(
                                   child: Text(
-                                    '${index + 1}',
+                                    '${moduleIndex + 1}',
                                     style: TextStyle(
                                       fontSize: XSizes.textSizeXs,
                                       fontWeight: FontWeight.w700,
@@ -121,7 +176,7 @@ class _LessonsTabState extends State<LessonsTab> {
                               // Display title without serial number
                               Expanded(
                                 child: Text(
-                                  lesson.title,
+                                  module.moduleTitle,
                                   style: TextStyle(
                                     fontSize: XSizes.textSizeSm,
                                     fontWeight: FontWeight.w600,
@@ -133,7 +188,7 @@ class _LessonsTabState extends State<LessonsTab> {
                             ],
                           ),
                           children:
-                              lesson.subTopics.map((subTopic) {
+                              module.topics.map((topic) {
                                 return Container(
                                   margin: EdgeInsets.only(
                                     bottom: XSizes.spacingSm,
@@ -159,7 +214,7 @@ class _LessonsTabState extends State<LessonsTab> {
                                         height: XSizes.iconSizeMd,
                                         decoration: BoxDecoration(
                                           color:
-                                              subTopic.isLocked
+                                              topic.videoUrl.isEmpty
                                                   ? themeController.textColor
                                                       .withValues(alpha: 0.1)
                                                   : themeController.primaryColor
@@ -167,12 +222,12 @@ class _LessonsTabState extends State<LessonsTab> {
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
-                                          subTopic.isLocked
+                                          topic.videoUrl.isEmpty
                                               ? Icons.lock
                                               : Icons.play_arrow,
                                           size: XSizes.iconSizeXs,
                                           color:
-                                              subTopic.isLocked
+                                              topic.videoUrl.isEmpty
                                                   ? themeController.textColor
                                                       .withValues(alpha: 0.4)
                                                   : themeController
@@ -182,13 +237,13 @@ class _LessonsTabState extends State<LessonsTab> {
                                       SizedBox(width: XSizes.spacingMd),
                                       Expanded(
                                         child: Text(
-                                          subTopic.title,
+                                          topic.topicTitle,
                                           style: TextStyle(
                                             fontSize: XSizes.textSizeXs,
                                             fontFamily: XFonts.lexend,
                                             fontWeight: FontWeight.w400,
                                             color:
-                                                subTopic.isLocked
+                                                topic.videoUrl.isEmpty
                                                     ? themeController.textColor
                                                         .withValues(alpha: 0.5)
                                                     : themeController.textColor
@@ -209,7 +264,7 @@ class _LessonsTabState extends State<LessonsTab> {
                                           ),
                                         ),
                                         child: Text(
-                                          subTopic.duration,
+                                          topic.videoDuration ?? 'N/A',
                                           style: TextStyle(
                                             fontSize: XSizes.textSizeXs,
                                             fontFamily: XFonts.lexend,
@@ -228,54 +283,9 @@ class _LessonsTabState extends State<LessonsTab> {
                     );
                   }).toList(),
             ),
-          ),
+          );
+        },
+      ),
     );
-  }
-
-  // --- Dummy Data Source for Lessons ---
-  List<Lesson> _getLessonsData() {
-    return [
-      Lesson(
-        title: 'Introduction to Mobile Applications',
-        isExpanded: true, // Initially expanded as in the image
-        subTopics: [
-          SubTopic(
-            title: 'Brief history of mobile applications',
-            duration: '2:00',
-            isLocked: false,
-          ),
-          SubTopic(
-            title: 'Brief history of mobile applications',
-            duration: '15:00',
-            isLocked: true,
-          ),
-          SubTopic(
-            title: 'Brief history of mobile applications',
-            duration: '22:00',
-            isLocked: true,
-          ),
-        ],
-      ),
-      Lesson(
-        title: 'Introduction to Android',
-        subTopics: [SubTopic(title: '...', duration: '...')],
-      ),
-      Lesson(
-        title: 'Android Architecture',
-        subTopics: [SubTopic(title: '...', duration: '...')],
-      ),
-      Lesson(
-        title: 'Preparing Android Developement',
-        subTopics: [SubTopic(title: '...', duration: '...')],
-      ),
-      Lesson(
-        title: 'Creating First Android Application',
-        subTopics: [SubTopic(title: '...', duration: '...')],
-      ),
-      Lesson(
-        title: 'Android Application Component - Part 1',
-        subTopics: [SubTopic(title: '...', duration: '...')],
-      ),
-    ];
   }
 }

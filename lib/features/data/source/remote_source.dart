@@ -80,6 +80,16 @@ abstract class RemoteSource {
 
   Future<BookmarksResponseModel> getBookmarks();
 
+  Future<Map<String, dynamic>> addBookmark({
+    required String programType,
+    required int programId,
+  });
+
+  Future<Map<String, dynamic>> removeBookmark({
+    required String programType,
+    required int programId,
+  });
+
   Future<MyLearningsResponseModel> getMyLearnings({String? status});
   
   Future<ProgramDetailsResponseModel> getProgramDetails({
@@ -691,6 +701,110 @@ class RemoteSourceImpl extends RemoteSource {
         }
       }
       // Other exceptions
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> addBookmark({
+    required String programType,
+    required int programId,
+  }) async {
+    try {
+      final response = await dio.post(
+        ApiEndpoints.addBookmarkUrl,
+        data: {
+          'program_type': programType,
+          'program_id': programId,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 400:
+              final message = responseData['message'] ?? 'Invalid request parameters';
+              throw ResponseException(message: message);
+            case 401:
+              final message = responseData['message'] ?? 'Authentication required';
+              throw ResponseException(message: message);
+            case 404:
+              final message = responseData['message'] ?? 'Program not found';
+              throw ResponseException(message: message);
+            case 500:
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> removeBookmark({
+    required String programType,
+    required int programId,
+  }) async {
+    try {
+      final response = await dio.delete(
+        ApiEndpoints.removeBookmarkUrl,
+        data: {
+          'program_type': programType,
+          'program_id': programId,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 400:
+              final message = responseData['message'] ?? 'Invalid request parameters';
+              throw ResponseException(message: message);
+            case 401:
+              final message = responseData['message'] ?? 'Authentication required';
+              throw ResponseException(message: message);
+            case 404:
+              final message = responseData['message'] ?? 'Bookmark not found';
+              throw ResponseException(message: message);
+            case 500:
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
       throw ServerException(message: e.toString());
     }
   }

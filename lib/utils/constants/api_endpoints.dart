@@ -28,6 +28,8 @@ class ApiEndpoints {
 
   // Bookmarks endpoints
   static const String bookmarksUrl = '${baseUrl}api/bookmarks';
+  static const String addBookmarkUrl = '${baseUrl}api/bookmark';
+  static const String removeBookmarkUrl = '${baseUrl}api/bookmark';
 
   // My Learnings endpoints
   static const String myLearningsUrl = '${baseUrl}api/my-learnings';

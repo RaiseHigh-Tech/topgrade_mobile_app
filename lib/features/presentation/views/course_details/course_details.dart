@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Add this import
+import 'package:flutter/services.dart'; 
 import 'package:get/get.dart';
 import 'package:topgrade/features/presentation/views/course_details/tabs/lession_tab.dart';
 import 'package:topgrade/features/presentation/widgets/primary_button.dart';
 import '../../controllers/theme_controller.dart';
 import '../../controllers/course_details_controller.dart';
+import '../../controllers/bookmarks_controller.dart';
 import '../../../../utils/constants/sizes.dart';
 import '../../../../utils/constants/fonts.dart';
 import '../../../../utils/constants/api_endpoints.dart';
@@ -19,6 +20,9 @@ class CourseDetailsScreen extends StatefulWidget {
 class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   final CourseDetailsController _controller = Get.put(
     CourseDetailsController(),
+  );
+  final BookmarksController _bookmarksController = Get.put(
+    BookmarksController(),
   );
 
   @override
@@ -57,8 +61,16 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
               ),
             ),
             actions: [
-              GestureDetector(
-                onTap: () => Get.back(),
+              Obx(() => GestureDetector(
+                onTap: _bookmarksController.isBookmarkLoading.value ? null : () async {
+                  await _bookmarksController.toggleBookmark(
+                    programType: _controller.programType,
+                    programId: _controller.programId,
+                    currentBookmarkStatus: _controller.isBookmarked,
+                  );
+                  // Refresh program details to update bookmark status
+                  _controller.fetchProgramDetails();
+                },
                 child: Container(
                   margin: EdgeInsets.only(
                     right: XSizes.paddingMd,
@@ -67,12 +79,28 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                   ),
                   padding: EdgeInsets.all(XSizes.spacingSm),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: _bookmarksController.isBookmarkLoading.value
+                        ? Colors.black.withValues(alpha: 0.2)
+                        : Colors.black.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(XSizes.borderRadiusLg),
                   ),
-                  child: const Icon(Icons.bookmark_border, color: Colors.white),
+                  child: _bookmarksController.isBookmarkLoading.value
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Icon(
+                          _controller.isBookmarked 
+                              ? Icons.bookmark 
+                              : Icons.bookmark_border,
+                          color: Colors.white,
+                        ),
                 ),
-              ),
+              )),
             ],
           ),
           body: Obx(() {

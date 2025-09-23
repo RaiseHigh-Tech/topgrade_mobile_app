@@ -82,6 +82,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               fontWeight: FontWeight.w600,
               color: themeController.textColor,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           )),
           actions: [
             IconButton(
@@ -172,7 +174,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   ),
                 ],
               ),
-              if (_controller.currentVideo.value?.description != null) ...[
+              if (_controller.currentVideo.value?.description != null && _controller.currentVideo.value!.description!.isNotEmpty) ...[
                 SizedBox(height: XSizes.spacingMd),
                 Text(
                   _controller.currentVideo.value!.description!,
@@ -435,13 +437,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             ),
           ),
           
-          // Playlist Items
+          // Playlist Items with Module Structure
           Expanded(
             child: Obx(() => ListView.builder(
-              itemCount: _controller.playlist.length,
-              itemBuilder: (context, index) {
-                final video = _controller.playlist[index];
-                final isCurrentVideo = index == _controller.currentVideoIndex.value;
+              itemCount: _controller.moduleStructure.length,
+              itemBuilder: (context, moduleIndex) {
+                final module = _controller.moduleStructure[moduleIndex];
                 
                 return Container(
                   margin: EdgeInsets.symmetric(
@@ -449,82 +450,163 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     vertical: XSizes.marginXs,
                   ),
                   decoration: BoxDecoration(
-                    color: isCurrentVideo
-                        ? themeController.primaryColor.withValues(alpha: 0.1)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(XSizes.borderRadiusSm),
-                    border: isCurrentVideo
-                        ? Border.all(color: themeController.primaryColor.withValues(alpha: 0.3))
-                        : null,
-                  ),
-                  child: ListTile(
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: XSizes.paddingSm,
-                      vertical: XSizes.paddingXs,
+                    color: themeController.backgroundColor,
+                    border: Border.all(
+                      color: themeController.textColor.withValues(alpha: 0.1),
+                      width: 1,
                     ),
-                    leading: Container(
-                      width: 60,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: themeController.textColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(XSizes.borderRadiusXs),
-                      ),
-                      child: Stack(
-                        children: [
-                          Center(
-                            child: Icon(
-                              isCurrentVideo ? Icons.play_arrow : Icons.play_circle_outline,
-                              color: isCurrentVideo
-                                  ? themeController.primaryColor
-                                  : themeController.textColor.withValues(alpha: 0.5),
-                              size: 20,
-                            ),
-                          ),
-                          if (isCurrentVideo)
-                            Positioned(
-                              bottom: 2,
-                              right: 2,
-                              child: Container(
-                                width: 8,
-                                height: 8,
+                    borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+                  ),
+                  child: Column(
+                    children: [
+                      // Module Header
+                      InkWell(
+                        onTap: () => _controller.toggleModuleExpansion(module.id),
+                        borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+                        child: Container(
+                          padding: EdgeInsets.all(XSizes.paddingSm),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: XSizes.iconSizeLg,
+                                height: XSizes.iconSizeLg,
                                 decoration: BoxDecoration(
-                                  color: themeController.primaryColor,
+                                  color: themeController.primaryColor.withValues(alpha: 0.1),
                                   shape: BoxShape.circle,
                                 ),
+                                child: Center(
+                                  child: Text(
+                                    '${moduleIndex + 1}',
+                                    style: TextStyle(
+                                      fontSize: XSizes.textSizeXs,
+                                      fontFamily: XFonts.lexend,
+                                      fontWeight: FontWeight.w600,
+                                      color: themeController.primaryColor,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                        ],
+                              SizedBox(width: XSizes.spacingSm),
+                              Expanded(
+                                child: Text(
+                                  module.title,
+                                  style: TextStyle(
+                                    fontSize: XSizes.textSizeSm,
+                                    fontFamily: XFonts.lexend,
+                                    fontWeight: FontWeight.w600,
+                                    color: themeController.textColor,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                module.isExpanded 
+                                    ? Icons.keyboard_arrow_up 
+                                    : Icons.keyboard_arrow_down,
+                                color: themeController.textColor.withValues(alpha: 0.6),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                    title: Text(
-                      video.title,
-                      style: TextStyle(
-                        fontSize: XSizes.textSizeSm,
-                        fontFamily: XFonts.lexend,
-                        fontWeight: isCurrentVideo ? FontWeight.w600 : FontWeight.w400,
-                        color: isCurrentVideo
-                            ? themeController.primaryColor
-                            : themeController.textColor,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(
-                      video.duration,
-                      style: TextStyle(
-                        fontSize: XSizes.textSizeXs,
-                        fontFamily: XFonts.lexend,
-                        color: themeController.textColor.withValues(alpha: 0.6),
-                      ),
-                    ),
-                    trailing: isCurrentVideo
-                        ? Icon(
-                            Icons.volume_up,
-                            color: themeController.primaryColor,
-                            size: 16,
-                          )
-                        : null,
-                    onTap: () => _controller.playVideoAtIndex(index),
+                      
+                      // Module Topics
+                      if (module.isExpanded)
+                        Container(
+                          color: themeController.backgroundColor,
+                          child: Column(
+                            children: module.videos.map((video) {
+                              final videoIndex = _controller.playlist.indexWhere((v) => v.id == video.id);
+                              final isCurrentVideo = videoIndex == _controller.currentVideoIndex.value;
+                              
+                              return Container(
+                                margin: EdgeInsets.only(
+                                  left: XSizes.marginMd,
+                                  right: XSizes.marginSm,
+                                  bottom: XSizes.marginXs,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isCurrentVideo
+                                      ? themeController.primaryColor.withValues(alpha: 0.1)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(XSizes.borderRadiusSm),
+                                  border: isCurrentVideo
+                                      ? Border.all(color: themeController.primaryColor.withValues(alpha: 0.3))
+                                      : null,
+                                ),
+                                child: ListTile(
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: XSizes.paddingSm,
+                                    vertical: XSizes.paddingXs,
+                                  ),
+                                  leading: Container(
+                                    width: 50,
+                                    height: 35,
+                                    decoration: BoxDecoration(
+                                      color: themeController.textColor.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(XSizes.borderRadiusXs),
+                                    ),
+                                    child: Stack(
+                                      children: [
+                                        Center(
+                                          child: Icon(
+                                            isCurrentVideo ? Icons.play_arrow : Icons.play_circle_outline,
+                                            color: isCurrentVideo
+                                                ? themeController.primaryColor
+                                                : themeController.textColor.withValues(alpha: 0.5),
+                                            size: 18,
+                                          ),
+                                        ),
+                                        if (isCurrentVideo)
+                                          Positioned(
+                                            bottom: 2,
+                                            right: 2,
+                                            child: Container(
+                                              width: 6,
+                                              height: 6,
+                                              decoration: BoxDecoration(
+                                                color: themeController.primaryColor,
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  title: Text(
+                                    video.title,
+                                    style: TextStyle(
+                                      fontSize: XSizes.textSizeXs,
+                                      fontFamily: XFonts.lexend,
+                                      fontWeight: isCurrentVideo ? FontWeight.w600 : FontWeight.w400,
+                                      color: isCurrentVideo
+                                          ? themeController.primaryColor
+                                          : themeController.textColor,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  subtitle: Text(
+                                    video.duration,
+                                    style: TextStyle(
+                                      fontSize: XSizes.textSizeXs - 1,
+                                      fontFamily: XFonts.lexend,
+                                      color: themeController.textColor.withValues(alpha: 0.6),
+                                    ),
+                                  ),
+                                  trailing: isCurrentVideo
+                                      ? Icon(
+                                          Icons.volume_up,
+                                          color: themeController.primaryColor,
+                                          size: 14,
+                                        )
+                                      : null,
+                                  onTap: () => _controller.playVideoAtIndex(videoIndex),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                    ],
                   ),
                 );
               },

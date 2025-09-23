@@ -224,19 +224,63 @@ class _LessonsTabState extends State<LessonsTab> {
                                         ),
                                         child: GestureDetector(
                                           onTap: topic.videoUrl.isEmpty ? null : () {
-                                            // Navigate to video player
+                                            // Navigate to video player with server data
                                             print('🎬 Navigating to video player...');
+                                            print('Topic ID: ${topic.id}');
                                             print('Topic: ${topic.topicTitle}');
                                             print('Module: ${module.moduleTitle}');
+                                            print('Video URL: ${topic.videoUrl}');
                                             
                                             try {
-                                              Get.toNamed(XRoutes.videoPlayer, arguments: {
-                                                'videoTitle': topic.topicTitle,
-                                                'moduleTitle': module.moduleTitle,
-                                              });
-                                              print('✅ Navigation initiated successfully');
+                                              // Get syllabus data from controller
+                                              final syllabusData = _controller.syllabus;
+                                              
+                                              if (syllabusData != null) {
+                                                // Convert syllabus to JSON-like structure for video player
+                                                final syllabusJson = {
+                                                  'total_modules': syllabusData.totalModules,
+                                                  'total_topics': syllabusData.totalTopics,
+                                                  'modules': syllabusData.modules.map((m) => {
+                                                    'id': m.id,
+                                                    'module_title': m.moduleTitle,
+                                                    'topics_count': m.topicsCount,
+                                                    'topics': m.topics.map((t) => {
+                                                      'id': t.id,
+                                                      'topic_title': t.topicTitle,
+                                                      'video_url': t.videoUrl,
+                                                      'video_duration': t.videoDuration,
+                                                    }).toList(),
+                                                  }).toList(),
+                                                };
+                                                
+                                                Get.toNamed(XRoutes.videoPlayer, arguments: {
+                                                  'syllabus': syllabusJson,
+                                                  'currentTopicId': topic.id,
+                                                  'videoTitle': topic.topicTitle,
+                                                  'moduleTitle': module.moduleTitle,
+                                                  'programTitle': _controller.program?.title ?? 'Course',
+                                                });
+                                                
+                                                print('✅ Navigation with server data initiated');
+                                              } else {
+                                                // Fallback to simple navigation
+                                                Get.toNamed(XRoutes.videoPlayer, arguments: {
+                                                  'videoTitle': topic.topicTitle,
+                                                  'moduleTitle': module.moduleTitle,
+                                                });
+                                                print('⚠️ Navigation with basic data (no syllabus)');
+                                              }
                                             } catch (e) {
                                               print('❌ Navigation error: $e');
+                                              
+                                              // Show error message to user
+                                              Get.snackbar(
+                                                'Error',
+                                                'Failed to open video player: ${e.toString()}',
+                                                backgroundColor: Colors.red,
+                                                colorText: Colors.white,
+                                                duration: Duration(seconds: 3),
+                                              );
                                             }
                                           },
                                           child: Icon(

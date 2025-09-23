@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:topgrade/features/presentation/views/course_details/course_details.dart';
 import 'package:topgrade/features/presentation/views/course_list/course_list_screen.dart';
 import 'package:topgrade/features/presentation/views/intrest/intrest_screen.dart';
+import 'package:topgrade/features/presentation/views/video_player/video_player_screen.dart';
 
 import '../views/auth/signin_screen.dart';
 import '../views/auth/signin_mobile_screen.dart';
@@ -21,6 +22,7 @@ class XRoutes {
   static const String interest = '/interest';
   static const String courseDetails = '/course-details';
   static const String courseList = '/course-list';
+  static const String videoPlayer = '/video-player';
 
   static List<GetPage> routes = [
     GetPage(name: onboarding, page: () => const OnboardingScreen()),
@@ -35,6 +37,11 @@ class XRoutes {
       name: courseList,
       page: () => const CourseListScreen(),
       transition: Transition.fade,
+    ),
+    GetPage(
+      name: videoPlayer,
+      page: () => const VideoPlayerScreen(),
+      transition: Transition.fadeIn,
     ),
   ];
 }

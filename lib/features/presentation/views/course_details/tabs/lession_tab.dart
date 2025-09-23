@@ -4,6 +4,7 @@ import '../../../../../utils/constants/fonts.dart';
 import '../../../../../utils/constants/sizes.dart';
 import '../../../controllers/theme_controller.dart';
 import '../../../controllers/course_details_controller.dart';
+import '../../../routes/routes.dart';
 import '../../../../data/model/program_details_response_model.dart';
 
 class LessonsTab extends StatefulWidget {
@@ -221,17 +222,35 @@ class _LessonsTabState extends State<LessonsTab> {
                                                       .withValues(alpha: 0.1),
                                           shape: BoxShape.circle,
                                         ),
-                                        child: Icon(
-                                          topic.videoUrl.isEmpty
-                                              ? Icons.lock
-                                              : Icons.play_arrow,
-                                          size: XSizes.iconSizeXs,
-                                          color:
-                                              topic.videoUrl.isEmpty
-                                                  ? themeController.textColor
-                                                      .withValues(alpha: 0.4)
-                                                  : themeController
-                                                      .primaryColor,
+                                        child: GestureDetector(
+                                          onTap: topic.videoUrl.isEmpty ? null : () {
+                                            // Navigate to video player
+                                            print('🎬 Navigating to video player...');
+                                            print('Topic: ${topic.topicTitle}');
+                                            print('Module: ${module.moduleTitle}');
+                                            
+                                            try {
+                                              Get.toNamed(XRoutes.videoPlayer, arguments: {
+                                                'videoTitle': topic.topicTitle,
+                                                'moduleTitle': module.moduleTitle,
+                                              });
+                                              print('✅ Navigation initiated successfully');
+                                            } catch (e) {
+                                              print('❌ Navigation error: $e');
+                                            }
+                                          },
+                                          child: Icon(
+                                            topic.videoUrl.isEmpty
+                                                ? Icons.lock
+                                                : Icons.play_arrow,
+                                            size: XSizes.iconSizeXs,
+                                            color:
+                                                topic.videoUrl.isEmpty
+                                                    ? themeController.textColor
+                                                        .withValues(alpha: 0.4)
+                                                    : themeController
+                                                        .primaryColor,
+                                          ),
                                         ),
                                       ),
                                       SizedBox(width: XSizes.spacingMd),

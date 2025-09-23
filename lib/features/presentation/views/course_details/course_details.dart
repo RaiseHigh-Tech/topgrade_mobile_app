@@ -6,6 +6,7 @@ import 'package:topgrade/features/presentation/widgets/primary_button.dart';
 import '../../controllers/theme_controller.dart';
 import '../../controllers/course_details_controller.dart';
 import '../../controllers/bookmarks_controller.dart';
+import '../../routes/routes.dart';
 import '../../../../utils/constants/sizes.dart';
 import '../../../../utils/constants/fonts.dart';
 import '../../../../utils/constants/api_endpoints.dart';
@@ -61,6 +62,22 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
               ),
             ),
             actions: [
+              // Test Video Player Button
+              IconButton(
+                icon: Icon(Icons.play_circle, color: Colors.red, size: 30),
+                onPressed: () {
+                  print('🧪 Test video player button pressed');
+                  try {
+                    Get.toNamed(XRoutes.videoPlayer, arguments: {
+                      'videoTitle': 'Test Video',
+                      'moduleTitle': 'Test Module',
+                    });
+                    print('✅ Test navigation initiated');
+                  } catch (e) {
+                    print('❌ Test navigation error: $e');
+                  }
+                },
+              ),
               Obx(() => GestureDetector(
                 onTap: _bookmarksController.isBookmarkLoading.value ? null : () async {
                   await _bookmarksController.toggleBookmark(

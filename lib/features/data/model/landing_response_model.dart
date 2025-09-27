@@ -18,14 +18,6 @@ class LandingResponseModel {
       counts: LandingCountsModel.fromJson(json['counts'] ?? {}),
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'success': success,
-      'data': data.toJson(),
-      'counts': counts.toJson(),
-    };
-  }
 }
 
 class LandingCountsModel {
@@ -55,17 +47,6 @@ class LandingCountsModel {
       continueWatching: json['continue_watching'] ?? 0,
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'top_course': topCourse,
-      'recently_added': recentlyAdded,
-      'featured': featured,
-      'programs': programs,
-      'advanced_programs': advancedPrograms,
-      'continue_watching': continueWatching,
-    };
-  }
 }
 
 class LandingDataModel {
@@ -87,42 +68,37 @@ class LandingDataModel {
 
   factory LandingDataModel.fromJson(Map<String, dynamic> json) {
     return LandingDataModel(
-      topCourse: (json['top_course'] as List<dynamic>?)
+      topCourse:
+          (json['top_course'] as List<dynamic>?)
               ?.map((item) => ProgramModel.fromJson(item))
               .toList() ??
           [],
-      recentlyAdded: (json['recently_added'] as List<dynamic>?)
+      recentlyAdded:
+          (json['recently_added'] as List<dynamic>?)
               ?.map((item) => ProgramModel.fromJson(item))
               .toList() ??
           [],
-      featured: (json['featured'] as List<dynamic>?)
+      featured:
+          (json['featured'] as List<dynamic>?)
               ?.map((item) => ProgramModel.fromJson(item))
               .toList() ??
           [],
-      programs: (json['programs'] as List<dynamic>?)
+      programs:
+          (json['programs'] as List<dynamic>?)
               ?.map((item) => ProgramModel.fromJson(item))
               .toList() ??
           [],
-      advancedPrograms: (json['advanced_programs'] as List<dynamic>?)
+      advancedPrograms:
+          (json['advanced_programs'] as List<dynamic>?)
               ?.map((item) => ProgramModel.fromJson(item))
               .toList() ??
           [],
-      continueWatching: (json['continue_watching'] as List<dynamic>?)
+      continueWatching:
+          (json['continue_watching'] as List<dynamic>?)
               ?.map((item) => ProgramModel.fromJson(item))
               .toList() ??
           [],
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'top_course': topCourse.map((program) => program.toJson()).toList(),
-      'recently_added': recentlyAdded.map((program) => program.toJson()).toList(),
-      'featured': featured.map((program) => program.toJson()).toList(),
-      'programs': programs.map((program) => program.toJson()).toList(),
-      'advanced_programs': advancedPrograms.map((program) => program.toJson()).toList(),
-      'continue_watching': continueWatching.map((program) => program.toJson()).toList(),
-    };
   }
 }
 
@@ -146,14 +122,5 @@ class LandingStatsModel {
       totalInstructors: json['total_instructors'] ?? 0,
       averageRating: (json['average_rating'] ?? 0.0).toDouble(),
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'total_programs': totalPrograms,
-      'total_students': totalStudents,
-      'total_instructors': totalInstructors,
-      'average_rating': averageRating,
-    };
   }
 }

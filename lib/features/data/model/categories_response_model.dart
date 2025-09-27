@@ -19,14 +19,6 @@ class CategoriesResponseModel {
           [],
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'success': success,
-      'count': count,
-      'categories': categories.map((category) => category.toJson()).toList(),
-    };
-  }
 }
 
 class CategoryModel {

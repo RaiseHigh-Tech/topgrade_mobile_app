@@ -2,7 +2,6 @@ import 'categories_response_model.dart';
 
 class ProgramModel {
   final int id;
-  final String type;
   final String title;
   final String subtitle;
   final String description;
@@ -18,7 +17,6 @@ class ProgramModel {
 
   ProgramModel({
     required this.id,
-    required this.type,
     required this.title,
     required this.subtitle,
     required this.description,
@@ -36,7 +34,6 @@ class ProgramModel {
   factory ProgramModel.fromJson(Map<String, dynamic> json) {
     return ProgramModel(
       id: json['id'] ?? 0,
-      type: json['type'] ?? '',
       title: json['title'] ?? '',
       subtitle: json['subtitle'] ?? '',
       description: json['description'] ?? '',
@@ -59,7 +56,6 @@ class ProgramModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'type': type,
       'title': title,
       'subtitle': subtitle,
       'description': description,

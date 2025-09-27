@@ -424,7 +424,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 '/course-details',
                 arguments: {
                   'programId': program.id,
-                  'programType': program.type,
                 },
               );
             },

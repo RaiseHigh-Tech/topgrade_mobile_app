@@ -13,7 +13,6 @@ class CourseDetailsController extends GetxController {
   var hasError = false.obs;
 
   // Arguments from navigation
-  late String programType;
   late int programId;
 
   @override
@@ -23,7 +22,6 @@ class CourseDetailsController extends GetxController {
     // Get arguments from navigation
     final args = Get.arguments as Map<String, dynamic>?;
     if (args != null) {
-      programType = args['programType'] ?? 'program';
       programId = args['programId'] ?? 0;
 
       if (programId > 0) {
@@ -47,7 +45,6 @@ class CourseDetailsController extends GetxController {
       errorMessage.value = '';
 
       final response = await _remoteSource.getProgramDetails(
-        programType: programType,
         programId: programId,
       );
 

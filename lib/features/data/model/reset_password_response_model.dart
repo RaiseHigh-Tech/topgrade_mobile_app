@@ -18,18 +18,6 @@ class ResetPasswordResponseModel {
     );
   }
 
-  /// Convert ResetPasswordResponseModel to JSON
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = {
-      'success': success,
-      'message': message,
-    };
-    
-    if (otp != null) data['otp'] = otp;
-    
-    return data;
-  }
-
   /// Check if response contains OTP
   bool get hasOtp => otp != null;
 
@@ -38,25 +26,4 @@ class ResetPasswordResponseModel {
 
   /// Check if this is a successful password reset response (Step 3)
   bool get isPasswordResetSuccess => success;
-
-  @override
-  String toString() {
-    return 'ResetPasswordResponseModel(success: $success, message: $message, hasOtp: $hasOtp)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is ResetPasswordResponseModel &&
-        other.success == success &&
-        other.message == message &&
-        other.otp == otp;
-  }
-
-  @override
-  int get hashCode {
-    return success.hashCode ^
-        message.hashCode ^
-        otp.hashCode;
-  }
 }

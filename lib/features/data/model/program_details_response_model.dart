@@ -19,14 +19,6 @@ class ProgramDetailsResponseModel {
       syllabus: SyllabusModel.fromJson(json['syllabus'] ?? {}),
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'success': success,
-      'program': program.toJson(),
-      'syllabus': syllabus.toJson(),
-    };
-  }
 }
 
 class ProgramDetailsModel {
@@ -77,24 +69,6 @@ class ProgramDetailsModel {
       pricing: PricingModel.fromJson(json['pricing'] ?? {}),
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'type': type,
-      'title': title,
-      'subtitle': subtitle,
-      'category': category.toJson(),
-      'description': description,
-      'image': image,
-      'duration': duration,
-      'program_rating': programRating,
-      'is_best_seller': isBestSeller,
-      'is_bookmarked': isBookmarked,
-      'enrolled_students': enrolledStudents,
-      'pricing': pricing.toJson(),
-    };
-  }
 }
 
 class SyllabusModel {
@@ -116,14 +90,6 @@ class SyllabusModel {
           ?.map((item) => ModuleModel.fromJson(item))
           .toList() ?? [],
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'total_modules': totalModules,
-      'total_topics': totalTopics,
-      'modules': modules.map((module) => module.toJson()).toList(),
-    };
   }
 }
 
@@ -150,15 +116,6 @@ class ModuleModel {
           .toList() ?? [],
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'module_title': moduleTitle,
-      'topics_count': topicsCount,
-      'topics': topics.map((topic) => topic.toJson()).toList(),
-    };
-  }
 }
 
 class TopicModel {
@@ -181,15 +138,5 @@ class TopicModel {
       videoUrl: json['video_url'] ?? '',
       videoDuration: json['video_duration'],
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'topic_title': topicTitle,
-      'video_url': videoUrl,
-      'video_duration': videoDuration,
-
-    };
   }
 }

@@ -62,26 +62,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
               ),
             ),
             actions: [
-              // Test Video Player Button
-              IconButton(
-                icon: Icon(Icons.play_circle, color: Colors.red, size: 30),
-                onPressed: () {
-                  print('🧪 Test video player button pressed');
-                  try {
-                    Get.toNamed(XRoutes.videoPlayer, arguments: {
-                      'videoTitle': 'Test Video',
-                      'moduleTitle': 'Test Module',
-                    });
-                    print('✅ Test navigation initiated');
-                  } catch (e) {
-                    print('❌ Test navigation error: $e');
-                  }
-                },
-              ),
               Obx(() => GestureDetector(
                 onTap: _bookmarksController.isBookmarkLoading.value ? null : () async {
                   await _bookmarksController.toggleBookmark(
-                    programType: _controller.programType,
                     programId: _controller.programId,
                     currentBookmarkStatus: _controller.isBookmarked,
                   );

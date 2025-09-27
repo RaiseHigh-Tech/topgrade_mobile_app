@@ -23,15 +23,6 @@ class MyLearningsResponseModel {
           .toList() ?? [],
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'success': success,
-      'statistics': statistics.toJson(),
-      'filter_applied': filterApplied,
-      'learnings': learnings.map((learning) => learning.toJson()).toList(),
-    };
-  }
 }
 
 class StatisticsModel {
@@ -55,15 +46,6 @@ class StatisticsModel {
       completionRate: (json['completion_rate'] ?? 0.0).toDouble(),
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'total_courses': totalCourses,
-      'completed_courses': completedCourses,
-      'in_progress_courses': inProgressCourses,
-      'completion_rate': completionRate,
-    };
-  }
 }
 
 class LearningModel {
@@ -86,15 +68,6 @@ class LearningModel {
       purchaseDate: DateTime.tryParse(json['purchase_date'] ?? '') ?? DateTime.now(),
       progress: ProgressModel.fromJson(json['progress'] ?? {}),
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'purchase_id': purchaseId,
-      'program': program.toJson(),
-      'purchase_date': purchaseDate.toIso8601String(),
-      'progress': progress.toJson(),
-    };
   }
 }
 
@@ -122,17 +95,6 @@ class ProgressModel {
       estimatedCompletion: json['estimated_completion'] ?? '',
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'percentage': percentage,
-      'status': status,
-      'completed_modules': completedModules,
-      'total_modules': totalModules,
-      'estimated_completion': estimatedCompletion,
-    };
-  }
-
   bool get isCompleted => status.toLowerCase() == 'completed';
   bool get isInProgress => status.toLowerCase() == 'onprogress';
 }

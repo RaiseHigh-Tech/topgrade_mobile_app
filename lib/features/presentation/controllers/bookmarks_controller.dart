@@ -56,7 +56,6 @@ class BookmarksController extends GetxController {
 
   // Toggle bookmark for any program
   Future<bool> toggleBookmark({
-    required String programType,
     required int programId,
     bool? currentBookmarkStatus,
   }) async {
@@ -68,11 +67,9 @@ class BookmarksController extends GetxController {
       final response =
           currentBookmarkStatus == true
               ? await _remoteSource.removeBookmark(
-                programType: programType,
                 programId: programId,
               )
               : await _remoteSource.addBookmark(
-                programType: programType,
                 programId: programId,
               );
 
@@ -97,11 +94,10 @@ class BookmarksController extends GetxController {
   }
 
   // Check if a specific program is bookmarked
-  bool isProgramBookmarked(int programId, String programType) {
+  bool isProgramBookmarked(int programId) {
     return bookmarks.any(
       (bookmark) =>
-          bookmark.program.id == programId &&
-          bookmark.program.type == programType,
+          bookmark.program.id == programId,
     );
   }
 

@@ -24,15 +24,6 @@ class ProgramsFilterResponseModel {
           [],
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'success': success,
-      'filters_applied': filtersApplied.toJson(),
-      'statistics': statistics.toJson(),
-      'programs': programs.map((program) => program.toJson()).toList(),
-    };
-  }
 }
 
 class FiltersAppliedModel {
@@ -71,20 +62,6 @@ class FiltersAppliedModel {
       sortOrder: json['sort_order'],
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'program_type': programType,
-      'category_id': categoryId,
-      'is_best_seller': isBestSeller,
-      'min_price': minPrice,
-      'max_price': maxPrice,
-      'min_rating': minRating,
-      'search': search,
-      'sort_by': sortBy,
-      'sort_order': sortOrder,
-    };
-  }
 }
 
 class StatisticsModel {
@@ -104,13 +81,5 @@ class StatisticsModel {
       regularProgramsCount: json['regular_programs_count'] ?? 0,
       advancedProgramsCount: json['advanced_programs_count'] ?? 0,
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'total_count': totalCount,
-      'regular_programs_count': regularProgramsCount,
-      'advanced_programs_count': advancedProgramsCount,
-    };
   }
 }

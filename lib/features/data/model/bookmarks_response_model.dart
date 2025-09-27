@@ -21,14 +21,6 @@ class BookmarksResponseModel {
           [],
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'success': success,
-      'count': count,
-      'bookmarks': bookmarks.map((bookmark) => bookmark.toJson()).toList(),
-    };
-  }
 }
 
 class BookmarkModel {
@@ -48,13 +40,5 @@ class BookmarkModel {
       program: ProgramModel.fromJson(json['program'] ?? {}),
       bookmarkedDate: json['bookmarked_date'] ?? '',
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'bookmark_id': bookmarkId,
-      'program': program.toJson(),
-      'bookmarked_date': bookmarkedDate,
-    };
   }
 }

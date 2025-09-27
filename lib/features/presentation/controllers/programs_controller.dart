@@ -39,7 +39,6 @@ class ProgramsController extends GetxController {
       errorMessage.value = '';
 
       final response = await _remoteSource.getFilteredPrograms(
-        programType: selectedProgramType.value,
         categoryId: selectedCategoryId.value,
         isBestSeller: selectedIsBestSeller.value,
         minPrice: selectedMinPrice.value,

@@ -223,8 +223,6 @@ class VideoPlayerScreenController extends GetxController {
       // Dispose previous controller
       await videoPlayerController?.dispose();
 
-      // Create new video player controller
-
       // Try network video first, then fallback to test content
       try {
         videoPlayerController = VideoPlayerController.networkUrl(

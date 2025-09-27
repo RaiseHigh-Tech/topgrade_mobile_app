@@ -832,8 +832,6 @@ class _CourseListScreenState extends State<CourseListScreen>
                         children: [
                           _buildSortByFilter(themeController),
                           SizedBox(height: XSizes.spacingLg),
-                          _buildProgramTypeFilter(themeController),
-                          SizedBox(height: XSizes.spacingLg),
                           _buildPriceRangeFilter(themeController),
                           SizedBox(height: XSizes.spacingLg),
                           _buildRatingFilter(themeController),
@@ -964,65 +962,6 @@ class _CourseListScreenState extends State<CourseListScreen>
                         },
                         activeColor: themeController.primaryColor,
                         contentPadding: EdgeInsets.zero,
-                      );
-                    }).toList(),
-              ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProgramTypeFilter(XThemeController themeController) {
-    final programTypes = ['All', 'Regular Programs', 'Advanced Programs'];
-    final apiValues = [null, 'program', 'advanced_program'];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Program Type',
-          style: TextStyle(
-            fontSize: XSizes.textSizeMd,
-            fontWeight: FontWeight.bold,
-            color: themeController.textColor,
-            fontFamily: XFonts.lexend,
-          ),
-        ),
-        SizedBox(height: XSizes.spacingSm),
-        StatefulBuilder(
-          builder:
-              (context, setFilterState) => Wrap(
-                spacing: XSizes.spacingSm,
-                children:
-                    programTypes.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final type = entry.value;
-                      final isSelected = _tempProgramType == apiValues[index];
-
-                      return FilterChip(
-                        label: Text(
-                          type,
-                          style: TextStyle(
-                            color:
-                                isSelected
-                                    ? Colors.white
-                                    : themeController.textColor,
-                            fontFamily: XFonts.lexend,
-                            fontSize: XSizes.textSizeXs,
-                          ),
-                        ),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setFilterState(() {
-                            _tempProgramType =
-                                selected ? apiValues[index] : null;
-                          });
-                        },
-                        selectedColor: themeController.primaryColor,
-                        backgroundColor: Colors.transparent,
-                        side: BorderSide(
-                          color: Colors.grey.withValues(alpha: 0.3),
-                        ),
                       );
                     }).toList(),
               ),

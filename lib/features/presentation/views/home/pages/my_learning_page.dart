@@ -27,7 +27,7 @@ class _MyLearningPageState extends State<MyLearningPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    
+
     // Initialize search animation controller
     _searchAnimationController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -50,7 +50,7 @@ class _MyLearningPageState extends State<MyLearningPage>
         curve: Curves.easeInOut,
       ),
     );
-    
+
     // Refresh data when the page is initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshMyLearningData();
@@ -95,7 +95,6 @@ class _MyLearningPageState extends State<MyLearningPage>
   late AnimationController _searchAnimationController;
   late Animation<Offset> _searchSlideAnimation;
   late Animation<double> _searchFadeAnimation;
-
 
   void _toggleSearch() {
     setState(() {
@@ -317,10 +316,7 @@ class _MyLearningPageState extends State<MyLearningPage>
             onTap: () {
               Get.toNamed(
                 '/course-details',
-                arguments: {
-                  'programId': bookmark.program.id,
-                  'programType': bookmark.program.type,
-                },
+                arguments: {'programId': bookmark.program.id},
               );
             },
             child: Container(
@@ -758,7 +754,6 @@ class _MyLearningPageState extends State<MyLearningPage>
                 '/course-details',
                 arguments: {
                   'programId': learning.program.id,
-                  'programType': learning.program.type,
                 },
               );
             },

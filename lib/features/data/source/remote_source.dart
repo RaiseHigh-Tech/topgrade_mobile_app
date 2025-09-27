@@ -65,7 +65,6 @@ abstract class RemoteSource {
   Future<CategoriesResponseModel> getCategories();
 
   Future<ProgramsFilterResponseModel> getFilteredPrograms({
-    String? programType,
     int? categoryId,
     bool? isBestSeller,
     double? minPrice,
@@ -81,19 +80,16 @@ abstract class RemoteSource {
   Future<BookmarksResponseModel> getBookmarks();
 
   Future<Map<String, dynamic>> addBookmark({
-    required String programType,
     required int programId,
   });
 
   Future<Map<String, dynamic>> removeBookmark({
-    required String programType,
     required int programId,
   });
 
   Future<MyLearningsResponseModel> getMyLearnings({String? status});
   
   Future<ProgramDetailsResponseModel> getProgramDetails({
-    required String programType,
     required int programId,
   });
 }
@@ -550,7 +546,6 @@ class RemoteSourceImpl extends RemoteSource {
 
   @override
   Future<ProgramsFilterResponseModel> getFilteredPrograms({
-    String? programType,
     int? categoryId,
     bool? isBestSeller,
     double? minPrice,
@@ -564,7 +559,6 @@ class RemoteSourceImpl extends RemoteSource {
       // Build query parameters
       Map<String, dynamic> queryParams = {};
       
-      if (programType != null) queryParams['program_type'] = programType;
       if (categoryId != null) queryParams['category_id'] = categoryId;
       if (isBestSeller != null) queryParams['is_best_seller'] = isBestSeller;
       if (minPrice != null) queryParams['min_price'] = minPrice;
@@ -707,14 +701,12 @@ class RemoteSourceImpl extends RemoteSource {
 
   @override
   Future<Map<String, dynamic>> addBookmark({
-    required String programType,
     required int programId,
   }) async {
     try {
       final response = await dio.post(
         ApiEndpoints.addBookmarkUrl,
         data: {
-          'program_type': programType,
           'program_id': programId,
         },
       );
@@ -759,14 +751,12 @@ class RemoteSourceImpl extends RemoteSource {
 
   @override
   Future<Map<String, dynamic>> removeBookmark({
-    required String programType,
     required int programId,
   }) async {
     try {
       final response = await dio.delete(
         ApiEndpoints.removeBookmarkUrl,
         data: {
-          'program_type': programType,
           'program_id': programId,
         },
       );
@@ -863,11 +853,10 @@ class RemoteSourceImpl extends RemoteSource {
 
   @override
   Future<ProgramDetailsResponseModel> getProgramDetails({
-    required String programType,
     required int programId,
   }) async {
     try {
-      final url = '${ApiEndpoints.baseUrl}api/program/$programType/$programId/details';
+      final url = '${ApiEndpoints.baseUrl}api/program/$programId/details';
       
       final response = await dio.get(url);
 

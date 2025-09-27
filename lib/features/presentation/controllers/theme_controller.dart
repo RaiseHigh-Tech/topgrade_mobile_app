@@ -12,14 +12,7 @@ class XThemeController extends GetxController {
 
   // ! Constrains
   double get height => Get.height;
-
   double get width => Get.width;
-
-  // ! Images
-  String get appLogo =>
-      _isLight.value
-          ? 'assets/images/logo_light.png'
-          : 'assets/images/logo_dark.png';
 
   // ! Colors
   Color get primaryColor =>
@@ -30,8 +23,6 @@ class XThemeController extends GetxController {
 
   Color get textColor =>
       _isLight.value ? XColors.textColor : XColors.textColorDark;
-
-  // ... add more colors as needed
 
   @override
   void onInit() {

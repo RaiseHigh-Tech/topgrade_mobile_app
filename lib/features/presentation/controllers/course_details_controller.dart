@@ -1,7 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../data/model/program_details_response_model.dart';
+import '../../data/model/purchase_response_model.dart';
 import '../../data/source/remote_source.dart';
 import '../../../utils/network/dio_client.dart';
+import '../widgets/purchase_success_modal.dart';
 
 class CourseDetailsController extends GetxController {
   final RemoteSource _remoteSource = RemoteSourceImpl(dio: DioClient());
@@ -11,6 +14,11 @@ class CourseDetailsController extends GetxController {
   var programDetails = Rx<ProgramDetailsResponseModel?>(null);
   var errorMessage = ''.obs;
   var hasError = false.obs;
+
+  // Purchase related variables
+  var isPurchasing = false.obs;
+  var purchaseSuccess = false.obs;
+  var purchaseResponse = Rx<PurchaseResponseModel?>(null);
 
   // Arguments from navigation
   late int programId;
@@ -82,6 +90,57 @@ class CourseDetailsController extends GetxController {
     'Visual Hierarchy',
     'Brand Identity',
   ];
+
+  // Purchase course method
+  Future<void> purchaseCourse({String paymentMethod = 'card'}) async {
+    try {
+      isPurchasing.value = true;
+      
+      final response = await _remoteSource.purchaseCourse(
+        programId: programId,
+        paymentMethod: paymentMethod,
+      );
+
+      if (response.success) {
+        purchaseResponse.value = response;
+        purchaseSuccess.value = true;
+        
+        // Show success modal with celebration
+        _showPurchaseSuccessModal();
+        
+        // Refresh program details to update purchase status
+        await fetchProgramDetails();
+      }
+    } catch (e) {
+      // Show error message
+      Get.snackbar(
+        'Purchase Failed',
+        e.toString(),
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+        margin: EdgeInsets.all(16),
+        borderRadius: 8,
+        duration: Duration(seconds: 4),
+      );
+    } finally {
+      isPurchasing.value = false;
+    }
+  }
+
+  // Show purchase success modal with celebration animation
+  void _showPurchaseSuccessModal() {
+    Get.dialog(
+      PurchaseSuccessModal(
+        purchaseResponse: purchaseResponse.value!,
+        onContinue: () {
+          Get.back(); // Close dialog
+          // Optional: Navigate to My Learnings or Course Content
+        },
+      ),
+      barrierDismissible: false,
+    );
+  }
 
   // Get static reviews data (will be replaced with API data later)
   List<ReviewModel> get staticReviews => [

@@ -224,19 +224,10 @@ class _LessonsTabState extends State<LessonsTab> {
                                         ),
                                         child: GestureDetector(
                                           onTap: topic.videoUrl.isEmpty ? null : () {
-                                            // Navigate to video player with server data
-                                            print('🎬 Navigating to video player...');
-                                            print('Topic ID: ${topic.id}');
-                                            print('Topic: ${topic.topicTitle}');
-                                            print('Module: ${module.moduleTitle}');
-                                            print('Video URL: ${topic.videoUrl}');
-                                            
                                             try {
-                                              // Get syllabus data from controller
                                               final syllabusData = _controller.syllabus;
                                               
                                               if (syllabusData != null) {
-                                                // Convert syllabus to JSON-like structure for video player
                                                 final syllabusJson = {
                                                   'total_modules': syllabusData.totalModules,
                                                   'total_topics': syllabusData.totalTopics,

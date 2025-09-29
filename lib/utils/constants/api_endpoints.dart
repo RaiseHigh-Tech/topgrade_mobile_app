@@ -34,4 +34,7 @@ class ApiEndpoints {
 
   // My Learnings endpoints
   static const String myLearningsUrl = '${baseUrl}api/my-learnings';
+
+  // Purchase endpoints
+  static const String purchaseUrl = '${baseUrl}api/purchase';
 }

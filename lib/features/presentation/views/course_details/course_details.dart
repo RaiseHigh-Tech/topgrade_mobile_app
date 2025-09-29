@@ -431,11 +431,14 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           // Enroll Now Button
           bottomNavigationBar: Padding(
             padding: EdgeInsets.all(XSizes.paddingMd),
-            child: PrimaryButton(
-              text: 'ENROLL NOW',
-              onPressed: () {
-                _controller.purchaseCourse();
-              },
+            child: Obx(
+              () => PrimaryButton(
+                text: 'ENROLL NOW',
+                isLoading: _controller.isPurchasing.value,
+                onPressed: () {
+                  _controller.purchaseCourse();
+                },
+              ),
             ),
           ),
         );

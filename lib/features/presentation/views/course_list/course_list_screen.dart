@@ -441,10 +441,7 @@ class _CourseListScreenState extends State<CourseListScreen>
   Widget _buildProgramCard(dynamic program, XThemeController themeController) {
     return GestureDetector(
       onTap: () {
-        Get.toNamed(
-          '/course-details',
-          arguments: {'programId': program.id, 'programType': program.type},
-        );
+        Get.toNamed('/course-details', arguments: {'programId': program.id});
       },
       child: Container(
         margin: EdgeInsets.only(bottom: XSizes.marginMd),
@@ -679,7 +676,7 @@ class _CourseListScreenState extends State<CourseListScreen>
                             )
                           else
                             Text(
-                              '\$${program.pricing.finalPrice.toStringAsFixed(2)}',
+                              '₹${program.pricing.finalPrice.toStringAsFixed(2)}',
                               style: TextStyle(
                                 fontSize: XSizes.textSizeSm,
                                 fontWeight: FontWeight.bold,
@@ -715,10 +712,7 @@ class _CourseListScreenState extends State<CourseListScreen>
                         onPressed: () {
                           Get.toNamed(
                             '/course-details',
-                            arguments: {
-                              'programId': program.id,
-                              'programType': program.type,
-                            },
+                            arguments: {'programId': program.id},
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -987,7 +981,7 @@ class _CourseListScreenState extends State<CourseListScreen>
         StatefulBuilder(
           builder: (context, setFilterState) {
             final minPrice = _tempMinPrice ?? 0.0;
-            final maxPrice = _tempMaxPrice ?? 200.0;
+            final maxPrice = _tempMaxPrice ?? 9999.0;
 
             return Column(
               children: [
@@ -995,14 +989,14 @@ class _CourseListScreenState extends State<CourseListScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '\$${minPrice.toInt()}',
+                      '₹${minPrice.toInt()}',
                       style: TextStyle(
                         color: themeController.textColor,
                         fontFamily: XFonts.lexend,
                       ),
                     ),
                     Text(
-                      '\$${maxPrice.toInt()}+',
+                      '₹${maxPrice.toInt()}+',
                       style: TextStyle(
                         color: themeController.textColor,
                         fontFamily: XFonts.lexend,
@@ -1013,7 +1007,7 @@ class _CourseListScreenState extends State<CourseListScreen>
                 RangeSlider(
                   values: RangeValues(minPrice, maxPrice),
                   min: 0,
-                  max: 200,
+                  max: 9999,
                   divisions: 20,
                   activeColor: themeController.primaryColor,
                   inactiveColor: Colors.grey.withValues(alpha: 0.3),
@@ -1190,7 +1184,7 @@ class _CourseListScreenState extends State<CourseListScreen>
       if (_programsController.selectedMinPrice.value != null ||
           _programsController.selectedMaxPrice.value != null) {
         String priceText =
-            'Price: \$${(_programsController.selectedMinPrice.value ?? 0).toInt()}-\$${(_programsController.selectedMaxPrice.value ?? 200).toInt()}';
+            'Price: ₹${(_programsController.selectedMinPrice.value ?? 0).toInt()}-₹${(_programsController.selectedMaxPrice.value ?? 9999).toInt()}';
         chips.add(
           _buildFilterChip(priceText, () {
             _programsController.filterByPriceRange(null, null);

@@ -15,13 +15,19 @@ class VideoPlayerScreen extends StatefulWidget {
 }
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
-  final VideoPlayerScreenController _controller = Get.put(VideoPlayerScreenController());
+  late final VideoPlayerScreenController _controller;
   bool _isFullScreen = false;
 
   @override
   void initState() {
     super.initState();
     print('🎬 VideoPlayerScreen initState called');
+    
+    // Create a fresh controller instance to avoid reuse issues
+    _controller = Get.put(
+      VideoPlayerScreenController(),
+      tag: DateTime.now().millisecondsSinceEpoch.toString(), // Unique tag
+    );
     
     // Set preferred orientations for video player
     SystemChrome.setPreferredOrientations([
@@ -37,6 +43,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
+    
+    // Properly dispose controller
+    Get.delete<VideoPlayerScreenController>(
+      tag: _controller.hashCode.toString(),
+    );
+    
     super.dispose();
   }
 

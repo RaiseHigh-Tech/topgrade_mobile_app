@@ -97,9 +97,18 @@ class VideoPlayerScreenController extends GetxController {
 
   @override
   void onClose() {
-    videoPlayerController?.dispose();
+    _disposeVideoController();
     _controlsTimer?.cancel();
     super.onClose();
+  }
+
+  // Properly dispose video controller
+  Future<void> _disposeVideoController() async {
+    if (videoPlayerController != null) {
+      videoPlayerController!.removeListener(_videoPlayerListener);
+      await videoPlayerController!.dispose();
+      videoPlayerController = null;
+    }
   }
 
   // Initialize playlist from server data
@@ -217,34 +226,42 @@ class VideoPlayerScreenController extends GetxController {
     try {
       isLoading.value = true;
       hasError.value = false;
+      
+      // Stop current video and reset state
+      if (videoPlayerController != null) {
+        await videoPlayerController!.pause();
+        isPlaying.value = false;
+      }
+
+      // Properly dispose previous controller
+      await _disposeVideoController();
+
+      // Update current video info
       currentVideoIndex.value = index;
       currentVideo.value = playlist[index];
 
-      // Dispose previous controller
-      await videoPlayerController?.dispose();
+      // Reset position and duration
+      currentPosition.value = Duration.zero;
+      totalDuration.value = Duration.zero;
 
-      // Try network video first, then fallback to test content
-      try {
-        videoPlayerController = VideoPlayerController.networkUrl(
-          Uri.parse(playlist[index].url),
-        );
+      print('🎬 Loading video at index $index: ${playlist[index].url}');
 
-        // Initialize video player with timeout
-        await videoPlayerController!.initialize().timeout(
-          Duration(seconds: 15),
-          onTimeout: () {
-            throw Exception('Network video initialization timeout');
-          },
-        );
-      } catch (networkError) {
-        // Dispose failed controller
-        await videoPlayerController?.dispose();
+      // Create new video controller
+      videoPlayerController = VideoPlayerController.networkUrl(
+        Uri.parse(playlist[index].url),
+      );
 
-        // Create a simple test scenario - show error but don't crash
-        throw Exception('Video not available: $networkError');
-      }
+      // Initialize video player with timeout
+      await videoPlayerController!.initialize().timeout(
+        Duration(seconds: 30), // Increased timeout
+        onTimeout: () {
+          throw Exception('Video initialization timeout after 30 seconds');
+        },
+      );
 
-      // Setup listeners
+      print('🎬 Video initialized successfully');
+
+      // Setup listeners AFTER successful initialization
       videoPlayerController!.addListener(_videoPlayerListener);
 
       // Update duration
@@ -253,12 +270,15 @@ class VideoPlayerScreenController extends GetxController {
       // Auto play video
       await videoPlayerController!.play();
       isPlaying.value = true;
+
+      print('🎬 Video started playing');
+
     } catch (e) {
+      print('🎬 Error loading video: $e');
       hasError.value = true;
 
-      // Clear the video controller on error
-      await videoPlayerController?.dispose();
-      videoPlayerController = null;
+      // Clean up on error
+      await _disposeVideoController();
     } finally {
       isLoading.value = false;
     }
@@ -266,13 +286,26 @@ class VideoPlayerScreenController extends GetxController {
 
   // Video player listener
   void _videoPlayerListener() {
-    if (videoPlayerController != null) {
+    if (videoPlayerController != null && videoPlayerController!.value.isInitialized) {
+      // Check for errors first
+      if (videoPlayerController!.value.hasError) {
+        print('🎬 Video player error: ${videoPlayerController!.value.errorDescription}');
+        hasError.value = true;
+        return;
+      }
+
+      // Update position and playing state
       currentPosition.value = videoPlayerController!.value.position;
       isPlaying.value = videoPlayerController!.value.isPlaying;
 
-      // Check if video ended
-      if (videoPlayerController!.value.position >=
-          videoPlayerController!.value.duration) {
+      // Check if video ended (with small buffer to prevent premature ending)
+      final position = videoPlayerController!.value.position;
+      final duration = videoPlayerController!.value.duration;
+      
+      if (position.inMilliseconds > 0 && 
+          duration.inMilliseconds > 0 && 
+          (position.inMilliseconds >= duration.inMilliseconds - 1000)) {
+        print('🎬 Video ended, playing next if available');
         // Auto play next video if available
         if (hasNextVideo) {
           playNextVideo();

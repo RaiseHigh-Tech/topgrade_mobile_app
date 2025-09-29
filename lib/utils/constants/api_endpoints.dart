@@ -1,6 +1,7 @@
 class ApiEndpoints {
   // Base URL
-  static const String baseUrl = 'https://202bc704f1e5.ngrok-free.app/';
+  static const String baseUrl =
+      'https://169fd1d3635aa835c2b50eb774422384.serveo.net/';
 
   // Complete URLs
   static const String signupUrl = '${baseUrl}api/auth/signup';

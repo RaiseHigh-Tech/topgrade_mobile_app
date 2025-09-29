@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:topgrade/utils/constants/fonts.dart';
 
@@ -9,8 +10,26 @@ import 'features/presentation/routes/routes.dart';
 import 'utils/constants/strings.dart';
 import 'utils/helpers/token_helper.dart';
 
+// Preload fonts to prevent text disappearing in release builds
+Future<void> _preloadFonts() async {
+  try {
+    await Future.wait([
+      // Preload Lexend font variants
+      rootBundle.load('assets/fonts/Lexend-Regular.ttf'),
+      rootBundle.load('assets/fonts/Lexend-Medium.ttf'),
+      rootBundle.load('assets/fonts/Lexend-SemiBold.ttf'),
+      rootBundle.load('assets/fonts/Lexend-Bold.ttf'),
+    ]);
+  } catch (e) {
+    print('Font preloading failed: $e');
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Preload custom fonts to prevent text disappearing in release builds
+  await _preloadFonts();
 
   final bool isOnboardingCompleted =
       await OnboardingController.isOnboardingCompleted();
@@ -45,7 +64,14 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: XFonts.lexend,
-        fontFamilyFallback: ['Roboto', 'Arial', 'sans-serif'],
+        fontFamilyFallback: const ['Roboto', 'Arial', 'sans-serif'],
+        // Ensure text is visible even if custom font fails
+        textTheme: const TextTheme().apply(
+          fontFamily: XFonts.lexend,
+          fontFamilyFallback: ['Roboto', 'Arial', 'sans-serif'],
+        ),
+        // Force Material3 text scaling
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       title: XString.appName,
       getPages: XRoutes.routes,

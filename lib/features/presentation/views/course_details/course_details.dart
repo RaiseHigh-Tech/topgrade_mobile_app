@@ -373,14 +373,14 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                                       themeController: themeController,
                                       icon: Icons.library_books,
                                       label: 'Lectures',
-                                      value: _controller.program?.toString() ?? '0',
+                                      value: _controller.totalLecturesText,
                                     ),
                                     SizedBox(height: XSizes.spacingLg),
                                     _buildDetailRow(
                                       themeController: themeController,
                                       icon: Icons.access_time_filled,
                                       label: 'Learning Time',
-                                      value: '4 Weeks',
+                                      value: _controller.totalLearningTime,
                                     ),
                                     SizedBox(height: XSizes.spacingLg),
                                     _buildDetailRow(

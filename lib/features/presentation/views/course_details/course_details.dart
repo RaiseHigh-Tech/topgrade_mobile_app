@@ -373,14 +373,17 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                                       themeController: themeController,
                                       icon: Icons.library_books,
                                       label: 'Lectures',
-                                      value: _controller.totalLecturesText,
+                                      value:
+                                          "${_controller.syllabus?.totalTopics} Lecture${_controller.syllabus?.totalModules != 1 ? 's' : ''}",
                                     ),
                                     SizedBox(height: XSizes.spacingLg),
                                     _buildDetailRow(
                                       themeController: themeController,
                                       icon: Icons.access_time_filled,
                                       label: 'Learning Time',
-                                      value: _controller.totalLearningTime,
+                                      value:
+                                          _controller.program?.duration ??
+                                          'N/A',
                                     ),
                                     SizedBox(height: XSizes.spacingLg),
                                     _buildDetailRow(
@@ -390,29 +393,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                                       value: 'Online Certificate',
                                     ),
                                   ],
-                                ),
-                                SizedBox(height: XSizes.spacingLg),
-                                // Reviews Section
-                                Text(
-                                  'Reviews',
-                                  style: TextStyle(
-                                    fontSize: XSizes.textSizeXl,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: XFonts.lexend,
-                                    color: themeController.textColor,
-                                  ),
-                                ),
-                                SizedBox(height: XSizes.spacingSm),
-                                // Add some sample reviews for demonstration
-                                Text(
-                                  'Great course! Very comprehensive and well-structured.',
-                                  style: TextStyle(
-                                    fontSize: XSizes.textSizeSm,
-                                    fontFamily: XFonts.lexend,
-                                    color: themeController.textColor.withValues(
-                                      alpha: 0.6,
-                                    ),
-                                  ),
                                 ),
                               ],
                             ),
@@ -442,13 +422,15 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                 onPressed: () {
                   if (_controller.program?.hasPurchased == true) {
                     final syllabusData = _controller.syllabus;
-                    if (syllabusData != null && syllabusData.modules.isNotEmpty) {
+                    if (syllabusData != null &&
+                        syllabusData.modules.isNotEmpty) {
                       // Get first module and first topic
                       final firstModule = syllabusData.modules.first;
-                      final firstTopic = firstModule.topics.isNotEmpty 
-                          ? firstModule.topics.first 
-                          : null;
-                      
+                      final firstTopic =
+                          firstModule.topics.isNotEmpty
+                              ? firstModule.topics.first
+                              : null;
+
                       if (firstTopic != null) {
                         final syllabusJson = {
                           'total_modules': syllabusData.totalModules,

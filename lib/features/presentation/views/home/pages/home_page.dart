@@ -206,6 +206,45 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     _landingController.topCourses,
                                   ),
                         ),
+                        const SizedBox(height: 24),
+                        Obx(
+                          () =>
+                              isLoading
+                                  ? _buildShimmerSectionHeader()
+                                  : _buildSectionHeader(
+                                    "Programs",
+                                    showViewAll: true,
+                                  ),
+                        ),
+                        const SizedBox(height: 16),
+                        Obx(
+                          () =>
+                              isLoading
+                                  ? _buildShimmerHorizontalCourseList()
+                                  : _buildRealHorizontalCourseList(
+                                    _landingController.programs,
+                                  ),
+                        ),
+                        const SizedBox(height: 24),
+                        Obx(
+                          () =>
+                              isLoading
+                                  ? _buildShimmerSectionHeader()
+                                  : _buildSectionHeader(
+                                    "Advanced Courses",
+                                    showViewAll: true,
+                                  ),
+                        ),
+                        const SizedBox(height: 16),
+                        Obx(
+                          () =>
+                              isLoading
+                                  ? _buildShimmerHorizontalCourseList()
+                                  : _buildRealHorizontalCourseList(
+                                    _landingController.advancedPrograms,
+                                  ),
+                        ),
+                        const SizedBox(height: 24),
                         SizedBox(
                           height: XSizes.spacingMd,
                         ), // Extra bottom padding
@@ -422,9 +461,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             onTap: () {
               Get.toNamed(
                 '/course-details',
-                arguments: {
-                  'programId': program.id,
-                },
+                arguments: {'programId': program.id},
               );
             },
             child: Container(

@@ -422,7 +422,7 @@ class _MyLearningPageState extends State<MyLearningPage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          bookmark.program.title,
+                          bookmark.program.subtitle,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: XSizes.textSizeSm,
@@ -520,7 +520,7 @@ class _MyLearningPageState extends State<MyLearningPage>
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  '\$${bookmark.program.pricing.finalPrice.toStringAsFixed(2)}',
+                                  '₹${bookmark.program.pricing.finalPrice.toStringAsFixed(2)}',
                                   style: TextStyle(
                                     fontSize: XSizes.textSizeXs,
                                     fontWeight: FontWeight.bold,
@@ -752,9 +752,7 @@ class _MyLearningPageState extends State<MyLearningPage>
             onTap: () {
               Get.toNamed(
                 '/course-details',
-                arguments: {
-                  'programId': learning.program.id,
-                },
+                arguments: {'programId': learning.program.id},
               );
             },
             child: Container(
@@ -840,7 +838,7 @@ class _MyLearningPageState extends State<MyLearningPage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          learning.program.title,
+                          learning.program.subtitle,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: XSizes.textSizeSm,

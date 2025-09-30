@@ -252,18 +252,14 @@ class _LessonsTabState extends State<LessonsTab> {
                                                   'programTitle': _controller.program?.title ?? 'Course',
                                                 });
                                                 
-                                                print('✅ Navigation with server data initiated');
                                               } else {
                                                 // Fallback to simple navigation
                                                 Get.toNamed(XRoutes.videoPlayer, arguments: {
                                                   'videoTitle': topic.topicTitle,
                                                   'moduleTitle': module.moduleTitle,
                                                 });
-                                                print('⚠️ Navigation with basic data (no syllabus)');
                                               }
                                             } catch (e) {
-                                              print('❌ Navigation error: $e');
-                                              
                                               // Show error message to user
                                               Get.snackbar(
                                                 'Error',

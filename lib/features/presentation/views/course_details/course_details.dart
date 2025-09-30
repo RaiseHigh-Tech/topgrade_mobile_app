@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:topgrade/features/presentation/routes/routes.dart';
 import 'package:topgrade/features/presentation/views/course_details/tabs/lession_tab.dart';
 import 'package:topgrade/features/presentation/widgets/primary_button.dart';
 import '../../controllers/theme_controller.dart';
@@ -372,7 +373,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                                       themeController: themeController,
                                       icon: Icons.library_books,
                                       label: 'Lectures',
-                                      value: '50+ Lectures',
+                                      value: _controller.program?.toString() ?? '0',
                                     ),
                                     SizedBox(height: XSizes.spacingLg),
                                     _buildDetailRow(
@@ -433,10 +434,65 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             padding: EdgeInsets.all(XSizes.paddingMd),
             child: Obx(
               () => PrimaryButton(
-                text: 'ENROLL NOW',
+                text:
+                    _controller.program?.hasPurchased == true
+                        ? 'Go to Course'
+                        : 'Enroll Now',
                 isLoading: _controller.isPurchasing.value,
                 onPressed: () {
-                  _controller.purchaseCourse();
+                  if (_controller.program?.hasPurchased == true) {
+                    final syllabusData = _controller.syllabus;
+                    if (syllabusData != null && syllabusData.modules.isNotEmpty) {
+                      // Get first module and first topic
+                      final firstModule = syllabusData.modules.first;
+                      final firstTopic = firstModule.topics.isNotEmpty 
+                          ? firstModule.topics.first 
+                          : null;
+                      
+                      if (firstTopic != null) {
+                        final syllabusJson = {
+                          'total_modules': syllabusData.totalModules,
+                          'total_topics': syllabusData.totalTopics,
+                          'modules':
+                              syllabusData.modules
+                                  .map(
+                                    (m) => {
+                                      'id': m.id,
+                                      'module_title': m.moduleTitle,
+                                      'topics_count': m.topicsCount,
+                                      'topics':
+                                          m.topics
+                                              .map(
+                                                (t) => {
+                                                  'id': t.id,
+                                                  'topic_title': t.topicTitle,
+                                                  'video_url': t.videoUrl,
+                                                  'video_duration':
+                                                      t.videoDuration,
+                                                },
+                                              )
+                                              .toList(),
+                                    },
+                                  )
+                                  .toList(),
+                        };
+
+                        Get.toNamed(
+                          XRoutes.videoPlayer,
+                          arguments: {
+                            'syllabus': syllabusJson,
+                            'currentTopicId': firstTopic.id,
+                            'videoTitle': firstTopic.topicTitle,
+                            'moduleTitle': firstModule.moduleTitle,
+                            'programTitle':
+                                _controller.program?.title ?? 'Course',
+                          },
+                        );
+                      }
+                    }
+                  } else {
+                    _controller.purchaseCourse();
+                  }
                 },
               ),
             ),

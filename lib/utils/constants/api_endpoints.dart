@@ -1,7 +1,7 @@
 class ApiEndpoints {
   // Base URL
   static const String baseUrl =
-      'https://169fd1d3635aa835c2b50eb774422384.serveo.net/';
+      'https://3e630c61ae12a0af4755b75865fe5fb5.serveo.net/';
 
   // Complete URLs
   static const String signupUrl = '${baseUrl}api/auth/signup';

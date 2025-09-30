@@ -23,7 +23,6 @@ class ProgramDetailsResponseModel {
 
 class ProgramDetailsModel {
   final int id;
-  final String type;
   final String title;
   final String subtitle;
   final CategoryModel category;
@@ -33,12 +32,12 @@ class ProgramDetailsModel {
   final double programRating;
   final bool isBestSeller;
   final bool isBookmarked;
+  final bool hasPurchased;
   final int enrolledStudents;
   final PricingModel pricing;
 
   ProgramDetailsModel({
     required this.id,
-    required this.type,
     required this.title,
     required this.subtitle,
     required this.category,
@@ -48,6 +47,7 @@ class ProgramDetailsModel {
     required this.programRating,
     required this.isBestSeller,
     required this.isBookmarked,
+    required this.hasPurchased,
     required this.enrolledStudents,
     required this.pricing,
   });
@@ -55,7 +55,6 @@ class ProgramDetailsModel {
   factory ProgramDetailsModel.fromJson(Map<String, dynamic> json) {
     return ProgramDetailsModel(
       id: json['id'] ?? 0,
-      type: json['type'] ?? '',
       title: json['title'] ?? '',
       subtitle: json['subtitle'] ?? '',
       category: CategoryModel.fromJson(json['category'] ?? {}),
@@ -65,6 +64,7 @@ class ProgramDetailsModel {
       programRating: (json['program_rating'] ?? 0.0).toDouble(),
       isBestSeller: json['is_best_seller'] ?? false,
       isBookmarked: json['is_bookmarked'] ?? false,
+      hasPurchased: json['has_purchased'] ?? false,
       enrolledStudents: json['enrolled_students'] ?? 0,
       pricing: PricingModel.fromJson(json['pricing'] ?? {}),
     );

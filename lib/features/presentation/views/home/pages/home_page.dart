@@ -225,26 +225,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     _landingController.programs,
                                   ),
                         ),
-                        const SizedBox(height: 24),
-                        Obx(
-                          () =>
-                              isLoading
-                                  ? _buildShimmerSectionHeader()
-                                  : _buildSectionHeader(
-                                    "Advanced Courses",
-                                    showViewAll: true,
-                                  ),
-                        ),
-                        const SizedBox(height: 16),
-                        Obx(
-                          () =>
-                              isLoading
-                                  ? _buildShimmerHorizontalCourseList()
-                                  : _buildRealHorizontalCourseList(
-                                    _landingController.advancedPrograms,
-                                  ),
-                        ),
-                        const SizedBox(height: 24),
                         SizedBox(
                           height: XSizes.spacingMd,
                         ), // Extra bottom padding
@@ -841,7 +821,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         final List<String> carouselImages = [
           'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=300&fit=crop',
           'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&h=300&fit=crop',
-          'https://images.unsplash.com/photo-1543269664-76bc57c0bb7e?w=800&h=300&fit=crop',
+          'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=300&fit=crop',
         ];
 
         return CarouselSlider(

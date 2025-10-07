@@ -12,7 +12,12 @@ class ProgramsController extends GetxController {
   var programs = <ProgramModel>[].obs;
   var errorMessage = ''.obs;
   var hasError = false.obs;
-  var statistics = StatisticsModel(totalCount: 0, regularProgramsCount: 0, advancedProgramsCount: 0).obs;
+  var statistics =
+      StatisticsModel(
+        totalCount: 0,
+        regularProgramsCount: 0,
+        advancedProgramsCount: 0,
+      ).obs;
   var filtersApplied = FiltersAppliedModel().obs;
 
   // Filter parameters
@@ -48,7 +53,7 @@ class ProgramsController extends GetxController {
         sortBy: selectedSortBy.value,
         sortOrder: selectedSortOrder.value,
       );
-      
+
       if (response.success) {
         programs.value = response.programs;
         statistics.value = response.statistics;
@@ -60,7 +65,6 @@ class ProgramsController extends GetxController {
     } catch (e) {
       hasError.value = true;
       errorMessage.value = e.toString();
-      print('Error fetching programs: $e');
     } finally {
       isLoading.value = false;
     }
@@ -126,18 +130,18 @@ class ProgramsController extends GetxController {
   // Helper method to check if any filters are applied
   bool get hasActiveFilters {
     return selectedCategoryId.value != null ||
-           selectedProgramType.value != null ||
-           selectedIsBestSeller.value != null ||
-           selectedMinPrice.value != null ||
-           selectedMaxPrice.value != null ||
-           selectedMinRating.value != null ||
-           searchQuery.value.isNotEmpty;
+        selectedProgramType.value != null ||
+        selectedIsBestSeller.value != null ||
+        selectedMinPrice.value != null ||
+        selectedMaxPrice.value != null ||
+        selectedMinRating.value != null ||
+        searchQuery.value.isNotEmpty;
   }
 
   // Get display text for current filters
   String get activeFiltersText {
     List<String> activeFilters = [];
-    
+
     if (selectedCategoryId.value != null) {
       activeFilters.add('Category filtered');
     }
@@ -153,7 +157,9 @@ class ProgramsController extends GetxController {
     if (searchQuery.value.isNotEmpty) {
       activeFilters.add('Search: "${searchQuery.value}"');
     }
-    
-    return activeFilters.isEmpty ? 'No filters applied' : activeFilters.join(', ');
+
+    return activeFilters.isEmpty
+        ? 'No filters applied'
+        : activeFilters.join(', ');
   }
 }

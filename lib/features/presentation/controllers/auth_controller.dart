@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../common/error/response_exception.dart';
 import '../../../common/error/server_exception.dart';
+import '../../../utils/helpers/snackbars.dart';
 import '../../../utils/helpers/token_helper.dart';
 import '../../data/source/remote_source.dart';
 import '../../data/model/signin_response_model.dart';
@@ -52,38 +53,38 @@ class AuthController extends GetxController {
 
       // Basic validation
       if (fullNameController.text.trim().isEmpty) {
-        Get.snackbar('Error', 'Please enter your full name');
+        Snackbars.errorSnackBar('Please enter your full name');
         return;
       }
 
       if (signupEmailController.text.trim().isEmpty) {
-        Get.snackbar('Error', 'Please enter your email');
+        Snackbars.errorSnackBar('Please enter your email');
         return;
       }
 
       if (!GetUtils.isEmail(signupEmailController.text.trim())) {
-        Get.snackbar('Error', 'Please enter a valid email address');
+        Snackbars.errorSnackBar('Please enter a valid email address');
         return;
       }
 
       if (signupPasswordController.text.trim().isEmpty) {
-        Get.snackbar('Error', 'Please enter your password');
+        Snackbars.errorSnackBar('Please enter your password');
         return;
       }
 
       if (signupPasswordController.text.trim().length < 6) {
-        Get.snackbar('Error', 'Password must be at least 6 characters');
+        Snackbars.errorSnackBar('Password must be at least 6 characters');
         return;
       }
 
       if (confirmPasswordController.text.trim().isEmpty) {
-        Get.snackbar('Error', 'Please confirm your password');
+        Snackbars.errorSnackBar('Please confirm your password');
         return;
       }
 
       if (signupPasswordController.text.trim() !=
           confirmPasswordController.text.trim()) {
-        Get.snackbar('Error', 'Passwords do not match');
+        Snackbars.errorSnackBar('Passwords do not match');
         return;
       }
 
@@ -117,21 +118,15 @@ class AuthController extends GetxController {
           // User hasn't selected area of interest, go to interest screen
           Get.offAllNamed(XRoutes.interest);
         }
-        
-        Get.snackbar(
-          'Success',
-          response.message,
-          snackPosition: SnackPosition.BOTTOM,
-        );
       } else {
-        Get.snackbar('Error', response.message);
+        Snackbars.errorSnackBar(response.message);
       }
     } on ResponseException catch (e) {
-      Get.snackbar('Error', e.message);
+      Snackbars.errorSnackBar(e.message);
     } on ServerException catch (e) {
-      Get.snackbar('Error', e.message);
+      Snackbars.errorSnackBar(e.message);
     } catch (e) {
-      Get.snackbar('Error', 'Signup failed. Please try again.');
+      Snackbars.errorSnackBar('Signup failed. Please try again.');
     } finally {
       _isLoading.value = false;
     }
@@ -144,17 +139,17 @@ class AuthController extends GetxController {
 
       // Basic validation
       if (emailController.text.trim().isEmpty) {
-        Get.snackbar('Error', 'Please enter your email');
+        Snackbars.errorSnackBar('Please enter your email');
         return;
       }
 
       if (!GetUtils.isEmail(emailController.text.trim())) {
-        Get.snackbar('Error', 'Please enter a valid email address');
+        Snackbars.errorSnackBar('Please enter a valid email address');
         return;
       }
 
       if (passwordController.text.trim().isEmpty) {
-        Get.snackbar('Error', 'Please enter your password');
+        Snackbars.errorSnackBar('Please enter your password');
         return;
       }
 
@@ -184,21 +179,15 @@ class AuthController extends GetxController {
           // User hasn't selected area of interest, go to interest screen
           Get.offAllNamed(XRoutes.interest);
         }
-        
-        Get.snackbar(
-          'Success',
-          response.message,
-          snackPosition: SnackPosition.BOTTOM,
-        );
       } else {
-        Get.snackbar('Error', response.message);
+        Snackbars.errorSnackBar(response.message);
       }
     } on ResponseException catch (e) {
-      Get.snackbar('Error', e.message);
+      Snackbars.errorSnackBar(e.message);
     } on ServerException catch (e) {
-      Get.snackbar('Error', e.message);
+      Snackbars.errorSnackBar(e.message);
     } catch (e) {
-      Get.snackbar('Error', 'Signin failed. Please try again.');
+      Snackbars.errorSnackBar('Signin failed. Please try again.');
     } finally {
       _isLoading.value = false;
     }
@@ -211,12 +200,12 @@ class AuthController extends GetxController {
 
       // Basic validation
       if (resetEmailController.text.trim().isEmpty) {
-        Get.snackbar('Error', 'Please enter your email address');
+        Snackbars.errorSnackBar('Please enter your email address');
         return;
       }
 
       if (!GetUtils.isEmail(resetEmailController.text.trim())) {
-        Get.snackbar('Error', 'Please enter a valid email address');
+        Snackbars.errorSnackBar('Please enter a valid email address');
         return;
       }
 
@@ -227,20 +216,15 @@ class AuthController extends GetxController {
       // Check if OTP request was successful
       if (response.isOtpRequestSuccess) {
         _resetStep.value = ResetStep.otp;
-        Get.snackbar(
-          'Success',
-          response.message,
-          snackPosition: SnackPosition.BOTTOM,
-        );
       } else {
-        Get.snackbar('Error', response.message);
+        Snackbars.errorSnackBar(response.message);
       }
     } on ResponseException catch (e) {
-      Get.snackbar('Error', e.message);
+      Snackbars.errorSnackBar(e.message);
     } on ServerException catch (e) {
-      Get.snackbar('Error', e.message);
+      Snackbars.errorSnackBar(e.message);
     } catch (e) {
-      Get.snackbar('Error', 'Failed to send verification code');
+      Snackbars.errorSnackBar('Failed to send verification code');
     } finally {
       _isLoading.value = false;
     }
@@ -253,38 +237,35 @@ class AuthController extends GetxController {
 
       // Basic validation
       if (resetOtpController.text.trim().isEmpty) {
-        Get.snackbar('Error', 'Please enter the verification code');
+        Snackbars.errorSnackBar('Please enter the verification code');
         return;
       }
 
       if (resetOtpController.text.trim().length < 6) {
-        Get.snackbar('Error', 'Please enter a valid 6-digit code');
+        Snackbars.errorSnackBar('Please enter a valid 6-digit code');
         return;
       }
 
       // Call verify OTP API
-      final VerifyOtpResponseModel response = await remoteSource.verifyPasswordResetOtp(
-        email: resetEmailController.text.trim(),
-        otp: resetOtpController.text.trim(),
-      );
+      final VerifyOtpResponseModel response = await remoteSource
+          .verifyPasswordResetOtp(
+            email: resetEmailController.text.trim(),
+            otp: resetOtpController.text.trim(),
+          );
 
       // Check if OTP verification was successful
       if (response.isOtpVerificationSuccess) {
         _resetStep.value = ResetStep.newPassword;
-        Get.snackbar(
-          'Success',
-          response.message,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        Snackbars.errorSnackBar(response.message);
       } else {
-        Get.snackbar('Error', response.message);
+        Snackbars.errorSnackBar(response.message);
       }
     } on ResponseException catch (e) {
-      Get.snackbar('Error', e.message);
+      Snackbars.errorSnackBar(e.message);
     } on ServerException catch (e) {
-      Get.snackbar('Error', e.message);
+      Snackbars.errorSnackBar(e.message);
     } catch (e) {
-      Get.snackbar('Error', 'Invalid verification code');
+      Snackbars.errorSnackBar('Invalid verification code');
     } finally {
       _isLoading.value = false;
     }
@@ -297,23 +278,23 @@ class AuthController extends GetxController {
 
       // Basic validation
       if (newPasswordController.text.trim().isEmpty) {
-        Get.snackbar('Error', 'Please enter your new password');
+        Snackbars.errorSnackBar('Please enter your new password');
         return;
       }
 
       if (newPasswordController.text.trim().length < 6) {
-        Get.snackbar('Error', 'Password must be at least 6 characters');
+        Snackbars.errorSnackBar('Password must be at least 6 characters');
         return;
       }
 
       if (confirmNewPasswordController.text.trim().isEmpty) {
-        Get.snackbar('Error', 'Please confirm your new password');
+        Snackbars.errorSnackBar('Please confirm your new password');
         return;
       }
 
       if (newPasswordController.text.trim() !=
           confirmNewPasswordController.text.trim()) {
-        Get.snackbar('Error', 'Passwords do not match');
+        Snackbars.errorSnackBar('Passwords do not match');
         return;
       }
 
@@ -335,20 +316,16 @@ class AuthController extends GetxController {
         _resetStep.value = ResetStep.email;
 
         Get.back(); // Go back to signin screen
-        Get.snackbar(
-          'Success',
-          response.message,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        Snackbars.errorSnackBar(response.message);
       } else {
-        Get.snackbar('Error', response.message);
+        Snackbars.errorSnackBar(response.message);
       }
     } on ResponseException catch (e) {
-      Get.snackbar('Error', e.message);
+      Snackbars.errorSnackBar(e.message);
     } on ServerException catch (e) {
-      Get.snackbar('Error', e.message);
+      Snackbars.errorSnackBar(e.message);
     } catch (e) {
-      Get.snackbar('Error', 'Password reset failed. Please try again.');
+      Snackbars.errorSnackBar('Password reset failed. Please try again.');
     } finally {
       _isLoading.value = false;
     }
@@ -361,7 +338,7 @@ class AuthController extends GetxController {
 
       // Basic validation
       if (phoneController.text.trim().isEmpty) {
-        Get.snackbar('Error', 'Please enter your phone number');
+        Snackbars.errorSnackBar('Please enter your phone number');
         return;
       }
 
@@ -377,7 +354,7 @@ class AuthController extends GetxController {
       }
 
       if (cleanPhone.length != 10) {
-        Get.snackbar('Error', 'Please enter a valid 10-digit phone number');
+        Snackbars.errorSnackBar('Please enter a valid 10-digit phone number');
         return;
       }
 
@@ -389,20 +366,15 @@ class AuthController extends GetxController {
       // Check if OTP request was successful
       if (response.isOtpRequestSuccess) {
         _isOtpSent.value = true;
-        Get.snackbar(
-          'Success',
-          response.message,
-          snackPosition: SnackPosition.BOTTOM,
-        );
       } else {
-        Get.snackbar('Error', response.message);
+        Snackbars.errorSnackBar(response.message);
       }
     } on ResponseException catch (e) {
-      Get.snackbar('Error', e.message);
+      Snackbars.errorSnackBar(e.message);
     } on ServerException catch (e) {
-      Get.snackbar('Error', e.message);
+      Snackbars.errorSnackBar(e.message);
     } catch (e) {
-      Get.snackbar('Error', 'Failed to send OTP');
+      Snackbars.errorSnackBar('Failed to send OTP');
     } finally {
       _isLoading.value = false;
     }
@@ -415,12 +387,12 @@ class AuthController extends GetxController {
 
       // Basic validation
       if (otpController.text.trim().isEmpty) {
-        Get.snackbar('Error', 'Please enter the OTP');
+        Snackbars.errorSnackBar('Please enter the OTP');
         return;
       }
 
       if (otpController.text.trim().length < 6) {
-        Get.snackbar('Error', 'Please enter a valid 6-digit OTP');
+        Snackbars.errorSnackBar('Please enter a valid 6-digit OTP');
         return;
       }
 
@@ -460,20 +432,15 @@ class AuthController extends GetxController {
           // User hasn't selected area of interest, go to interest screen
           Get.offAllNamed(XRoutes.interest);
         }
-        Get.snackbar(
-          'Success',
-          response.message,
-          snackPosition: SnackPosition.BOTTOM,
-        );
       } else {
-        Get.snackbar('Error', response.message);
+        Snackbars.errorSnackBar(response.message);
       }
     } on ResponseException catch (e) {
-      Get.snackbar('Error', e.message);
+      Snackbars.errorSnackBar(e.message);
     } on ServerException catch (e) {
-      Get.snackbar('Error', e.message);
+      Snackbars.errorSnackBar(e.message);
     } catch (e) {
-      Get.snackbar('Error', 'Invalid OTP');
+      Snackbars.errorSnackBar('Invalid OTP');
     } finally {
       _isLoading.value = false;
     }
@@ -493,13 +460,9 @@ class AuthController extends GetxController {
       await Future.delayed(const Duration(seconds: 2));
 
       Get.offAllNamed(XRoutes.home);
-      Get.snackbar(
-        'Success',
-        'Signed in with Google!',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      Snackbars.errorSnackBar('Signed in with Google!');
     } catch (e) {
-      Get.snackbar('Error', 'Google sign-in failed');
+      Snackbars.errorSnackBar('Google sign-in failed');
     } finally {
       _isLoading.value = false;
     }
@@ -550,15 +513,8 @@ class AuthController extends GetxController {
 
       // Navigate to signin screen
       Get.offAllNamed(XRoutes.login);
-
-      // Show success message
-      Get.snackbar(
-        'Success',
-        'Logged out successfully',
-        snackPosition: SnackPosition.BOTTOM,
-      );
     } catch (e) {
-      Get.offAllNamed(XRoutes.login);
+      Snackbars.errorSnackBar('Logout failed');
     }
   }
 

@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:flutter/material.dart';
+import 'package:topgrade/utils/helpers/snackbars.dart';
 import '../../data/model/bookmarks_response_model.dart';
 import '../../data/source/remote_source.dart';
 import '../../../utils/network/dio_client.dart';
@@ -66,12 +66,8 @@ class BookmarksController extends GetxController {
 
       final response =
           currentBookmarkStatus == true
-              ? await _remoteSource.removeBookmark(
-                programId: programId,
-              )
-              : await _remoteSource.addBookmark(
-                programId: programId,
-              );
+              ? await _remoteSource.removeBookmark(programId: programId)
+              : await _remoteSource.addBookmark(programId: programId);
 
       if (response['success'] == true) {
         await fetchBookmarks();
@@ -79,13 +75,8 @@ class BookmarksController extends GetxController {
       }
       return false;
     } catch (e) {
-      // Show error message
-      Get.snackbar(
-        'Error',
+      Snackbars.errorSnackBar(
         'Failed to ${currentBookmarkStatus == true ? 'remove' : 'add'} bookmark: ${e.toString()}',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: Duration(seconds: 3),
       );
       return false;
     } finally {
@@ -95,10 +86,7 @@ class BookmarksController extends GetxController {
 
   // Check if a specific program is bookmarked
   bool isProgramBookmarked(int programId) {
-    return bookmarks.any(
-      (bookmark) =>
-          bookmark.program.id == programId,
-    );
+    return bookmarks.any((bookmark) => bookmark.program.id == programId);
   }
 
   // Refresh bookmarks

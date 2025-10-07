@@ -226,7 +226,7 @@ class VideoPlayerScreenController extends GetxController {
     try {
       isLoading.value = true;
       hasError.value = false;
-      
+
       // Stop current video and reset state
       if (videoPlayerController != null) {
         await videoPlayerController!.pause();
@@ -259,8 +259,6 @@ class VideoPlayerScreenController extends GetxController {
         },
       );
 
-      print('🎬 Video initialized successfully');
-
       // Setup listeners AFTER successful initialization
       videoPlayerController!.addListener(_videoPlayerListener);
 
@@ -270,11 +268,7 @@ class VideoPlayerScreenController extends GetxController {
       // Auto play video
       await videoPlayerController!.play();
       isPlaying.value = true;
-
-      print('🎬 Video started playing');
-
     } catch (e) {
-      print('🎬 Error loading video: $e');
       hasError.value = true;
 
       // Clean up on error
@@ -286,10 +280,10 @@ class VideoPlayerScreenController extends GetxController {
 
   // Video player listener
   void _videoPlayerListener() {
-    if (videoPlayerController != null && videoPlayerController!.value.isInitialized) {
+    if (videoPlayerController != null &&
+        videoPlayerController!.value.isInitialized) {
       // Check for errors first
       if (videoPlayerController!.value.hasError) {
-        print('🎬 Video player error: ${videoPlayerController!.value.errorDescription}');
         hasError.value = true;
         return;
       }
@@ -301,11 +295,10 @@ class VideoPlayerScreenController extends GetxController {
       // Check if video ended (with small buffer to prevent premature ending)
       final position = videoPlayerController!.value.position;
       final duration = videoPlayerController!.value.duration;
-      
-      if (position.inMilliseconds > 0 && 
-          duration.inMilliseconds > 0 && 
+
+      if (position.inMilliseconds > 0 &&
+          duration.inMilliseconds > 0 &&
           (position.inMilliseconds >= duration.inMilliseconds - 1000)) {
-        print('🎬 Video ended, playing next if available');
         // Auto play next video if available
         if (hasNextVideo) {
           playNextVideo();

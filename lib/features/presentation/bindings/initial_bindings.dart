@@ -5,6 +5,7 @@ import '../../data/source/remote_source.dart';
 import '../controllers/theme_controller.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/onboarding_controller.dart';
+import '../controllers/carousel_controller.dart';
 
 class InitialBindings extends Bindings {
   @override
@@ -19,5 +20,6 @@ class InitialBindings extends Bindings {
     // Controllers
     Get.put(OnboardingController(), permanent: true);
     Get.put(AuthController(), permanent: true);
+    Get.put(CarouselController(), permanent: true);
   }
 }

@@ -18,6 +18,7 @@ import '../model/bookmarks_response_model.dart';
 import '../model/my_learnings_response_model.dart';
 import '../model/purchase_response_model.dart';
 import '../model/program_details_response_model.dart';
+import '../model/carousel_response_model.dart';
 
 abstract class RemoteSource {
   final DioClient dio;
@@ -89,6 +90,9 @@ abstract class RemoteSource {
   });
 
   Future<MyLearningsResponseModel> getMyLearnings({String? status});
+
+  // Carousel endpoints
+  Future<CarouselResponseModel> getCarouselData();
 
   Future<PurchaseResponseModel> purchaseCourse({
     required int programId,
@@ -853,6 +857,45 @@ class RemoteSourceImpl extends RemoteSource {
         }
       }
       // Other exceptions
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<CarouselResponseModel> getCarouselData() async {
+    try {
+      final response = await dio.get(ApiEndpoints.carouselUrl);
+
+      if (response.statusCode == 200) {
+        return CarouselResponseModel.fromJson(response.data);
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 404:
+              // No carousel data found
+              final message = responseData['message'] ?? 'No carousel data found';
+              throw ResponseException(message: message);
+            case 500:
+              // Server error
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
       throw ServerException(message: e.toString());
     }
   }

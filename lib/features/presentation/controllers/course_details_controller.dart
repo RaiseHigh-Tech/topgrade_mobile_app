@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:topgrade/utils/helpers/snackbars.dart';
 import '../../data/model/program_details_response_model.dart';
 import '../../data/model/purchase_response_model.dart';
 import '../../data/source/remote_source.dart';
@@ -81,7 +81,6 @@ class CourseDetailsController extends GetxController {
   SyllabusModel? get syllabus => programDetails.value?.syllabus;
   bool get isBookmarked => program?.isBookmarked ?? false;
 
-
   // Get static skills data (will be replaced with API data later)
   List<String> get staticSkills => [
     'Typography',
@@ -95,7 +94,7 @@ class CourseDetailsController extends GetxController {
   Future<void> purchaseCourse({String paymentMethod = 'card'}) async {
     try {
       isPurchasing.value = true;
-      
+
       final response = await _remoteSource.purchaseCourse(
         programId: programId,
         paymentMethod: paymentMethod,
@@ -104,25 +103,16 @@ class CourseDetailsController extends GetxController {
       if (response.success) {
         purchaseResponse.value = response;
         purchaseSuccess.value = true;
-        
+
         // Show success modal with celebration
         _showPurchaseSuccessModal();
-        
+
         // Refresh program details to update purchase status
         await fetchProgramDetails();
       }
     } catch (e) {
       // Show error message
-      Get.snackbar(
-        'Purchase Failed',
-        e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.8),
-        colorText: Colors.white,
-        margin: EdgeInsets.all(16),
-        borderRadius: 8,
-        duration: Duration(seconds: 4),
-      );
+      Snackbars.errorSnackBar('Failed to purchase course: ${e.toString()}');
     } finally {
       isPurchasing.value = false;
     }
@@ -146,7 +136,7 @@ class CourseDetailsController extends GetxController {
   String get totalLecturesText {
     final syllabusData = syllabus;
     if (syllabusData == null) return '0 Lectures';
-    
+
     final totalTopics = syllabusData.totalTopics;
     return '$totalTopics Lecture${totalTopics != 1 ? 's' : ''}';
   }

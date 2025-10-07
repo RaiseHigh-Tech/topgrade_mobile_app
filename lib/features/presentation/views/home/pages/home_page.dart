@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide CarouselController;
 import 'package:get/get.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import '../../../controllers/theme_controller.dart';
 import '../../../controllers/categories_controller.dart';
 import '../../../controllers/landing_controller.dart';
+import '../../../controllers/carousel_controller.dart';
 import '../../../../../utils/constants/sizes.dart';
 import '../../../../../utils/constants/fonts.dart';
 import '../../../../../utils/constants/api_endpoints.dart';
@@ -23,6 +24,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     CategoriesController(),
   );
   final LandingController _landingController = Get.put(LandingController());
+  final CarouselController _carouselController = Get.put(CarouselController());
 
   // Current carousel index for indicators
   int _currentCarouselIndex = 0;
@@ -77,14 +79,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   // Get combined loading state from controllers
   bool get isLoading =>
       _landingController.isLoading.value ||
-      _categoriesController.isLoading.value;
+      _categoriesController.isLoading.value ||
+      _carouselController.isLoading.value;
 
   // Refresh landing data
   Future<void> _refreshLandingData() async {
-    // Refresh both landing data and categories
-    await Future.wait([
+    // Refresh landing data, categories, and carousel
+    await Future.wait<void>([
       _landingController.fetchLandingData(),
       _categoriesController.fetchCategories(),
+      _carouselController.refreshCarouselData(),
     ]);
   }
 
@@ -817,144 +821,153 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget _buildImageCarousel() {
     return GetBuilder<XThemeController>(
       builder: (themeController) {
-        // Sample carousel images - you can replace with actual API data
-        final List<String> carouselImages = [
-          'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=300&fit=crop',
-          'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&h=300&fit=crop',
-          'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=300&fit=crop',
-        ];
+        return Obx(() {
+          final carouselSlides = _carouselController.carouselSlides;
 
-        return CarouselSlider(
-          options: CarouselOptions(
-            height: 160,
-            viewportFraction: 1,
-            autoPlay: true,
-            autoPlayInterval: const Duration(seconds: 4),
-            autoPlayAnimationDuration: const Duration(milliseconds: 800),
-            autoPlayCurve: Curves.fastOutSlowIn,
-            enlargeCenterPage: true,
-            scrollDirection: Axis.horizontal,
-            onPageChanged: (index, reason) {
-              setState(() {
-                _currentCarouselIndex = index;
-              });
-            },
-          ),
-          items:
-              carouselImages.map((imageUrl) {
-                return Builder(
-                  builder: (BuildContext context) {
-                    return Container(
-                      width: MediaQuery.of(context).size.width,
-                      margin: EdgeInsets.symmetric(horizontal: XSizes.marginXs),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(
-                          XSizes.borderRadiusMd,
+          // Show shimmer if loading or no data, fallback to sample images if API fails
+          if (_carouselController.isLoading.value || carouselSlides.isEmpty) {
+            return _buildShimmerCarousel();
+          }
+
+          // Convert API slides to image URLs for existing carousel structure
+          final List<String> carouselImages =
+              carouselSlides.map((slide) => slide.image).toList();
+
+          return CarouselSlider(
+            options: CarouselOptions(
+              height: 160,
+              viewportFraction: 1,
+              autoPlay: true,
+              autoPlayInterval: const Duration(seconds: 4),
+              autoPlayAnimationDuration: const Duration(milliseconds: 800),
+              autoPlayCurve: Curves.fastOutSlowIn,
+              enlargeCenterPage: true,
+              scrollDirection: Axis.horizontal,
+              onPageChanged: (index, reason) {
+                setState(() {
+                  _currentCarouselIndex = index;
+                });
+              },
+            ),
+            items:
+                carouselImages.map((imageUrl) {
+                  return Builder(
+                    builder: (BuildContext context) {
+                      return Container(
+                        width: MediaQuery.of(context).size.width,
+                        margin: EdgeInsets.symmetric(
+                          horizontal: XSizes.marginXs,
                         ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          XSizes.borderRadiusMd,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(
+                            XSizes.borderRadiusMd,
+                          ),
                         ),
-                        child: Stack(
-                          children: [
-                            Image.network(
-                              imageUrl,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: double.infinity,
-                              loadingBuilder: (
-                                context,
-                                child,
-                                loadingProgress,
-                              ) {
-                                if (loadingProgress == null) return child;
-                                return Container(
-                                  color: themeController.textColor.withValues(
-                                    alpha: 0.1,
-                                  ),
-                                  child: Center(
-                                    child: SizedBox(
-                                      width: 30,
-                                      height: 30,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 3,
-                                        color: themeController.primaryColor,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                              errorBuilder:
-                                  (context, error, stackTrace) => Container(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                            XSizes.borderRadiusMd,
+                          ),
+                          child: Stack(
+                            children: [
+                              Image.network(
+                                imageUrl,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                                loadingBuilder: (
+                                  context,
+                                  child,
+                                  loadingProgress,
+                                ) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
                                     color: themeController.textColor.withValues(
                                       alpha: 0.1,
                                     ),
                                     child: Center(
-                                      child: Icon(
-                                        Icons.image_not_supported,
-                                        size: 40,
-                                        color: themeController.textColor
-                                            .withValues(alpha: 0.3),
+                                      child: SizedBox(
+                                        width: 30,
+                                        height: 30,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 3,
+                                          color: themeController.primaryColor,
+                                        ),
                                       ),
                                     ),
+                                  );
+                                },
+                                errorBuilder:
+                                    (context, error, stackTrace) => Container(
+                                      color: themeController.textColor
+                                          .withValues(alpha: 0.1),
+                                      child: Center(
+                                        child: Icon(
+                                          Icons.image_not_supported,
+                                          size: 40,
+                                          color: themeController.textColor
+                                              .withValues(alpha: 0.3),
+                                        ),
+                                      ),
+                                    ),
+                              ),
+                              // Gradient overlay for better contrast
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.black.withValues(alpha: 0.3),
+                                    ],
                                   ),
-                            ),
-                            // Gradient overlay for better contrast
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.black.withValues(alpha: 0.3),
-                                  ],
                                 ),
                               ),
-                            ),
-                            // Carousel Indicators positioned at bottom center
-                            Positioned(
-                              bottom: 12,
-                              left: 0,
-                              right: 0,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children:
-                                    carouselImages.asMap().entries.map((entry) {
-                                      return GestureDetector(
-                                        onTap: () {
-                                          // You can add functionality to jump to specific slide here if needed
-                                        },
-                                        child: Container(
-                                          width: 8.0,
-                                          height: 8.0,
-                                          margin: EdgeInsets.symmetric(
-                                            horizontal: 4.0,
+                              // Carousel Indicators positioned at bottom center
+                              Positioned(
+                                bottom: 12,
+                                left: 0,
+                                right: 0,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children:
+                                      carouselImages.asMap().entries.map((
+                                        entry,
+                                      ) {
+                                        return GestureDetector(
+                                          onTap: () {
+                                            // You can add functionality to jump to specific slide here if needed
+                                          },
+                                          child: Container(
+                                            width: 8.0,
+                                            height: 8.0,
+                                            margin: EdgeInsets.symmetric(
+                                              horizontal: 4.0,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color:
+                                                  _currentCarouselIndex ==
+                                                          entry.key
+                                                      ? Colors.white
+                                                      : Colors.white.withValues(
+                                                        alpha: 0.5,
+                                                      ),
+                                            ),
                                           ),
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color:
-                                                _currentCarouselIndex ==
-                                                        entry.key
-                                                    ? Colors.white
-                                                    : Colors.white.withValues(
-                                                      alpha: 0.5,
-                                                    ),
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
+                                        );
+                                      }).toList(),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                );
-              }).toList(),
-        );
+                      );
+                    },
+                  );
+                }).toList(),
+          );
+        });
       },
     );
   }

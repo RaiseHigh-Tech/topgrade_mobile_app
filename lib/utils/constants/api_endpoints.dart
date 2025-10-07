@@ -26,6 +26,9 @@ class ApiEndpoints {
   // Landing endpoints
   static const String landingUrl = '${baseUrl}api/landing';
 
+  // Carousel endpoints
+  static const String carouselUrl = '${baseUrl}api/carousel';
+
   // Bookmarks endpoints
   static const String bookmarksUrl = '${baseUrl}api/bookmarks';
   static const String addBookmarkUrl = '${baseUrl}api/bookmark';

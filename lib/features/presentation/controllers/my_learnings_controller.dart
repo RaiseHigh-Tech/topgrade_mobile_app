@@ -11,12 +11,13 @@ class MyLearningsController extends GetxController {
   var allLearnings = <LearningModel>[].obs;
   var inProgressLearnings = <LearningModel>[].obs;
   var completedLearnings = <LearningModel>[].obs;
-  var statistics = StatisticsModel(
-    totalCourses: 0,
-    completedCourses: 0,
-    inProgressCourses: 0,
-    completionRate: 0.0,
-  ).obs;
+  var statistics =
+      StatisticsModel(
+        totalCourses: 0,
+        completedCourses: 0,
+        inProgressCourses: 0,
+        completionRate: 0.0,
+      ).obs;
   var errorMessage = ''.obs;
   var hasError = false.obs;
 
@@ -33,19 +34,21 @@ class MyLearningsController extends GetxController {
       errorMessage.value = '';
 
       final response = await _remoteSource.getMyLearnings();
-      
+
       if (response.success) {
         allLearnings.value = response.learnings;
         statistics.value = response.statistics;
-        
+
         // Filter learnings by status
-        inProgressLearnings.value = response.learnings
-            .where((learning) => learning.progress.isInProgress)
-            .toList();
-        
-        completedLearnings.value = response.learnings
-            .where((learning) => learning.progress.isCompleted)
-            .toList();
+        inProgressLearnings.value =
+            response.learnings
+                .where((learning) => learning.progress.isInProgress)
+                .toList();
+
+        completedLearnings.value =
+            response.learnings
+                .where((learning) => learning.progress.isCompleted)
+                .toList();
       } else {
         hasError.value = true;
         errorMessage.value = 'Failed to fetch learnings';
@@ -65,7 +68,7 @@ class MyLearningsController extends GetxController {
       errorMessage.value = '';
 
       final response = await _remoteSource.getMyLearnings(status: 'onprogress');
-      
+
       if (response.success) {
         inProgressLearnings.value = response.learnings;
         statistics.value = response.statistics;
@@ -88,7 +91,7 @@ class MyLearningsController extends GetxController {
       errorMessage.value = '';
 
       final response = await _remoteSource.getMyLearnings(status: 'completed');
-      
+
       if (response.success) {
         completedLearnings.value = response.learnings;
         statistics.value = response.statistics;
@@ -113,7 +116,7 @@ class MyLearningsController extends GetxController {
   bool get hasLearnings => allLearnings.isNotEmpty;
   bool get hasInProgressLearnings => inProgressLearnings.isNotEmpty;
   bool get hasCompletedLearnings => completedLearnings.isNotEmpty;
-  
+
   // Refresh learnings
   Future<void> refreshLearnings() async {
     await fetchAllLearnings();

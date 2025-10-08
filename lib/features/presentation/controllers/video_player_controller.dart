@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
 import '../../../utils/constants/api_endpoints.dart';
@@ -67,9 +68,12 @@ class VideoPlayerScreenController extends GetxController {
   var currentVideo = Rx<VideoItem?>(null);
   var currentPosition = Duration.zero.obs;
   var totalDuration = Duration.zero.obs;
+  var currentVolume = 1.0.obs;
+  var showVolumeSlider = false.obs;
 
   // Timer for hiding controls
   Timer? _controlsTimer;
+  Timer? _volumeSliderTimer;
 
   // Playlist data
   var playlist = <VideoItem>[].obs;
@@ -78,6 +82,9 @@ class VideoPlayerScreenController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    
+    // Configure audio session for video playback
+    _configureAudioSession();
 
     // Check if there are navigation arguments with server data
     final args = Get.arguments as Map<String, dynamic>?;
@@ -99,6 +106,7 @@ class VideoPlayerScreenController extends GetxController {
   void onClose() {
     _disposeVideoController();
     _controlsTimer?.cancel();
+    _volumeSliderTimer?.cancel();
     super.onClose();
   }
 
@@ -259,15 +267,23 @@ class VideoPlayerScreenController extends GetxController {
         },
       );
 
+      // Set initial volume and update observable
+      await setVolume(1.0);
+
       // Setup listeners AFTER successful initialization
       videoPlayerController!.addListener(_videoPlayerListener);
 
       // Update duration
       totalDuration.value = videoPlayerController!.value.duration;
 
+      // Set initial volume and update observable
+      await setVolume(1.0);
+      
       // Auto play video
       await videoPlayerController!.play();
       isPlaying.value = true;
+      
+      print('🔊 Video started with audio enabled');
     } catch (e) {
       hasError.value = true;
 
@@ -407,7 +423,67 @@ class VideoPlayerScreenController extends GetxController {
   // Set volume
   Future<void> setVolume(double volume) async {
     if (videoPlayerController != null) {
-      await videoPlayerController!.setVolume(volume);
+      // Clamp volume between 0.0 and 1.0
+      final clampedVolume = volume.clamp(0.0, 1.0);
+      await videoPlayerController!.setVolume(clampedVolume);
+      currentVolume.value = clampedVolume;
+      print('🔊 Volume set to: ${(clampedVolume * 100).round()}%');
+    }
+  }
+
+  // Toggle volume slider visibility
+  void toggleVolumeSlider() {
+    showVolumeSlider.value = !showVolumeSlider.value;
+    
+    if (showVolumeSlider.value) {
+      _startVolumeSliderTimer();
+    } else {
+      _volumeSliderTimer?.cancel();
+    }
+  }
+
+  // Show volume slider temporarily
+  void showVolumeSliderTemporarily() {
+    showVolumeSlider.value = true;
+    _startVolumeSliderTimer();
+  }
+
+  // Start timer to hide volume slider
+  void _startVolumeSliderTimer() {
+    _volumeSliderTimer?.cancel();
+    _volumeSliderTimer = Timer(Duration(seconds: 3), () {
+      showVolumeSlider.value = false;
+    });
+  }
+
+  // Mute/Unmute toggle
+  Future<void> toggleMute() async {
+    if (currentVolume.value > 0) {
+      // Mute
+      await setVolume(0.0);
+    } else {
+      // Unmute to 70% volume
+      await setVolume(0.7);
+    }
+  }
+
+  // Configure audio session for proper video playback
+  Future<void> _configureAudioSession() async {
+    try {
+      // Enable audio focus for video playback
+      await SystemChannels.platform.invokeMethod('AudioManager.requestAudioFocus');
+      
+      // Set system volume to ensure audio is audible
+      await SystemChannels.platform.invokeMethod('AudioManager.setStreamVolume', {
+        'streamType': 'STREAM_MUSIC',
+        'volume': 15, // Set to a reasonable volume level
+        'flags': 0,
+      });
+      
+      print('✅ Audio session configured successfully');
+    } catch (e) {
+      print('⚠️ Failed to configure audio session: $e');
+      // Audio configuration failed, but continue with video playback
     }
   }
 

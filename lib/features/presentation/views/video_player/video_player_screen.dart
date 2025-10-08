@@ -268,7 +268,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     duration: Duration(milliseconds: 300),
                     child: Container(
                       color: Colors.black26,
-                      child: _buildVideoControls(themeController, isFullScreen),
+                      child: Stack(
+                        children: [
+                          _buildVideoControls(themeController, isFullScreen),
+                          // Volume Slider Overlay
+                          Obx(() => _controller.showVolumeSlider.value
+                              ? _buildVolumeSlider(themeController, isFullScreen)
+                              : SizedBox.shrink()),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -380,6 +388,20 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                             color: _controller.hasNextVideo ? Colors.white : Colors.white38,
                             size: 24,
                           ),
+                        ),
+                        
+                        // Volume Control
+                        IconButton(
+                          onPressed: () => _controller.showVolumeSliderTemporarily(),
+                          icon: Obx(() => Icon(
+                            _controller.currentVolume.value > 0.5
+                                ? Icons.volume_up
+                                : _controller.currentVolume.value > 0
+                                    ? Icons.volume_down
+                                    : Icons.volume_off,
+                            color: Colors.white,
+                            size: 24,
+                          )),
                         ),
                         
                         // Fullscreen Toggle
@@ -625,6 +647,90 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             )),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildVolumeSlider(XThemeController themeController, bool isFullScreen) {
+    return Positioned(
+      right: isFullScreen ? 80 : 60,
+      top: isFullScreen ? 100 : 80,
+      child: Container(
+        width: 50,
+        height: isFullScreen ? 200 : 150,
+        padding: EdgeInsets.symmetric(vertical: XSizes.paddingSm),
+        decoration: BoxDecoration(
+          color: Colors.black87,
+          borderRadius: BorderRadius.circular(XSizes.borderRadiusLg),
+          border: Border.all(
+            color: themeController.primaryColor.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Volume Icon
+            GestureDetector(
+              onTap: () => _controller.toggleMute(),
+              child: Container(
+                padding: EdgeInsets.all(XSizes.paddingXs),
+                child: Obx(() => Icon(
+                  _controller.currentVolume.value > 0.5
+                      ? Icons.volume_up
+                      : _controller.currentVolume.value > 0
+                          ? Icons.volume_down
+                          : Icons.volume_off,
+                  color: _controller.currentVolume.value > 0
+                      ? Colors.white
+                      : Colors.white60,
+                  size: 20,
+                )),
+              ),
+            ),
+            
+            SizedBox(height: XSizes.spacingSm),
+            
+            // Volume Slider
+            Expanded(
+              child: Obx(() => RotatedBox(
+                quarterTurns: 3, // Rotate to make it vertical
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 3,
+                    thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8),
+                    overlayShape: RoundSliderOverlayShape(overlayRadius: 16),
+                    activeTrackColor: themeController.primaryColor,
+                    inactiveTrackColor: Colors.white30,
+                    thumbColor: themeController.primaryColor,
+                    overlayColor: themeController.primaryColor.withValues(alpha: 0.2),
+                  ),
+                  child: Slider(
+                    value: _controller.currentVolume.value,
+                    onChanged: (value) {
+                      _controller.setVolume(value);
+                    },
+                    min: 0.0,
+                    max: 1.0,
+                  ),
+                ),
+              )),
+            ),
+            
+            SizedBox(height: XSizes.spacingSm),
+            
+            // Volume Percentage
+            Obx(() => Text(
+              '${(_controller.currentVolume.value * 100).round()}%',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: XSizes.textSizeXs,
+                fontFamily: XFonts.lexend,
+                fontWeight: FontWeight.w500,
+              ),
+            )),
+          ],
+        ),
       ),
     );
   }

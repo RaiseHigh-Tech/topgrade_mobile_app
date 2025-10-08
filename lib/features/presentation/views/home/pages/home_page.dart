@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart' hide CarouselController;
 import 'package:get/get.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import '../../../../data/model/program_model.dart';
 import '../../../controllers/theme_controller.dart';
 import '../../../controllers/categories_controller.dart';
 import '../../../controllers/landing_controller.dart';
 import '../../../controllers/carousel_controller.dart';
+import '../../../controllers/my_learnings_controller.dart';
 import '../../../../../utils/constants/sizes.dart';
 import '../../../../../utils/constants/fonts.dart';
 import '../../../../../utils/constants/api_endpoints.dart';
@@ -25,6 +27,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   );
   final LandingController _landingController = Get.put(LandingController());
   final CarouselController _carouselController = Get.put(CarouselController());
+  final MyLearningsController _myLearningsController = Get.put(MyLearningsController());
 
   // Current carousel index for indicators
   int _currentCarouselIndex = 0;
@@ -129,21 +132,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         // Continue Watching Section - only show if data exists
                         Obx(
                           () =>
-                              _landingController.continueWatching.isNotEmpty
+                              _myLearningsController.inProgressLearnings.isNotEmpty
                                   ? Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       _buildSectionHeader("Continue Watching"),
                                       SizedBox(height: XSizes.spacingSm),
-                                      ..._landingController.continueWatching.map(
-                                        (program) => Padding(
+                                      ..._myLearningsController.inProgressLearnings.map(
+                                        (learning) => Padding(
                                           padding: EdgeInsets.only(
                                             bottom: XSizes.spacingSm,
                                           ),
                                           child:
                                               _buildContinueWatchingProgramCard(
-                                                program,
+                                                learning,
                                               ),
                                         ),
                                       ),
@@ -613,17 +616,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildContinueWatchingProgramCard(dynamic program) {
+  Widget _buildContinueWatchingProgramCard(dynamic learningData) {
+    // Extract program and progress data based on type
+    final program = learningData is ProgramModel ? learningData : learningData.program;
+    final progress = learningData is ProgramModel ? null : learningData.progress;
     return GetBuilder<XThemeController>(
       builder:
           (themeController) => GestureDetector(
             onTap: () {
               Get.toNamed(
                 '/course-details',
-                arguments: {
-                  'programId': program.id,
-                  'programType': program.type,
-                },
+                arguments: {'programId': program.id},
               );
             },
             child: Container(
@@ -750,8 +753,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           children: [
                             Expanded(
                               child: LinearProgressIndicator(
-                                value:
-                                    0.75, // Default progress - you can add progress field to program model
+                                value: progress != null 
+                                    ? (progress.percentage / 100.0).clamp(0.0, 1.0)
+                                    : 0.0,
                                 backgroundColor: Colors.grey[300],
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   themeController.primaryColor,
@@ -764,7 +768,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              '75%', // Default progress - you can add progress field to program model
+                              progress != null 
+                                  ? '${progress.percentage.toStringAsFixed(0)}%'
+                                  : '0%',
                               style: TextStyle(
                                 fontSize: XSizes.textSizeXs,
                                 color: themeController.textColor,

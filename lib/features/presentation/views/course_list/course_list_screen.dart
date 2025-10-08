@@ -599,7 +599,7 @@ class _CourseListScreenState extends State<CourseListScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    program.title,
+                    program.subtitle,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: XSizes.textSizeSm,

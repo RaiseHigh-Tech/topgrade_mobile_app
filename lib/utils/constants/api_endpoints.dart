@@ -1,7 +1,6 @@
 class ApiEndpoints {
   // Base URL
-  static const String baseUrl =
-      'https://torrential-india-problematically.ngrok-free.dev/';
+  static const String baseUrl = 'https://www.topgradeinnovation.com/';
 
   // Complete URLs
   static const String signupUrl = '${baseUrl}api/auth/signup';

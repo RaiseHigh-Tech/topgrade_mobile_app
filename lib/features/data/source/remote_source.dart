@@ -16,6 +16,7 @@ import '../model/programs_filter_response_model.dart';
 import '../model/landing_response_model.dart';
 import '../model/bookmarks_response_model.dart';
 import '../model/my_learnings_response_model.dart';
+import '../model/progress_update_response_model.dart';
 import '../model/purchase_response_model.dart';
 import '../model/program_details_response_model.dart';
 import '../model/carousel_response_model.dart';
@@ -51,9 +52,7 @@ abstract class RemoteSource {
     required String confirmPassword,
   });
 
-  Future<PhoneOtpResponseModel> requestPhoneOtp({
-    required String phoneNumber,
-  });
+  Future<PhoneOtpResponseModel> requestPhoneOtp({required String phoneNumber});
 
   Future<PhoneSigninResponseModel> phoneSignin({
     required String phoneNumber,
@@ -81,13 +80,9 @@ abstract class RemoteSource {
 
   Future<BookmarksResponseModel> getBookmarks();
 
-  Future<Map<String, dynamic>> addBookmark({
-    required int programId,
-  });
+  Future<Map<String, dynamic>> addBookmark({required int programId});
 
-  Future<Map<String, dynamic>> removeBookmark({
-    required int programId,
-  });
+  Future<Map<String, dynamic>> removeBookmark({required int programId});
 
   Future<MyLearningsResponseModel> getMyLearnings({String? status});
 
@@ -98,9 +93,15 @@ abstract class RemoteSource {
     required int programId,
     required String paymentMethod,
   });
-  
+
   Future<ProgramDetailsResponseModel> getProgramDetails({
     required int programId,
+  });
+
+  Future<ProgressUpdateResponseModel> updateLearningProgress({
+    required int topicId,
+    required int purchaseId,
+    required int watchTimeSeconds,
   });
 }
 
@@ -184,7 +185,9 @@ class RemoteSourceImpl extends RemoteSource {
       if (response.statusCode == 200) {
         return SignupResponseModel.fromJson(response.data);
       } else {
-        throw ServerException(message: "Unexpected response code: ${response.statusCode}");
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
       }
     } catch (e) {
       if (e is DioException) {
@@ -199,7 +202,9 @@ class RemoteSourceImpl extends RemoteSource {
               throw ResponseException(message: message);
             case 409:
               // Conflict - user already exists
-              final message = responseData['message'] ?? 'User with this email already exists';
+              final message =
+                  responseData['message'] ??
+                  'User with this email already exists';
               throw ResponseException(message: message);
             case 500:
               // Server error
@@ -209,7 +214,9 @@ class RemoteSourceImpl extends RemoteSource {
           }
         } else {
           // Network error
-          throw ServerException(message: 'Network error: Please check your connection');
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
         }
       }
       // Other exceptions
@@ -224,15 +231,15 @@ class RemoteSourceImpl extends RemoteSource {
     try {
       final response = await dio.post(
         ApiEndpoints.requestOtpUrl,
-        data: {
-          'email': email,
-        },
+        data: {'email': email},
       );
 
       if (response.statusCode == 200) {
         return ResetPasswordResponseModel.fromJson(response.data);
       } else {
-        throw ServerException(message: "Unexpected response code: ${response.statusCode}");
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
       }
     } catch (e) {
       if (e is DioException) {
@@ -243,11 +250,13 @@ class RemoteSourceImpl extends RemoteSource {
           switch (statusCode) {
             case 400:
               // Bad request - invalid email format
-              final message = responseData['message'] ?? 'Invalid email address';
+              final message =
+                  responseData['message'] ?? 'Invalid email address';
               throw ResponseException(message: message);
             case 404:
               // User not found
-              final message = responseData['message'] ?? 'User not found with this email';
+              final message =
+                  responseData['message'] ?? 'User not found with this email';
               throw ResponseException(message: message);
             case 500:
               // Server error
@@ -257,7 +266,9 @@ class RemoteSourceImpl extends RemoteSource {
           }
         } else {
           // Network error
-          throw ServerException(message: 'Network error: Please check your connection');
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
         }
       }
       // Other exceptions
@@ -284,7 +295,9 @@ class RemoteSourceImpl extends RemoteSource {
       if (response.statusCode == 200) {
         return ResetPasswordResponseModel.fromJson(response.data);
       } else {
-        throw ServerException(message: "Unexpected response code: ${response.statusCode}");
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
       }
     } catch (e) {
       if (e is DioException) {
@@ -299,7 +312,9 @@ class RemoteSourceImpl extends RemoteSource {
               throw ResponseException(message: message);
             case 404:
               // User not found
-              final message = responseData['message'] ?? 'User with this email does not exist';
+              final message =
+                  responseData['message'] ??
+                  'User with this email does not exist';
               throw ResponseException(message: message);
             case 500:
               // Server error
@@ -309,7 +324,9 @@ class RemoteSourceImpl extends RemoteSource {
           }
         } else {
           // Network error
-          throw ServerException(message: 'Network error: Please check your connection');
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
         }
       }
       // Other exceptions
@@ -324,15 +341,15 @@ class RemoteSourceImpl extends RemoteSource {
     try {
       final response = await dio.post(
         ApiEndpoints.requestPhoneOtpUrl,
-        data: {
-          'phone_number': phoneNumber,
-        },
+        data: {'phone_number': phoneNumber},
       );
 
       if (response.statusCode == 200) {
         return PhoneOtpResponseModel.fromJson(response.data);
       } else {
-        throw ServerException(message: "Unexpected response code: ${response.statusCode}");
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
       }
     } catch (e) {
       if (e is DioException) {
@@ -343,7 +360,9 @@ class RemoteSourceImpl extends RemoteSource {
           switch (statusCode) {
             case 400:
               // Bad request - invalid phone number format
-              final message = responseData['message'] ?? 'Phone number must be exactly 10 digits';
+              final message =
+                  responseData['message'] ??
+                  'Phone number must be exactly 10 digits';
               throw ResponseException(message: message);
             case 500:
               // Server error
@@ -353,7 +372,9 @@ class RemoteSourceImpl extends RemoteSource {
           }
         } else {
           // Network error
-          throw ServerException(message: 'Network error: Please check your connection');
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
         }
       }
       // Other exceptions
@@ -369,16 +390,15 @@ class RemoteSourceImpl extends RemoteSource {
     try {
       final response = await dio.post(
         ApiEndpoints.phoneSigninUrl,
-        data: {
-          'phone_number': phoneNumber,
-          'otp': otp,
-        },
+        data: {'phone_number': phoneNumber, 'otp': otp},
       );
 
       if (response.statusCode == 200) {
         return PhoneSigninResponseModel.fromJson(response.data);
       } else {
-        throw ServerException(message: "Unexpected response code: ${response.statusCode}");
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
       }
     } catch (e) {
       if (e is DioException) {
@@ -389,11 +409,13 @@ class RemoteSourceImpl extends RemoteSource {
           switch (statusCode) {
             case 400:
               // Bad request - invalid phone number or OTP format
-              final message = responseData['message'] ?? 'Invalid phone number or OTP';
+              final message =
+                  responseData['message'] ?? 'Invalid phone number or OTP';
               throw ResponseException(message: message);
             case 401:
               // Invalid or expired OTP
-              final message = responseData['message'] ?? 'Invalid or expired OTP';
+              final message =
+                  responseData['message'] ?? 'Invalid or expired OTP';
               throw ResponseException(message: message);
             case 500:
               // Server error
@@ -403,7 +425,9 @@ class RemoteSourceImpl extends RemoteSource {
           }
         } else {
           // Network error
-          throw ServerException(message: 'Network error: Please check your connection');
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
         }
       }
       // Other exceptions
@@ -419,16 +443,15 @@ class RemoteSourceImpl extends RemoteSource {
     try {
       final response = await dio.post(
         ApiEndpoints.verifyOtpUrl,
-        data: {
-          'email': email,
-          'otp': otp,
-        },
+        data: {'email': email, 'otp': otp},
       );
 
       if (response.statusCode == 200) {
         return VerifyOtpResponseModel.fromJson(response.data);
       } else {
-        throw ServerException(message: "Unexpected response code: ${response.statusCode}");
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
       }
     } catch (e) {
       if (e is DioException) {
@@ -447,7 +470,9 @@ class RemoteSourceImpl extends RemoteSource {
               throw ResponseException(message: message);
             case 404:
               // User not found
-              final message = responseData['message'] ?? 'User with this email does not exist';
+              final message =
+                  responseData['message'] ??
+                  'User with this email does not exist';
               throw ResponseException(message: message);
             case 500:
               // Server error
@@ -457,7 +482,9 @@ class RemoteSourceImpl extends RemoteSource {
           }
         } else {
           // Network error
-          throw ServerException(message: 'Network error: Please check your connection');
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
         }
       }
       // Other exceptions
@@ -474,7 +501,7 @@ class RemoteSourceImpl extends RemoteSource {
         ApiEndpoints.addAreaOfInterestUrl,
         data: {'area_of_intrest': areaOfIntrest},
       );
- 
+
       if (response.statusCode == 200) {
         return AreaOfInterestResponseModel.fromJson(response.data);
       } else {
@@ -491,15 +518,18 @@ class RemoteSourceImpl extends RemoteSource {
           switch (statusCode) {
             case 401:
               // Unauthorized - invalid or missing token
-              final message = responseData['detail'] ?? 'Authentication required';
+              final message =
+                  responseData['detail'] ?? 'Authentication required';
               throw ResponseException(message: message);
             case 422:
               // Validation error
-              final message = responseData['detail']?[0]?['msg'] ?? 'Validation error';
+              final message =
+                  responseData['detail']?[0]?['msg'] ?? 'Validation error';
               throw ResponseException(message: message);
             case 500:
               // Server error
-              final message = responseData['message'] ?? 'Internal server error';
+              final message =
+                  responseData['message'] ?? 'Internal server error';
               throw ServerException(message: message);
             default:
               throw ServerException(message: 'Unexpected error occurred');
@@ -568,7 +598,7 @@ class RemoteSourceImpl extends RemoteSource {
     try {
       // Build query parameters
       Map<String, dynamic> queryParams = {};
-      
+
       if (categoryId != null) queryParams['category_id'] = categoryId;
       if (isBestSeller != null) queryParams['is_best_seller'] = isBestSeller;
       if (minPrice != null) queryParams['min_price'] = minPrice;
@@ -599,7 +629,8 @@ class RemoteSourceImpl extends RemoteSource {
           switch (statusCode) {
             case 400:
               // Bad request - invalid parameters
-              final message = responseData['message'] ?? 'Invalid request parameters';
+              final message =
+                  responseData['message'] ?? 'Invalid request parameters';
               throw ResponseException(message: message);
             case 404:
               // Programs not found
@@ -644,7 +675,8 @@ class RemoteSourceImpl extends RemoteSource {
           switch (statusCode) {
             case 404:
               // Landing data not found
-              final message = responseData['message'] ?? 'Landing data not found';
+              final message =
+                  responseData['message'] ?? 'Landing data not found';
               throw ResponseException(message: message);
             case 500:
               // Server error
@@ -685,7 +717,8 @@ class RemoteSourceImpl extends RemoteSource {
           switch (statusCode) {
             case 401:
               // Unauthorized
-              final message = responseData['message'] ?? 'Authentication required';
+              final message =
+                  responseData['message'] ?? 'Authentication required';
               throw ResponseException(message: message);
             case 404:
               // No bookmarks found
@@ -710,15 +743,11 @@ class RemoteSourceImpl extends RemoteSource {
   }
 
   @override
-  Future<Map<String, dynamic>> addBookmark({
-    required int programId,
-  }) async {
+  Future<Map<String, dynamic>> addBookmark({required int programId}) async {
     try {
       final response = await dio.post(
         ApiEndpoints.addBookmarkUrl,
-        data: {
-          'program_id': programId,
-        },
+        data: {'program_id': programId},
       );
 
       if (response.statusCode == 200) {
@@ -736,10 +765,12 @@ class RemoteSourceImpl extends RemoteSource {
 
           switch (statusCode) {
             case 400:
-              final message = responseData['message'] ?? 'Invalid request parameters';
+              final message =
+                  responseData['message'] ?? 'Invalid request parameters';
               throw ResponseException(message: message);
             case 401:
-              final message = responseData['message'] ?? 'Authentication required';
+              final message =
+                  responseData['message'] ?? 'Authentication required';
               throw ResponseException(message: message);
             case 404:
               final message = responseData['message'] ?? 'Program not found';
@@ -760,15 +791,11 @@ class RemoteSourceImpl extends RemoteSource {
   }
 
   @override
-  Future<Map<String, dynamic>> removeBookmark({
-    required int programId,
-  }) async {
+  Future<Map<String, dynamic>> removeBookmark({required int programId}) async {
     try {
       final response = await dio.delete(
         ApiEndpoints.removeBookmarkUrl,
-        data: {
-          'program_id': programId,
-        },
+        data: {'program_id': programId},
       );
 
       if (response.statusCode == 200) {
@@ -786,10 +813,12 @@ class RemoteSourceImpl extends RemoteSource {
 
           switch (statusCode) {
             case 400:
-              final message = responseData['message'] ?? 'Invalid request parameters';
+              final message =
+                  responseData['message'] ?? 'Invalid request parameters';
               throw ResponseException(message: message);
             case 401:
-              final message = responseData['message'] ?? 'Authentication required';
+              final message =
+                  responseData['message'] ?? 'Authentication required';
               throw ResponseException(message: message);
             case 404:
               final message = responseData['message'] ?? 'Bookmark not found';
@@ -813,12 +842,12 @@ class RemoteSourceImpl extends RemoteSource {
   Future<MyLearningsResponseModel> getMyLearnings({String? status}) async {
     try {
       String url = ApiEndpoints.myLearningsUrl;
-      
+
       // Add status query parameter if provided
       if (status != null && status.isNotEmpty) {
         url += '?status=$status';
       }
-      
+
       final response = await dio.get(url);
 
       if (response.statusCode == 200) {
@@ -837,7 +866,8 @@ class RemoteSourceImpl extends RemoteSource {
           switch (statusCode) {
             case 401:
               // Unauthorized
-              final message = responseData['message'] ?? 'Authentication required';
+              final message =
+                  responseData['message'] ?? 'Authentication required';
               throw ResponseException(message: message);
             case 404:
               // No learnings found
@@ -882,7 +912,8 @@ class RemoteSourceImpl extends RemoteSource {
           switch (statusCode) {
             case 404:
               // No carousel data found
-              final message = responseData['message'] ?? 'No carousel data found';
+              final message =
+                  responseData['message'] ?? 'No carousel data found';
               throw ResponseException(message: message);
             case 500:
               // Server error
@@ -908,10 +939,7 @@ class RemoteSourceImpl extends RemoteSource {
     try {
       final response = await dio.post(
         ApiEndpoints.purchaseUrl,
-        data: {
-          'program_id': programId,
-          'payment_method': paymentMethod,
-        },
+        data: {'program_id': programId, 'payment_method': paymentMethod},
       );
 
       if (response.statusCode == 200) {
@@ -930,11 +958,13 @@ class RemoteSourceImpl extends RemoteSource {
           switch (statusCode) {
             case 400:
               // Bad request
-              final message = responseData['message'] ?? 'Invalid purchase request';
+              final message =
+                  responseData['message'] ?? 'Invalid purchase request';
               throw ResponseException(message: message);
             case 401:
               // Unauthorized
-              final message = responseData['message'] ?? 'Authentication required';
+              final message =
+                  responseData['message'] ?? 'Authentication required';
               throw ResponseException(message: message);
             case 404:
               // Program not found
@@ -942,7 +972,8 @@ class RemoteSourceImpl extends RemoteSource {
               throw ResponseException(message: message);
             case 409:
               // Already purchased
-              final message = responseData['message'] ?? 'Course already purchased';
+              final message =
+                  responseData['message'] ?? 'Course already purchased';
               throw ResponseException(message: message);
             case 500:
               // Server error
@@ -968,7 +999,7 @@ class RemoteSourceImpl extends RemoteSource {
   }) async {
     try {
       final url = '${ApiEndpoints.baseUrl}api/program/$programId/details';
-      
+
       final response = await dio.get(url);
 
       if (response.statusCode == 200) {
@@ -987,7 +1018,8 @@ class RemoteSourceImpl extends RemoteSource {
           switch (statusCode) {
             case 401:
               // Unauthorized
-              final message = responseData['message'] ?? 'Authentication required';
+              final message =
+                  responseData['message'] ?? 'Authentication required';
               throw ResponseException(message: message);
             case 404:
               // Program not found
@@ -998,6 +1030,76 @@ class RemoteSourceImpl extends RemoteSource {
               throw ServerException(message: 'Internal server error');
             default:
               throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          // Network error
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
+      // Other exceptions
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<ProgressUpdateResponseModel> updateLearningProgress({
+    required int topicId,
+    required int purchaseId,
+    required int watchTimeSeconds,
+  }) async {
+    try {
+      final response = await dio.post(
+        ApiEndpoints.updateProgressUrl,
+        data: {
+          'topic_id': topicId,
+          'purchase_id': purchaseId,
+          'watch_time_seconds': watchTimeSeconds,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return ProgressUpdateResponseModel.fromJson(response.data);
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 400:
+              // Bad request
+              final message = responseData['message'] ?? 'Invalid request data';
+              throw ResponseException(message: message);
+            case 401:
+              // Unauthorized
+              final message =
+                  responseData['message'] ?? 'Authentication required';
+              throw ResponseException(message: message);
+            case 403:
+              // Forbidden - not purchased
+              final message =
+                  responseData['message'] ??
+                  'Access denied - content not purchased';
+              throw ResponseException(message: message);
+            case 404:
+              // Topic or purchase not found
+              final message =
+                  responseData['message'] ?? 'Topic or purchase not found';
+              throw ResponseException(message: message);
+            case 500:
+              // Server error
+              throw ServerException(message: 'Internal server error');
+            default:
+              final message =
+                  responseData['message'] ?? 'Failed to update progress';
+              throw ResponseException(message: message);
           }
         } else {
           // Network error

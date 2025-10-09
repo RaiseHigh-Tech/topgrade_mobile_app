@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
+import 'package:dio/dio.dart';
 import '../../../utils/constants/api_endpoints.dart';
+import '../../data/source/remote_source.dart';
+import '../../../utils/network/dio_client.dart';
 
 class VideoItem {
   final int id;
@@ -55,8 +59,10 @@ class ModuleVideoStructure {
 }
 
 class VideoPlayerScreenController extends GetxController {
-  // Video Player Controller
   VideoPlayerController? videoPlayerController;
+
+  // Remote source for API calls
+  late RemoteSource _remoteSource;
 
   // Observable variables
   var isLoading = true.obs;
@@ -69,11 +75,19 @@ class VideoPlayerScreenController extends GetxController {
   var currentPosition = Duration.zero.obs;
   var totalDuration = Duration.zero.obs;
   var currentVolume = 1.0.obs;
-  var showVolumeSlider = false.obs;
 
   // Timer for hiding controls
   Timer? _controlsTimer;
   Timer? _volumeSliderTimer;
+
+  // Position tracking for milestones
+  Duration _lastApiUpdatePosition = Duration.zero;
+  static const Duration _apiUpdateInterval = Duration(seconds: 30);
+
+  // Progress tracking variables
+  var hasPurchased = false.obs;
+  var purchaseId = 0.obs;
+  var currentTopicId = 0.obs;
 
   // Playlist data
   var playlist = <VideoItem>[].obs;
@@ -82,28 +96,32 @@ class VideoPlayerScreenController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    
-    // Configure audio session for video playback
+    // Initialize remote source
+    _remoteSource = RemoteSourceImpl(dio: Get.find<DioClient>());
+
     _configureAudioSession();
 
-    // Check if there are navigation arguments with server data
+    // Get navigation arguments
     final args = Get.arguments as Map<String, dynamic>?;
     if (args != null) {
-      // Check if we have syllabus data from course details
+      // Initialize progress tracking from navigation arguments
+      hasPurchased.value = args['hasPurchased'] ?? false;
+      purchaseId.value = args['purchaseId'] ?? 0;
+      currentTopicId.value = args['currentTopicId'] ?? 0;
+
       if (args.containsKey('syllabus') && args.containsKey('currentTopicId')) {
         _initializeFromServerData(args);
       } else {
-        // No syllabus data available
         _showNoVideosError();
       }
     } else {
-      // No arguments provided
       _showNoVideosError();
     }
   }
 
   @override
   void onClose() {
+    _removeVideoPlayerListener();
     _disposeVideoController();
     _controlsTimer?.cancel();
     _volumeSliderTimer?.cancel();
@@ -125,7 +143,6 @@ class VideoPlayerScreenController extends GetxController {
       final syllabus = args['syllabus'];
       final currentTopicId = args['currentTopicId'] as int?;
 
-      // Extract all topics from all modules and create module structure
       List<VideoItem> serverPlaylist = [];
       List<ModuleVideoStructure> modules = [];
       int currentVideoIndex = 0;
@@ -144,12 +161,9 @@ class VideoPlayerScreenController extends GetxController {
               final videoUrl = topic['video_url'] ?? '';
               final videoDuration = topic['video_duration'] ?? '00:00';
 
-              // Only add topics that have video URLs
               if (videoUrl.isNotEmpty) {
-                // Convert relative URL to absolute URL if needed
                 String fullVideoUrl = videoUrl;
                 if (!videoUrl.startsWith('http')) {
-                  // Use base URL from API endpoints
                   fullVideoUrl = '${ApiEndpoints.baseUrl}$videoUrl';
                 }
 
@@ -165,12 +179,9 @@ class VideoPlayerScreenController extends GetxController {
 
                 serverPlaylist.add(videoItem);
                 moduleVideos.add(videoItem);
-
-                // Check if this is the current topic to play
                 if (topicId == currentTopicId) {
                   currentVideoIndex = videoIndex;
                 }
-
                 videoIndex++;
               }
             }
@@ -185,7 +196,7 @@ class VideoPlayerScreenController extends GetxController {
                 videos: moduleVideos,
                 isExpanded: moduleVideos.any(
                   (video) => video.id == currentTopicId,
-                ), // Expand if contains current video
+                ),
               ),
             );
           }
@@ -235,59 +246,41 @@ class VideoPlayerScreenController extends GetxController {
       isLoading.value = true;
       hasError.value = false;
 
-      // Stop current video and reset state
       if (videoPlayerController != null) {
         await videoPlayerController!.pause();
         isPlaying.value = false;
       }
-
-      // Properly dispose previous controller
       await _disposeVideoController();
 
-      // Update current video info
       currentVideoIndex.value = index;
       currentVideo.value = playlist[index];
 
-      // Reset position and duration
       currentPosition.value = Duration.zero;
       totalDuration.value = Duration.zero;
 
-      print('🎬 Loading video at index $index: ${playlist[index].url}');
-
-      // Create new video controller
       videoPlayerController = VideoPlayerController.networkUrl(
         Uri.parse(playlist[index].url),
       );
 
-      // Initialize video player with timeout
       await videoPlayerController!.initialize().timeout(
-        Duration(seconds: 30), // Increased timeout
+        Duration(seconds: 30),
         onTimeout: () {
           throw Exception('Video initialization timeout after 30 seconds');
         },
       );
 
-      // Set initial volume and update observable
       await setVolume(1.0);
 
-      // Setup listeners AFTER successful initialization
       videoPlayerController!.addListener(_videoPlayerListener);
-
-      // Update duration
       totalDuration.value = videoPlayerController!.value.duration;
-
-      // Set initial volume and update observable
       await setVolume(1.0);
-      
-      // Auto play video
+
       await videoPlayerController!.play();
       isPlaying.value = true;
-      
-      print('🔊 Video started with audio enabled');
+
+      _addVideoPlayerListener();
     } catch (e) {
       hasError.value = true;
-
-      // Clean up on error
       await _disposeVideoController();
     } finally {
       isLoading.value = false;
@@ -304,18 +297,40 @@ class VideoPlayerScreenController extends GetxController {
         return;
       }
 
-      // Update position and playing state
-      currentPosition.value = videoPlayerController!.value.position;
-      isPlaying.value = videoPlayerController!.value.isPlaying;
-
-      // Check if video ended (with small buffer to prevent premature ending)
       final position = videoPlayerController!.value.position;
       final duration = videoPlayerController!.value.duration;
 
+      // Update observable values for UI
+      currentPosition.value = position;
+      totalDuration.value = duration;
+      isPlaying.value = videoPlayerController!.value.isPlaying;
+
+      // API Update every 30 seconds when playing (for purchased content only)
+      if (isPlaying.value &&
+          position.inSeconds >=
+              _lastApiUpdatePosition.inSeconds + _apiUpdateInterval.inSeconds) {
+        print('   - isPlaying: ${isPlaying.value}');
+        print('   - hasPurchased: ${hasPurchased.value}');
+        print('   - currentTopicId: ${currentTopicId.value}');
+        print('   - purchaseId: ${purchaseId.value}');
+        print('   - position: ${position.inSeconds}s');
+
+        if (hasPurchased.value &&
+            currentTopicId.value > 0 &&
+            purchaseId.value > 0) {
+          _lastApiUpdatePosition = Duration(
+            seconds: (position.inSeconds ~/ 30) * 30,
+          );
+          _updateProgressToServer(position.inSeconds);
+        } else {
+          debugPrint('❌ DEBUG: API update blocked - missing purchase requirements');
+        }
+      }
+
+      // Check for video end and auto-play next
       if (position.inMilliseconds > 0 &&
           duration.inMilliseconds > 0 &&
           (position.inMilliseconds >= duration.inMilliseconds - 1000)) {
-        // Auto play next video if available
         if (hasNextVideo) {
           playNextVideo();
         } else {
@@ -392,13 +407,6 @@ class VideoPlayerScreenController extends GetxController {
     await _loadVideoAtIndex(currentVideoIndex.value);
   }
 
-  // Seek to position
-  Future<void> seekTo(Duration position) async {
-    if (videoPlayerController != null) {
-      await videoPlayerController!.seekTo(position);
-    }
-  }
-
   // Format duration
   String formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
@@ -413,56 +421,20 @@ class VideoPlayerScreenController extends GetxController {
     }
   }
 
-  // Set playback speed
-  Future<void> setPlaybackSpeed(double speed) async {
-    if (videoPlayerController != null) {
-      await videoPlayerController!.setPlaybackSpeed(speed);
-    }
-  }
-
   // Set volume
   Future<void> setVolume(double volume) async {
     if (videoPlayerController != null) {
-      // Clamp volume between 0.0 and 1.0
       final clampedVolume = volume.clamp(0.0, 1.0);
       await videoPlayerController!.setVolume(clampedVolume);
       currentVolume.value = clampedVolume;
-      print('🔊 Volume set to: ${(clampedVolume * 100).round()}%');
     }
-  }
-
-  // Toggle volume slider visibility
-  void toggleVolumeSlider() {
-    showVolumeSlider.value = !showVolumeSlider.value;
-    
-    if (showVolumeSlider.value) {
-      _startVolumeSliderTimer();
-    } else {
-      _volumeSliderTimer?.cancel();
-    }
-  }
-
-  // Show volume slider temporarily
-  void showVolumeSliderTemporarily() {
-    showVolumeSlider.value = true;
-    _startVolumeSliderTimer();
-  }
-
-  // Start timer to hide volume slider
-  void _startVolumeSliderTimer() {
-    _volumeSliderTimer?.cancel();
-    _volumeSliderTimer = Timer(Duration(seconds: 3), () {
-      showVolumeSlider.value = false;
-    });
   }
 
   // Mute/Unmute toggle
   Future<void> toggleMute() async {
     if (currentVolume.value > 0) {
-      // Mute
       await setVolume(0.0);
     } else {
-      // Unmute to 70% volume
       await setVolume(0.7);
     }
   }
@@ -470,70 +442,57 @@ class VideoPlayerScreenController extends GetxController {
   // Configure audio session for proper video playback
   Future<void> _configureAudioSession() async {
     try {
-      // Enable audio focus for video playback
-      await SystemChannels.platform.invokeMethod('AudioManager.requestAudioFocus');
-      
-      // Set system volume to ensure audio is audible
-      await SystemChannels.platform.invokeMethod('AudioManager.setStreamVolume', {
-        'streamType': 'STREAM_MUSIC',
-        'volume': 15, // Set to a reasonable volume level
-        'flags': 0,
-      });
-      
-      print('✅ Audio session configured successfully');
-    } catch (e) {
-      print('⚠️ Failed to configure audio session: $e');
-      // Audio configuration failed, but continue with video playback
-    }
-  }
-
-  // Add video to playlist
-  void addVideoToPlaylist(VideoItem video) {
-    playlist.add(video);
-  }
-
-  // Remove video from playlist
-  void removeVideoFromPlaylist(int index) {
-    if (index >= 0 && index < playlist.length) {
-      // If removing current video, play next or previous
-      if (index == currentVideoIndex.value) {
-        if (hasNextVideo) {
-          playNextVideo();
-        } else if (hasPreviousVideo) {
-          playPreviousVideo();
-        }
-      }
-
-      playlist.removeAt(index);
-
-      // Update current video index if needed
-      if (index < currentVideoIndex.value) {
-        currentVideoIndex.value--;
-      }
-    }
-  }
-
-  // Clear playlist
-  void clearPlaylist() {
-    videoPlayerController?.dispose();
-    playlist.clear();
-    currentVideoIndex.value = 0;
-    currentVideo.value = null;
-    isPlaying.value = false;
-  }
-
-  // Shuffle playlist
-  void shufflePlaylist() {
-    final currentVideoItem = currentVideo.value;
-    playlist.shuffle();
-
-    // Find the new index of current video
-    if (currentVideoItem != null) {
-      final newIndex = playlist.indexWhere(
-        (video) => video.url == currentVideoItem.url,
+      await SystemChannels.platform.invokeMethod(
+        'AudioManager.requestAudioFocus',
       );
-      if (newIndex != -1) {
-        currentVideoIndex.value = newIndex;
+      await SystemChannels.platform.invokeMethod(
+        'AudioManager.setStreamVolume',
+        {'streamType': 'STREAM_MUSIC', 'volume': 15, 'flags': 0},
+      );
+    } catch (e) {
+      debugPrint('⚠️ Failed to configure audio session: $e');
+    }
+  }
+
+  // Add video player listener for position-based printing
+  void _addVideoPlayerListener() {
+    if (videoPlayerController == null) return;
+    videoPlayerController!.addListener(_videoPlayerListener);
+  }
+
+  // Remove video player listener
+  void _removeVideoPlayerListener() {
+    if (videoPlayerController != null) {
+      videoPlayerController!.removeListener(_videoPlayerListener);
+    }
+  }
+
+  // Update progress to server every 30 seconds
+  Future<void> _updateProgressToServer(int watchTimeSeconds) async {
+    if (!hasPurchased.value ||
+        currentTopicId.value <= 0 ||
+        purchaseId.value <= 0) {
+      return;
+    }
+
+    try {
+      final response = await _remoteSource.updateLearningProgress(
+        topicId: currentTopicId.value,
+        purchaseId: purchaseId.value,
+        watchTimeSeconds: watchTimeSeconds,
+      );
+
+      if (response.success) {
+        debugPrint('✅ API: Progress updated successfully!');
+      } else {
+        debugPrint('❌ API: Progress update failed - ${response.message}');
+      }
+    } catch (e) {
+      debugPrint('❌ API: Failed to update progress: $e');
+      if (e is DioException) {
+        debugPrint('❌ API: Dio error details: ${e.response?.data}');
+      } else {
+        debugPrint('❌ API: Non-Dio error: ${e.runtimeType}');
       }
     }
   }

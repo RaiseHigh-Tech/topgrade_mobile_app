@@ -21,14 +21,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   void initState() {
     super.initState();
-    print('🎬 VideoPlayerScreen initState called');
-    
     // Create a fresh controller instance to avoid reuse issues
     _controller = Get.put(
       VideoPlayerScreenController(),
       tag: DateTime.now().millisecondsSinceEpoch.toString(), // Unique tag
     );
-    
+
     // Set preferred orientations for video player
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -40,15 +38,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   void dispose() {
     // Reset orientation when leaving video player
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-    ]);
-    
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
     // Properly dispose controller
     Get.delete<VideoPlayerScreenController>(
       tag: _controller.hashCode.toString(),
     );
-    
+
     super.dispose();
   }
 
@@ -75,42 +71,56 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('🎬 VideoPlayerScreen build called');
     return GetBuilder<XThemeController>(
-      builder: (themeController) => Scaffold(
-        backgroundColor: _isFullScreen ? Colors.black : themeController.backgroundColor,
-        appBar: _isFullScreen ? null : AppBar(
-          backgroundColor: themeController.backgroundColor,
-          elevation: 0,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: themeController.textColor),
-            onPressed: () => Get.back(),
+      builder:
+          (themeController) => Scaffold(
+            backgroundColor:
+                _isFullScreen ? Colors.black : themeController.backgroundColor,
+            appBar:
+                _isFullScreen
+                    ? null
+                    : AppBar(
+                      backgroundColor: themeController.backgroundColor,
+                      elevation: 0,
+                      leading: IconButton(
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: themeController.textColor,
+                        ),
+                        onPressed: () => Get.back(),
+                      ),
+                      title: Obx(
+                        () => Text(
+                          _controller.currentVideo.value?.title ??
+                              'Video Player',
+                          style: TextStyle(
+                            fontSize: XSizes.textSizeMd,
+                            fontFamily: XFonts.lexend,
+                            fontWeight: FontWeight.w600,
+                            color: themeController.textColor,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      actions: [
+                        IconButton(
+                          icon: Icon(
+                            Icons.playlist_play,
+                            color: themeController.primaryColor,
+                          ),
+                          onPressed: () {
+                            // Toggle playlist visibility
+                            _controller.togglePlaylistVisibility();
+                          },
+                        ),
+                      ],
+                    ),
+            body:
+                _isFullScreen
+                    ? _buildFullScreenVideo(themeController)
+                    : _buildNormalView(themeController),
           ),
-          title: Obx(() => Text(
-            _controller.currentVideo.value?.title ?? 'Video Player',
-            style: TextStyle(
-              fontSize: XSizes.textSizeMd,
-              fontFamily: XFonts.lexend,
-              fontWeight: FontWeight.w600,
-              color: themeController.textColor,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          )),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.playlist_play, color: themeController.primaryColor),
-              onPressed: () {
-                // Toggle playlist visibility
-                _controller.togglePlaylistVisibility();
-              },
-            ),
-          ],
-        ),
-        body: _isFullScreen
-            ? _buildFullScreenVideo(themeController)
-            : _buildNormalView(themeController),
-      ),
     );
   }
 
@@ -124,102 +134,116 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   Widget _buildNormalView(XThemeController themeController) {
-    return Obx(() => Column(
-      children: [
-        // Video Player Section
-        Container(
-          width: double.infinity,
-          height: 250,
-          color: Colors.black,
-          child: _buildVideoPlayer(themeController),
-        ),
-        
-        // Video Info Section
-        Container(
-          padding: EdgeInsets.all(XSizes.paddingMd),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _controller.currentVideo.value?.title ?? 'Loading...',
-                style: TextStyle(
-                  fontSize: XSizes.textSizeLg,
-                  fontFamily: XFonts.lexend,
-                  fontWeight: FontWeight.w700,
-                  color: themeController.textColor,
+    return Obx(
+      () => Column(
+        children: [
+          // Video Player Section
+          Container(
+            width: double.infinity,
+            height: 250,
+            color: Colors.black,
+            child: _buildVideoPlayer(themeController),
+          ),
+
+          // Video Info Section
+          Container(
+            padding: EdgeInsets.all(XSizes.paddingMd),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _controller.currentVideo.value?.title ?? 'Loading...',
+                  style: TextStyle(
+                    fontSize: XSizes.textSizeLg,
+                    fontFamily: XFonts.lexend,
+                    fontWeight: FontWeight.w700,
+                    color: themeController.textColor,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              SizedBox(height: XSizes.spacingSm),
-              Row(
-                children: [
-                  Icon(Icons.access_time, size: 16, color: themeController.textColor.withValues(alpha: 0.6)),
-                  SizedBox(width: XSizes.spacingXs),
-                  Text(
-                    _controller.currentVideo.value?.duration ?? '00:00',
-                    style: TextStyle(
-                      fontSize: XSizes.textSizeXs,
-                      fontFamily: XFonts.lexend,
+                SizedBox(height: XSizes.spacingSm),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.access_time,
+                      size: 16,
                       color: themeController.textColor.withValues(alpha: 0.6),
                     ),
-                  ),
-                  Spacer(),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: XSizes.spacingSm,
-                      vertical: XSizes.spacingXs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: themeController.primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(XSizes.borderRadiusSm),
-                    ),
-                    child: Text(
-                      'Module ${_controller.currentVideoIndex.value + 1}',
+                    SizedBox(width: XSizes.spacingXs),
+                    Text(
+                      _controller.currentVideo.value?.duration ?? '00:00',
                       style: TextStyle(
                         fontSize: XSizes.textSizeXs,
                         fontFamily: XFonts.lexend,
-                        fontWeight: FontWeight.w500,
-                        color: themeController.primaryColor,
+                        color: themeController.textColor.withValues(alpha: 0.6),
                       ),
                     ),
+                    Spacer(),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: XSizes.spacingSm,
+                        vertical: XSizes.spacingXs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: themeController.primaryColor.withValues(
+                          alpha: 0.1,
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          XSizes.borderRadiusSm,
+                        ),
+                      ),
+                      child: Text(
+                        'Module ${_controller.currentVideoIndex.value + 1}',
+                        style: TextStyle(
+                          fontSize: XSizes.textSizeXs,
+                          fontFamily: XFonts.lexend,
+                          fontWeight: FontWeight.w500,
+                          color: themeController.primaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_controller.currentVideo.value?.description != null &&
+                    _controller
+                        .currentVideo
+                        .value!
+                        .description!
+                        .isNotEmpty) ...[
+                  SizedBox(height: XSizes.spacingMd),
+                  Text(
+                    _controller.currentVideo.value!.description!,
+                    style: TextStyle(
+                      fontSize: XSizes.textSizeSm,
+                      fontFamily: XFonts.lexend,
+                      color: themeController.textColor.withValues(alpha: 0.8),
+                      height: 1.5,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
-              ),
-              if (_controller.currentVideo.value?.description != null && _controller.currentVideo.value!.description!.isNotEmpty) ...[
-                SizedBox(height: XSizes.spacingMd),
-                Text(
-                  _controller.currentVideo.value!.description!,
-                  style: TextStyle(
-                    fontSize: XSizes.textSizeSm,
-                    fontFamily: XFonts.lexend,
-                    color: themeController.textColor.withValues(alpha: 0.8),
-                    height: 1.5,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
               ],
-            ],
+            ),
           ),
-        ),
-        
-        // Playlist Section
-        if (_controller.isPlaylistVisible.value)
-          Expanded(
-            child: _buildPlaylist(themeController),
-          ),
-      ],
-    ));
+
+          // Playlist Section
+          if (_controller.isPlaylistVisible.value)
+            Expanded(child: _buildPlaylist(themeController)),
+        ],
+      ),
+    );
   }
 
-  Widget _buildVideoPlayer(XThemeController themeController, {bool isFullScreen = false}) {
+  Widget _buildVideoPlayer(
+    XThemeController themeController, {
+    bool isFullScreen = false,
+  }) {
     return Obx(() {
       if (_controller.isLoading.value) {
         return Center(
-          child: CircularProgressIndicator(
-            color: themeController.primaryColor,
-          ),
+          child: CircularProgressIndicator(color: themeController.primaryColor),
         );
       }
 
@@ -258,7 +282,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           child: Stack(
             children: [
               VideoPlayer(_controller.videoPlayerController!),
-              
+
               // Video Controls Overlay
               Positioned.fill(
                 child: GestureDetector(
@@ -271,10 +295,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                       child: Stack(
                         children: [
                           _buildVideoControls(themeController, isFullScreen),
-                          // Volume Slider Overlay
-                          Obx(() => _controller.showVolumeSlider.value
-                              ? _buildVolumeSlider(themeController, isFullScreen)
-                              : SizedBox.shrink()),
                         ],
                       ),
                     ),
@@ -302,7 +322,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     });
   }
 
-  Widget _buildVideoControls(XThemeController themeController, bool isFullScreen) {
+  Widget _buildVideoControls(
+    XThemeController themeController,
+    bool isFullScreen,
+  ) {
     return Stack(
       children: [
         // Play/Pause Button (Center)
@@ -315,15 +338,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 color: Colors.black54,
                 shape: BoxShape.circle,
               ),
-              child: Obx(() => Icon(
-                _controller.isPlaying.value ? Icons.pause : Icons.play_arrow,
-                color: Colors.white,
-                size: isFullScreen ? 48 : 36,
-              )),
+              child: Obx(
+                () => Icon(
+                  _controller.isPlaying.value ? Icons.pause : Icons.play_arrow,
+                  color: Colors.white,
+                  size: isFullScreen ? 48 : 36,
+                ),
+              ),
             ),
           ),
         ),
-        
+
         // Bottom Controls
         Positioned(
           bottom: 0,
@@ -342,73 +367,93 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Progress Bar
-                Obx(() => VideoProgressIndicator(
-                  _controller.videoPlayerController!,
-                  allowScrubbing: true,
-                  colors: VideoProgressColors(
-                    playedColor: themeController.primaryColor,
-                    bufferedColor: Colors.white30,
-                    backgroundColor: Colors.white12,
+                Obx(
+                  () => VideoProgressIndicator(
+                    _controller.videoPlayerController!,
+                    allowScrubbing: true,
+                    colors: VideoProgressColors(
+                      playedColor: themeController.primaryColor,
+                      bufferedColor: Colors.white30,
+                      backgroundColor: Colors.white12,
+                    ),
                   ),
-                )),
+                ),
                 SizedBox(height: XSizes.spacingSm),
-                
+
                 // Control Buttons Row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Time Display
-                    Obx(() => Text(
-                      '${_controller.formatDuration(_controller.currentPosition.value)} / ${_controller.formatDuration(_controller.totalDuration.value)}',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: XSizes.textSizeXs,
-                        fontFamily: XFonts.lexend,
+                    Obx(
+                      () => Text(
+                        '${_controller.formatDuration(_controller.currentPosition.value)} / ${_controller.formatDuration(_controller.totalDuration.value)}',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: XSizes.textSizeXs,
+                          fontFamily: XFonts.lexend,
+                        ),
                       ),
-                    )),
-                    
+                    ),
+
                     // Control Buttons
                     Row(
                       children: [
                         // Previous Video
                         IconButton(
-                          onPressed: _controller.hasPreviousVideo ? () => _controller.playPreviousVideo() : null,
+                          onPressed:
+                              _controller.hasPreviousVideo
+                                  ? () => _controller.playPreviousVideo()
+                                  : null,
                           icon: Icon(
                             Icons.skip_previous,
-                            color: _controller.hasPreviousVideo ? Colors.white : Colors.white38,
+                            color:
+                                _controller.hasPreviousVideo
+                                    ? Colors.white
+                                    : Colors.white38,
                             size: 24,
                           ),
                         ),
-                        
+
                         // Next Video
                         IconButton(
-                          onPressed: _controller.hasNextVideo ? () => _controller.playNextVideo() : null,
+                          onPressed:
+                              _controller.hasNextVideo
+                                  ? () => _controller.playNextVideo()
+                                  : null,
                           icon: Icon(
                             Icons.skip_next,
-                            color: _controller.hasNextVideo ? Colors.white : Colors.white38,
+                            color:
+                                _controller.hasNextVideo
+                                    ? Colors.white
+                                    : Colors.white38,
                             size: 24,
                           ),
                         ),
-                        
+
                         // Volume Control
                         IconButton(
-                          onPressed: () => _controller.showVolumeSliderTemporarily(),
-                          icon: Obx(() => Icon(
-                            _controller.currentVolume.value > 0.5
-                                ? Icons.volume_up
-                                : _controller.currentVolume.value > 0
-                                    ? Icons.volume_down
-                                    : Icons.volume_off,
-                            color: Colors.white,
-                            size: 24,
-                          )),
+                          onPressed: () => _controller.toggleMute(),
+                          icon: Obx(
+                            () => Icon(
+                              _controller.currentVolume.value > 0.5
+                                  ? Icons.volume_up
+                                  : _controller.currentVolume.value > 0
+                                  ? Icons.volume_down
+                                  : Icons.volume_off,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
                         ),
-                        
+
                         // Fullscreen Toggle
                         IconButton(
                           onPressed: _toggleFullScreen,
                           icon: Icon(
-                            _isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                            _isFullScreen
+                                ? Icons.fullscreen_exit
+                                : Icons.fullscreen,
                             color: Colors.white,
                             size: 24,
                           ),
@@ -459,278 +504,246 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   ),
                 ),
                 Spacer(),
-                Obx(() => Text(
-                  '${_controller.currentVideoIndex.value + 1} of ${_controller.playlist.length}',
-                  style: TextStyle(
-                    fontSize: XSizes.textSizeXs,
-                    fontFamily: XFonts.lexend,
-                    color: themeController.textColor.withValues(alpha: 0.6),
+                Obx(
+                  () => Text(
+                    '${_controller.currentVideoIndex.value + 1} of ${_controller.playlist.length}',
+                    style: TextStyle(
+                      fontSize: XSizes.textSizeXs,
+                      fontFamily: XFonts.lexend,
+                      color: themeController.textColor.withValues(alpha: 0.6),
+                    ),
                   ),
-                )),
+                ),
               ],
             ),
           ),
-          
+
           // Playlist Items with Module Structure
           Expanded(
-            child: Obx(() => ListView.builder(
-              itemCount: _controller.moduleStructure.length,
-              itemBuilder: (context, moduleIndex) {
-                final module = _controller.moduleStructure[moduleIndex];
-                
-                return Container(
-                  margin: EdgeInsets.symmetric(
-                    horizontal: XSizes.marginSm,
-                    vertical: XSizes.marginXs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: themeController.backgroundColor,
-                    border: Border.all(
-                      color: themeController.textColor.withValues(alpha: 0.1),
-                      width: 1,
+            child: Obx(
+              () => ListView.builder(
+                itemCount: _controller.moduleStructure.length,
+                itemBuilder: (context, moduleIndex) {
+                  final module = _controller.moduleStructure[moduleIndex];
+
+                  return Container(
+                    margin: EdgeInsets.symmetric(
+                      horizontal: XSizes.marginSm,
+                      vertical: XSizes.marginXs,
                     ),
-                    borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
-                  ),
-                  child: Column(
-                    children: [
-                      // Module Header
-                      InkWell(
-                        onTap: () => _controller.toggleModuleExpansion(module.id),
-                        borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
-                        child: Container(
-                          padding: EdgeInsets.all(XSizes.paddingSm),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: XSizes.iconSizeLg,
-                                height: XSizes.iconSizeLg,
-                                decoration: BoxDecoration(
-                                  color: themeController.primaryColor.withValues(alpha: 0.1),
-                                  shape: BoxShape.circle,
+                    decoration: BoxDecoration(
+                      color: themeController.backgroundColor,
+                      border: Border.all(
+                        color: themeController.textColor.withValues(alpha: 0.1),
+                        width: 1,
+                      ),
+                      borderRadius: BorderRadius.circular(
+                        XSizes.borderRadiusMd,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        // Module Header
+                        InkWell(
+                          onTap:
+                              () =>
+                                  _controller.toggleModuleExpansion(module.id),
+                          borderRadius: BorderRadius.circular(
+                            XSizes.borderRadiusMd,
+                          ),
+                          child: Container(
+                            padding: EdgeInsets.all(XSizes.paddingSm),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: XSizes.iconSizeLg,
+                                  height: XSizes.iconSizeLg,
+                                  decoration: BoxDecoration(
+                                    color: themeController.primaryColor
+                                        .withValues(alpha: 0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '${moduleIndex + 1}',
+                                      style: TextStyle(
+                                        fontSize: XSizes.textSizeXs,
+                                        fontFamily: XFonts.lexend,
+                                        fontWeight: FontWeight.w600,
+                                        color: themeController.primaryColor,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                                child: Center(
+                                SizedBox(width: XSizes.spacingSm),
+                                Expanded(
                                   child: Text(
-                                    '${moduleIndex + 1}',
+                                    module.title,
                                     style: TextStyle(
-                                      fontSize: XSizes.textSizeXs,
+                                      fontSize: XSizes.textSizeSm,
                                       fontFamily: XFonts.lexend,
                                       fontWeight: FontWeight.w600,
-                                      color: themeController.primaryColor,
+                                      color: themeController.textColor,
                                     ),
                                   ),
                                 ),
-                              ),
-                              SizedBox(width: XSizes.spacingSm),
-                              Expanded(
-                                child: Text(
-                                  module.title,
-                                  style: TextStyle(
-                                    fontSize: XSizes.textSizeSm,
-                                    fontFamily: XFonts.lexend,
-                                    fontWeight: FontWeight.w600,
-                                    color: themeController.textColor,
+                                Icon(
+                                  module.isExpanded
+                                      ? Icons.keyboard_arrow_up
+                                      : Icons.keyboard_arrow_down,
+                                  color: themeController.textColor.withValues(
+                                    alpha: 0.6,
                                   ),
                                 ),
-                              ),
-                              Icon(
-                                module.isExpanded 
-                                    ? Icons.keyboard_arrow_up 
-                                    : Icons.keyboard_arrow_down,
-                                color: themeController.textColor.withValues(alpha: 0.6),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      
-                      // Module Topics
-                      if (module.isExpanded)
-                        Container(
-                          color: themeController.backgroundColor,
-                          child: Column(
-                            children: module.videos.map((video) {
-                              final videoIndex = _controller.playlist.indexWhere((v) => v.id == video.id);
-                              final isCurrentVideo = videoIndex == _controller.currentVideoIndex.value;
-                              
-                              return Container(
-                                margin: EdgeInsets.only(
-                                  left: XSizes.marginMd,
-                                  right: XSizes.marginSm,
-                                  bottom: XSizes.marginXs,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isCurrentVideo
-                                      ? themeController.primaryColor.withValues(alpha: 0.1)
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(XSizes.borderRadiusSm),
-                                  border: isCurrentVideo
-                                      ? Border.all(color: themeController.primaryColor.withValues(alpha: 0.3))
-                                      : null,
-                                ),
-                                child: ListTile(
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: XSizes.paddingSm,
-                                    vertical: XSizes.paddingXs,
-                                  ),
-                                  leading: Container(
-                                    width: 50,
-                                    height: 35,
-                                    decoration: BoxDecoration(
-                                      color: themeController.textColor.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(XSizes.borderRadiusXs),
-                                    ),
-                                    child: Stack(
-                                      children: [
-                                        Center(
-                                          child: Icon(
-                                            isCurrentVideo ? Icons.play_arrow : Icons.play_circle_outline,
-                                            color: isCurrentVideo
+
+                        // Module Topics
+                        if (module.isExpanded)
+                          Container(
+                            color: themeController.backgroundColor,
+                            child: Column(
+                              children:
+                                  module.videos.map((video) {
+                                    final videoIndex = _controller.playlist
+                                        .indexWhere((v) => v.id == video.id);
+                                    final isCurrentVideo =
+                                        videoIndex ==
+                                        _controller.currentVideoIndex.value;
+
+                                    return Container(
+                                      margin: EdgeInsets.only(
+                                        left: XSizes.marginMd,
+                                        right: XSizes.marginSm,
+                                        bottom: XSizes.marginXs,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            isCurrentVideo
                                                 ? themeController.primaryColor
-                                                : themeController.textColor.withValues(alpha: 0.5),
-                                            size: 18,
-                                          ),
+                                                    .withValues(alpha: 0.1)
+                                                : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(
+                                          XSizes.borderRadiusSm,
                                         ),
-                                        if (isCurrentVideo)
-                                          Positioned(
-                                            bottom: 2,
-                                            right: 2,
-                                            child: Container(
-                                              width: 6,
-                                              height: 6,
-                                              decoration: BoxDecoration(
-                                                color: themeController.primaryColor,
-                                                shape: BoxShape.circle,
-                                              ),
+                                        border:
+                                            isCurrentVideo
+                                                ? Border.all(
+                                                  color: themeController
+                                                      .primaryColor
+                                                      .withValues(alpha: 0.3),
+                                                )
+                                                : null,
+                                      ),
+                                      child: ListTile(
+                                        contentPadding: EdgeInsets.symmetric(
+                                          horizontal: XSizes.paddingSm,
+                                          vertical: XSizes.paddingXs,
+                                        ),
+                                        leading: Container(
+                                          width: 50,
+                                          height: 35,
+                                          decoration: BoxDecoration(
+                                            color: themeController.textColor
+                                                .withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              XSizes.borderRadiusXs,
                                             ),
                                           ),
-                                      ],
-                                    ),
-                                  ),
-                                  title: Text(
-                                    video.title,
-                                    style: TextStyle(
-                                      fontSize: XSizes.textSizeXs,
-                                      fontFamily: XFonts.lexend,
-                                      fontWeight: isCurrentVideo ? FontWeight.w600 : FontWeight.w400,
-                                      color: isCurrentVideo
-                                          ? themeController.primaryColor
-                                          : themeController.textColor,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  subtitle: Text(
-                                    video.duration,
-                                    style: TextStyle(
-                                      fontSize: XSizes.textSizeXs - 1,
-                                      fontFamily: XFonts.lexend,
-                                      color: themeController.textColor.withValues(alpha: 0.6),
-                                    ),
-                                  ),
-                                  trailing: isCurrentVideo
-                                      ? Icon(
-                                          Icons.volume_up,
-                                          color: themeController.primaryColor,
-                                          size: 14,
-                                        )
-                                      : null,
-                                  onTap: () => _controller.playVideoAtIndex(videoIndex),
-                                ),
-                              );
-                            }).toList(),
+                                          child: Stack(
+                                            children: [
+                                              Center(
+                                                child: Icon(
+                                                  isCurrentVideo
+                                                      ? Icons.play_arrow
+                                                      : Icons
+                                                          .play_circle_outline,
+                                                  color:
+                                                      isCurrentVideo
+                                                          ? themeController
+                                                              .primaryColor
+                                                          : themeController
+                                                              .textColor
+                                                              .withValues(
+                                                                alpha: 0.5,
+                                                              ),
+                                                  size: 18,
+                                                ),
+                                              ),
+                                              if (isCurrentVideo)
+                                                Positioned(
+                                                  bottom: 2,
+                                                  right: 2,
+                                                  child: Container(
+                                                    width: 6,
+                                                    height: 6,
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          themeController
+                                                              .primaryColor,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                        title: Text(
+                                          video.title,
+                                          style: TextStyle(
+                                            fontSize: XSizes.textSizeXs,
+                                            fontFamily: XFonts.lexend,
+                                            fontWeight:
+                                                isCurrentVideo
+                                                    ? FontWeight.w600
+                                                    : FontWeight.w400,
+                                            color:
+                                                isCurrentVideo
+                                                    ? themeController
+                                                        .primaryColor
+                                                    : themeController.textColor,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        subtitle: Text(
+                                          video.duration,
+                                          style: TextStyle(
+                                            fontSize: XSizes.textSizeXs - 1,
+                                            fontFamily: XFonts.lexend,
+                                            color: themeController.textColor
+                                                .withValues(alpha: 0.6),
+                                          ),
+                                        ),
+                                        trailing:
+                                            isCurrentVideo
+                                                ? Icon(
+                                                  Icons.volume_up,
+                                                  color:
+                                                      themeController
+                                                          .primaryColor,
+                                                  size: 14,
+                                                )
+                                                : null,
+                                        onTap:
+                                            () => _controller.playVideoAtIndex(
+                                              videoIndex,
+                                            ),
+                                      ),
+                                    );
+                                  }).toList(),
+                            ),
                           ),
-                        ),
-                    ],
-                  ),
-                );
-              },
-            )),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildVolumeSlider(XThemeController themeController, bool isFullScreen) {
-    return Positioned(
-      right: isFullScreen ? 80 : 60,
-      top: isFullScreen ? 100 : 80,
-      child: Container(
-        width: 50,
-        height: isFullScreen ? 200 : 150,
-        padding: EdgeInsets.symmetric(vertical: XSizes.paddingSm),
-        decoration: BoxDecoration(
-          color: Colors.black87,
-          borderRadius: BorderRadius.circular(XSizes.borderRadiusLg),
-          border: Border.all(
-            color: themeController.primaryColor.withValues(alpha: 0.3),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Volume Icon
-            GestureDetector(
-              onTap: () => _controller.toggleMute(),
-              child: Container(
-                padding: EdgeInsets.all(XSizes.paddingXs),
-                child: Obx(() => Icon(
-                  _controller.currentVolume.value > 0.5
-                      ? Icons.volume_up
-                      : _controller.currentVolume.value > 0
-                          ? Icons.volume_down
-                          : Icons.volume_off,
-                  color: _controller.currentVolume.value > 0
-                      ? Colors.white
-                      : Colors.white60,
-                  size: 20,
-                )),
-              ),
-            ),
-            
-            SizedBox(height: XSizes.spacingSm),
-            
-            // Volume Slider
-            Expanded(
-              child: Obx(() => RotatedBox(
-                quarterTurns: 3, // Rotate to make it vertical
-                child: SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    trackHeight: 3,
-                    thumbShape: RoundSliderThumbShape(enabledThumbRadius: 8),
-                    overlayShape: RoundSliderOverlayShape(overlayRadius: 16),
-                    activeTrackColor: themeController.primaryColor,
-                    inactiveTrackColor: Colors.white30,
-                    thumbColor: themeController.primaryColor,
-                    overlayColor: themeController.primaryColor.withValues(alpha: 0.2),
-                  ),
-                  child: Slider(
-                    value: _controller.currentVolume.value,
-                    onChanged: (value) {
-                      _controller.setVolume(value);
-                    },
-                    min: 0.0,
-                    max: 1.0,
-                  ),
-                ),
-              )),
-            ),
-            
-            SizedBox(height: XSizes.spacingSm),
-            
-            // Volume Percentage
-            Obx(() => Text(
-              '${(_controller.currentVolume.value * 100).round()}%',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: XSizes.textSizeXs,
-                fontFamily: XFonts.lexend,
-                fontWeight: FontWeight.w500,
-              ),
-            )),
-          ],
-        ),
       ),
     );
   }

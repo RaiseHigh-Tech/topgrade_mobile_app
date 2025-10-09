@@ -33,6 +33,7 @@ class ProgramDetailsModel {
   final bool isBestSeller;
   final bool isBookmarked;
   final bool hasPurchased;
+  final int purchaseId;
   final int enrolledStudents;
   final PricingModel pricing;
 
@@ -48,6 +49,7 @@ class ProgramDetailsModel {
     required this.isBestSeller,
     required this.isBookmarked,
     required this.hasPurchased,
+    required this.purchaseId,
     required this.enrolledStudents,
     required this.pricing,
   });
@@ -65,6 +67,7 @@ class ProgramDetailsModel {
       isBestSeller: json['is_best_seller'] ?? false,
       isBookmarked: json['is_bookmarked'] ?? false,
       hasPurchased: json['has_purchased'] ?? false,
+      purchaseId: json['purchase_id'] ?? 0,
       enrolledStudents: json['enrolled_students'] ?? 0,
       pricing: PricingModel.fromJson(json['pricing'] ?? {}),
     );
@@ -86,9 +89,11 @@ class SyllabusModel {
     return SyllabusModel(
       totalModules: json['total_modules'] ?? 0,
       totalTopics: json['total_topics'] ?? 0,
-      modules: (json['modules'] as List<dynamic>?)
-          ?.map((item) => ModuleModel.fromJson(item))
-          .toList() ?? [],
+      modules:
+          (json['modules'] as List<dynamic>?)
+              ?.map((item) => ModuleModel.fromJson(item))
+              .toList() ??
+          [],
     );
   }
 }
@@ -111,9 +116,11 @@ class ModuleModel {
       id: json['id'] ?? 0,
       moduleTitle: json['module_title'] ?? '',
       topicsCount: json['topics_count'] ?? 0,
-      topics: (json['topics'] as List<dynamic>?)
-          ?.map((item) => TopicModel.fromJson(item))
-          .toList() ?? [],
+      topics:
+          (json['topics'] as List<dynamic>?)
+              ?.map((item) => TopicModel.fromJson(item))
+              .toList() ??
+          [],
     );
   }
 }

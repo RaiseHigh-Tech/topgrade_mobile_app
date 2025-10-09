@@ -468,6 +468,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                             'moduleTitle': firstModule.moduleTitle,
                             'programTitle':
                                 _controller.program?.title ?? 'Course',
+                            'hasPurchased': _controller.program?.hasPurchased,
+                            'purchaseId': _controller.program?.purchaseId,
                           },
                         );
                       }

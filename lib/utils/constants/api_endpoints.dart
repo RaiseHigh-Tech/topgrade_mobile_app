@@ -1,6 +1,6 @@
 class ApiEndpoints {
   // Base URL
-  static const String baseUrl = 'https://www.topgradeinnovation.com/';
+  static const String baseUrl = 'https://topgradeinnovation.com/';
 
   // Complete URLs
   static const String signupUrl = '${baseUrl}api/auth/signup';
@@ -39,4 +39,7 @@ class ApiEndpoints {
 
   // Purchase endpoints
   static const String purchaseUrl = '${baseUrl}api/purchase';
+  
+  // Learning Progress endpoints
+  static const String updateProgressUrl = '${baseUrl}api/learning/update-progress';
 }

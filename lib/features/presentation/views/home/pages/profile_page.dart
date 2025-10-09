@@ -1,373 +1,409 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controllers/theme_controller.dart';
-import '../../../controllers/auth_controller.dart';
+import 'package:topgrade/features/presentation/routes/routes.dart';
+
 import '../../../../../utils/constants/fonts.dart';
 import '../../../../../utils/constants/sizes.dart';
+import '../../../controllers/auth_controller.dart';
+import '../../../controllers/theme_controller.dart';
 
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+  ProfilePage({super.key});
+
+  final XThemeController themeController = Get.find<XThemeController>();
+  final AuthController authController = Get.find<AuthController>();
 
   @override
   Widget build(BuildContext context) {
-    final authController = Get.find<AuthController>();
-
-    return GetBuilder<XThemeController>(
-      builder:
-          (themeController) => Scaffold(
-            backgroundColor: themeController.backgroundColor,
-            body: SafeArea(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(XSizes.paddingLg),
-                child: Column(
-                  children: [
-                    // Header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Profile',
-                          style: TextStyle(
-                            fontSize: XSizes.textSize3xl,
-                            fontFamily: XFonts.lexend,
-                            color: themeController.textColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            // Settings action
-                          },
-                          icon: Icon(
-                            Icons.settings_outlined,
-                            color: themeController.textColor,
-                            size: XSizes.iconSizeLg,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: XSizes.spacingLg),
-
-                    // Profile Info
-                    Container(
-                      padding: EdgeInsets.all(XSizes.paddingLg),
-                      decoration: BoxDecoration(
-                        color: themeController.backgroundColor,
-                        borderRadius: BorderRadius.circular(
-                          XSizes.borderRadiusLg,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          // Avatar
-                          CircleAvatar(
-                            radius: 50,
-                            backgroundColor: themeController.primaryColor
-                                .withValues(alpha: 0.2),
-                            child: Text(
-                              'JD',
-                              style: TextStyle(
-                                fontSize: XSizes.textSize3xl,
-                                fontFamily: XFonts.lexend,
-                                color: themeController.primaryColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: XSizes.spacingMd),
-                          Text(
-                            'John Doe',
-                            style: TextStyle(
-                              fontSize: XSizes.textSize2xl,
-                              fontFamily: XFonts.lexend,
-                              color: themeController.textColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(height: XSizes.spacingXs),
-                          Text(
-                            'john.doe@example.com',
-                            style: TextStyle(
-                              fontSize: XSizes.textSizeMd,
-                              fontFamily: XFonts.lexend,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          SizedBox(height: XSizes.spacingMd),
-
-                          // Stats Row
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _buildStatItem('5', 'Courses', themeController),
-                              Container(
-                                height: 40,
-                                width: 1,
-                                color: Colors.grey.withValues(alpha: 0.3),
-                              ),
-                              _buildStatItem('120', 'Hours', themeController),
-                              Container(
-                                height: 40,
-                                width: 1,
-                                color: Colors.grey.withValues(alpha: 0.3),
-                              ),
-                              _buildStatItem(
-                                '15',
-                                'Certificates',
-                                themeController,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: XSizes.spacingLg),
-
-                    // Menu Items
-                    _buildMenuItem(
-                      Icons.person_outline,
-                      'Edit Profile',
-                      () {},
-                      themeController,
-                    ),
-                    _buildMenuItem(
-                      Icons.bookmark_outline,
-                      'Saved Courses',
-                      () {},
-                      themeController,
-                    ),
-                    _buildMenuItem(
-                      Icons.download_outlined,
-                      'Downloads',
-                      () {},
-                      themeController,
-                    ),
-                    _buildMenuItem(
-                      Icons.notifications,
-                      'Notifications',
-                      () {},
-                      themeController,
-                    ),
-                    _buildMenuItem(
-                      Icons.help_outline,
-                      'Help & Support',
-                      () {},
-                      themeController,
-                    ),
-                    _buildMenuItem(
-                      Icons.info_outline,
-                      'About',
-                      () {},
-                      themeController,
-                    ),
-
-                    SizedBox(height: XSizes.spacingLg),
-
-                    // Theme Toggle
-                    Container(
-                      padding: EdgeInsets.all(XSizes.paddingMd),
-                      decoration: BoxDecoration(
-                        color: themeController.backgroundColor,
-                        borderRadius: BorderRadius.circular(
-                          XSizes.borderRadiusLg,
-                        ),
-                        border: Border.all(
-                          color: Colors.grey.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            themeController.isLightTheme
-                                ? Icons.light_mode
-                                : Icons.dark_mode,
-                            color: themeController.textColor,
-                            size: XSizes.iconSizeMd,
-                          ),
-                          SizedBox(width: XSizes.spacingMd),
-                          Expanded(
-                            child: Text(
-                              'Dark Mode',
-                              style: TextStyle(
-                                fontSize: XSizes.textSizeLg,
-                                fontFamily: XFonts.lexend,
-                                color: themeController.textColor,
-                              ),
-                            ),
-                          ),
-                          Switch(
-                            value: !themeController.isLightTheme,
-                            onChanged: (value) {
-                              themeController.changeTheme(!value);
-                            },
-                            activeColor: themeController.primaryColor,
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: XSizes.spacingLg),
-
-                    // Logout Button
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(XSizes.paddingMd),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(
-                          XSizes.borderRadiusLg,
-                        ),
-                        border: Border.all(
-                          color: Colors.red.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: InkWell(
-                        onTap: () {
-                          // Show logout confirmation
-                          Get.dialog(
-                            AlertDialog(
-                              backgroundColor: themeController.backgroundColor,
-                              title: Text(
-                                'Logout',
-                                style: TextStyle(
-                                  color: themeController.textColor,
-                                ),
-                              ),
-                              content: Text(
-                                'Are you sure you want to logout?',
-                                style: TextStyle(
-                                  color: themeController.textColor,
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Get.back(),
-                                  child: Text(
-                                    'Cancel',
-                                    style: TextStyle(
-                                      color: themeController.textColor,
-                                    ),
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Get.back();
-                                    authController.logout();
-                                  },
-                                  child: const Text(
-                                    'Logout',
-                                    style: TextStyle(color: Colors.red),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.logout, color: Colors.red),
-                            SizedBox(width: XSizes.spacingSm),
-                            Text(
-                              'Logout',
-                              style: TextStyle(
-                                fontSize: XSizes.textSizeLg,
-                                fontFamily: XFonts.lexend,
-                                color: Colors.red,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-    );
-  }
-
-  Widget _buildStatItem(
-    String value,
-    String label,
-    XThemeController themeController,
-  ) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: XSizes.textSize2xl,
-            fontFamily: XFonts.lexend,
-            color: themeController.primaryColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: XSizes.textSizeSm,
-            fontFamily: XFonts.lexend,
-            color: Colors.grey,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMenuItem(
-    IconData icon,
-    String title,
-    VoidCallback onTap,
-    XThemeController themeController,
-  ) {
-    return Container(
-      margin: EdgeInsets.only(bottom: XSizes.spacingSm),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(XSizes.borderRadiusLg),
-        child: Container(
+    return Scaffold(
+      backgroundColor: themeController.backgroundColor,
+      body: SafeArea(
+        child: SingleChildScrollView(
           padding: EdgeInsets.all(XSizes.paddingMd),
-          decoration: BoxDecoration(
-            color: themeController.backgroundColor,
-            borderRadius: BorderRadius.circular(XSizes.borderRadiusLg),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-          ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                icon,
-                color: themeController.textColor,
-                size: XSizes.iconSizeMd,
-              ),
-              SizedBox(width: XSizes.spacingMd),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: XSizes.textSizeLg,
-                    fontFamily: XFonts.lexend,
-                    color: themeController.textColor,
-                  ),
-                ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.grey,
-                size: XSizes.iconSizeSm,
-              ),
+              SizedBox(height: XSizes.spacingMd),
+              // Profile Header Card
+              _buildProfileCard(),
+              SizedBox(height: XSizes.spacingLg),
+
+              // Profile Options List
+              _buildProfileOptionsList(),
+
+              SizedBox(height: XSizes.spacingXl),
             ],
           ),
         ),
       ),
     );
   }
+
+  Widget _buildProfileCard() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(XSizes.paddingLg),
+      decoration: BoxDecoration(
+        color: themeController.backgroundColor,
+        borderRadius: BorderRadius.circular(XSizes.borderRadiusXl),
+        border: Border.all(
+          color:
+              themeController.isLightTheme
+                  ? Colors.grey.withOpacity(0.1)
+                  : Colors.white.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Profile Avatar
+          Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(XSizes.borderRadiusCircle),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  themeController.primaryColor,
+                  themeController.primaryColor.withOpacity(0.8),
+                ],
+              ),
+            ),
+            child: Icon(
+              Icons.person_rounded,
+              size: XSizes.iconSizeLg,
+              color: Colors.white,
+            ),
+          ),
+          SizedBox(width: XSizes.spacingMd),
+
+          // User Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'John Doe',
+                  style: TextStyle(
+                    fontSize: XSizes.textSizeXl,
+                    fontWeight: FontWeight.bold,
+                    color: themeController.textColor,
+                    fontFamily: XFonts.lexend,
+                  ),
+                ),
+                SizedBox(height: XSizes.spacingXs),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.email_rounded,
+                      size: XSizes.iconSizeSm,
+                      color: themeController.textColor.withOpacity(0.6),
+                    ),
+                    SizedBox(width: XSizes.spacingXs),
+                    Expanded(
+                      child: Text(
+                        'john.doe@example.com', // TODO: Replace with actual email
+                        style: TextStyle(
+                          fontSize: XSizes.textSizeSm,
+                          color: themeController.textColor.withOpacity(0.7),
+                          fontFamily: XFonts.lexend,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileOptionsList() {
+    final profileOptions = [
+      ProfileOption(
+        icon: Icons.edit_rounded,
+        title: 'Edit Profile',
+        subtitle: 'Update your personal information',
+        onTap: () => _navigateToEditProfile(),
+      ),
+      ProfileOption(
+        icon: Icons.notifications_rounded,
+        title: 'Notifications',
+        subtitle: 'Manage your notification preferences',
+        onTap: () => _navigateToNotifications(),
+      ),
+      ProfileOption(
+        icon: Icons.palette_rounded,
+        title: 'Theme',
+        subtitle: 'Switch between light and dark mode',
+        trailing: Obx(
+          () => Switch.adaptive(
+            value: themeController.isLightTheme,
+            onChanged: (value) => themeController.changeTheme(value),
+            activeColor: themeController.primaryColor,
+          ),
+        ),
+        onTap: null, // Handled by switch
+      ),
+      ProfileOption(
+        icon: Icons.description_rounded,
+        title: 'Terms & Conditions',
+        subtitle: 'Read our terms of service',
+        onTap: () => _navigateToTerms(),
+      ),
+      ProfileOption(
+        icon: Icons.privacy_tip_rounded,
+        title: 'Privacy Policy',
+        subtitle: 'Learn about your privacy rights',
+        onTap: () => _navigateToPrivacy(),
+      ),
+      ProfileOption(
+        icon: Icons.logout_rounded,
+        title: 'Logout',
+        subtitle: 'Sign out of your account',
+        isDestructive: true,
+        onTap: () => _showLogoutDialog(),
+      ),
+    ];
+
+    return Column(
+      children:
+          profileOptions.map((option) => _buildOptionTile(option)).toList(),
+    );
+  }
+
+  Widget _buildOptionTile(ProfileOption option) {
+    return Container(
+      margin: EdgeInsets.only(bottom: XSizes.spacingSm),
+      decoration: BoxDecoration(
+        color: themeController.backgroundColor,
+        borderRadius: BorderRadius.circular(XSizes.borderRadiusLg),
+        border: Border.all(
+          color:
+              themeController.isLightTheme
+                  ? Colors.grey.withOpacity(0.1)
+                  : Colors.white.withOpacity(0.1),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color:
+                themeController.isLightTheme
+                    ? Colors.black.withOpacity(0.04)
+                    : Colors.white.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: XSizes.paddingMd,
+          vertical: XSizes.paddingSm,
+        ),
+        leading: Container(
+          width: 45,
+          height: 45,
+          decoration: BoxDecoration(
+            color:
+                option.isDestructive
+                    ? Colors.red.withOpacity(0.1)
+                    : themeController.primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+          ),
+          child: Icon(
+            option.icon,
+            color:
+                option.isDestructive
+                    ? Colors.red
+                    : themeController.primaryColor,
+            size: XSizes.iconSizeMd,
+          ),
+        ),
+        title: Text(
+          option.title,
+          style: TextStyle(
+            fontSize: XSizes.textSizeMd,
+            fontWeight: FontWeight.w600,
+            color:
+                option.isDestructive ? Colors.red : themeController.textColor,
+            fontFamily: XFonts.lexend,
+          ),
+        ),
+        subtitle:
+            option.subtitle != null
+                ? Text(
+                  option.subtitle!,
+                  style: TextStyle(
+                    fontSize: XSizes.textSizeSm,
+                    color: themeController.textColor.withOpacity(0.6),
+                    fontFamily: XFonts.lexend,
+                  ),
+                )
+                : null,
+        trailing:
+            option.trailing ??
+            Icon(
+              Icons.chevron_right_rounded,
+              size: XSizes.iconSizeMd,
+              color: themeController.textColor.withOpacity(0.4),
+            ),
+        onTap: option.onTap,
+      ),
+    );
+  }
+
+  // Navigation methods
+  void _navigateToEditProfile() {
+    // TODO: Navigate to edit profile screen
+    Get.snackbar(
+      'Coming Soon',
+      'Edit Profile feature will be available soon',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: themeController.primaryColor.withOpacity(0.9),
+      colorText: Colors.white,
+    );
+  }
+
+  void _navigateToNotifications() {
+    // TODO: Navigate to notifications settings
+    Get.snackbar(
+      'Coming Soon',
+      'Notification settings will be available soon',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: themeController.primaryColor.withOpacity(0.9),
+      colorText: Colors.white,
+    );
+  }
+
+  void _navigateToTerms() {
+    // TODO: Navigate to terms and conditions
+    Get.snackbar(
+      'Terms & Conditions',
+      'Terms and Conditions page will be available soon',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: themeController.primaryColor.withOpacity(0.9),
+      colorText: Colors.white,
+    );
+  }
+
+  void _navigateToPrivacy() {
+    // TODO: Navigate to privacy policy
+    Get.snackbar(
+      'Privacy Policy',
+      'Privacy Policy page will be available soon',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: themeController.primaryColor.withOpacity(0.9),
+      colorText: Colors.white,
+    );
+  }
+
+  void _showLogoutDialog() {
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: themeController.backgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(XSizes.borderRadiusXl),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.logout_rounded,
+              color: Colors.red,
+              size: XSizes.iconSizeMd,
+            ),
+            SizedBox(width: XSizes.spacingSm),
+            Text(
+              'Logout',
+              style: TextStyle(
+                color: themeController.textColor,
+                fontFamily: XFonts.lexend,
+                fontWeight: FontWeight.bold,
+                fontSize: XSizes.textSizeXl,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to logout from your account?',
+          style: TextStyle(
+            color: themeController.textColor.withOpacity(0.8),
+            fontFamily: XFonts.lexend,
+            fontSize: XSizes.textSizeMd,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.symmetric(
+                horizontal: XSizes.paddingLg,
+                vertical: XSizes.paddingSm,
+              ),
+            ),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: themeController.textColor.withOpacity(0.7),
+                fontFamily: XFonts.lexend,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => _performLogout(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              padding: EdgeInsets.symmetric(
+                horizontal: XSizes.paddingLg,
+                vertical: XSizes.paddingSm,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+              ),
+            ),
+            child: Text(
+              'Logout',
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: XFonts.lexend,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _performLogout() {
+    Get.back(); // Close dialog
+    // TODO: Implement actual logout logic with AuthController
+    authController.logout();
+    Get.offAllNamed(XRoutes.login);
+  }
+}
+
+// Helper class for profile options
+class ProfileOption {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final bool isDestructive;
+
+  ProfileOption({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+    this.isDestructive = false,
+  });
 }

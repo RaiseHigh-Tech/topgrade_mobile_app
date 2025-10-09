@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../../data/model/purchase_response_model.dart';
 import '../../../utils/constants/colors.dart';
 import '../../../utils/constants/fonts.dart';

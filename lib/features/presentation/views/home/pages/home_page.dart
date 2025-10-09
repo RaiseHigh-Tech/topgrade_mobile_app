@@ -132,7 +132,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         // Continue Watching Section - only show if data exists
                         Obx(
                           () =>
-                              _myLearningsController.inProgressLearnings.isNotEmpty
+                              _myLearningsController.inProgressLearnings.isNotEmpty 
                                   ? Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,

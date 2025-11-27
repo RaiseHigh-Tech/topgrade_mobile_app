@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../common/error/response_exception.dart';
 import '../../../common/error/server_exception.dart';
@@ -10,7 +11,6 @@ import '../../data/model/signin_response_model.dart';
 import '../../data/model/signup_response_model.dart';
 import '../../data/model/reset_password_response_model.dart';
 import '../../data/model/verify_otp_response_model.dart';
-import '../../data/model/phone_otp_response_model.dart';
 import '../../data/model/phone_signin_response_model.dart';
 import '../routes/routes.dart';
 
@@ -25,9 +25,15 @@ class AuthController extends GetxController {
   final passwordController = TextEditingController();
 
   // TextField Controllers for mobile sign-in form
+  final mobileNameController = TextEditingController();
   final phoneController = TextEditingController();
   final otpController = TextEditingController();
   final _isOtpSent = false.obs;
+
+  // Firebase Auth
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  String? _verificationId;
+  int? _resendToken;
 
   // TextField Controllers for sign-up form
   final fullNameController = TextEditingController();
@@ -331,88 +337,142 @@ class AuthController extends GetxController {
     }
   }
 
-  // Send OTP to phone number
+  // Phone number sign in (redirect to mobile screen)
+  Future<void> signInWithPhone() async {
+    Get.toNamed(XRoutes.signinMobile);
+  }
+
+  // Send OTP using Firebase
   Future<void> sendOtp() async {
     try {
+      // Basic validation (before setting loading state)
+      if (mobileNameController.text.trim().isEmpty) {
+        Snackbars.errorSnackBar('Please enter your full name', duration: const Duration(milliseconds: 1500));
+        return;
+      }
+
+      if (phoneController.text.trim().isEmpty) {
+        Snackbars.errorSnackBar('Please enter your phone number', duration: const Duration(milliseconds: 1500));
+        return;
+      }
+
+      if (phoneController.text.trim().length != 10) {
+        Snackbars.errorSnackBar('Please enter a valid 10-digit phone number', duration: const Duration(milliseconds: 1500));
+        return;
+      }
+
+      // Set loading state after validation passes
       _isLoading.value = true;
 
-      // Basic validation
-      if (phoneController.text.trim().isEmpty) {
-        Snackbars.errorSnackBar('Please enter your phone number');
-        return;
-      }
+      final phoneNumber = '+91${phoneController.text.trim()}';
 
-      // Clean phone number (remove spaces, dashes, etc.)
-      String cleanPhone = phoneController.text.trim().replaceAll(
-        RegExp(r'[^\d]'),
-        '',
+      await _firebaseAuth.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          // Auto-verification completed
+          debugPrint('Auto verification completed');
+          await _signInWithCredential(credential);
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          debugPrint('Verification failed: ${e.message}');
+          _isLoading.value = false;
+          if (e.code == 'invalid-phone-number') {
+            Snackbars.errorSnackBar('Invalid phone number format', duration: const Duration(milliseconds: 1500));
+          } else {
+            Snackbars.errorSnackBar(e.message ?? 'Verification failed', duration: const Duration(milliseconds: 1500));
+          }
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          debugPrint('Code sent to $phoneNumber');
+          _verificationId = verificationId;
+          _resendToken = resendToken;
+          _isOtpSent.value = true;
+          _isLoading.value = false;
+          Snackbars.successSnackBar('OTP sent successfully to your phone', duration: const Duration(milliseconds: 1500));
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          debugPrint('Auto retrieval timeout');
+          _verificationId = verificationId;
+        },
+        timeout: const Duration(seconds: 60),
+        forceResendingToken: _resendToken,
       );
-
-      // Remove country code if present
-      if (cleanPhone.startsWith('91') && cleanPhone.length == 12) {
-        cleanPhone = cleanPhone.substring(2);
-      }
-
-      if (cleanPhone.length != 10) {
-        Snackbars.errorSnackBar('Please enter a valid 10-digit phone number');
-        return;
-      }
-
-      // Call request phone OTP API
-      final PhoneOtpResponseModel response = await remoteSource.requestPhoneOtp(
-        phoneNumber: cleanPhone,
-      );
-
-      // Check if OTP request was successful
-      if (response.isOtpRequestSuccess) {
-        _isOtpSent.value = true;
-      } else {
-        Snackbars.errorSnackBar(response.message);
-      }
-    } on ResponseException catch (e) {
-      Snackbars.errorSnackBar(e.message);
-    } on ServerException catch (e) {
-      Snackbars.errorSnackBar(e.message);
     } catch (e) {
-      Snackbars.errorSnackBar('Failed to send OTP');
-    } finally {
       _isLoading.value = false;
+      debugPrint('Error sending OTP: $e');
+      Snackbars.errorSnackBar('Failed to send OTP. Please try again', duration: const Duration(milliseconds: 1500));
     }
   }
 
   // Verify OTP and sign in
-  Future<void> verifyOtpAndSignIn() async {
+  Future<void> verifyOtp() async {
     try {
+      // Basic validation (before setting loading state)
+      if (otpController.text.trim().isEmpty) {
+        Snackbars.errorSnackBar('Please enter the OTP', duration: const Duration(milliseconds: 1500));
+        return;
+      }
+
+      if (otpController.text.trim().length != 6) {
+        Snackbars.errorSnackBar('Please enter a valid 6-digit OTP', duration: const Duration(milliseconds: 1500));
+        return;
+      }
+
+      if (_verificationId == null) {
+        Snackbars.errorSnackBar('Please request OTP first', duration: const Duration(milliseconds: 1500));
+        return;
+      }
+
+      // Set loading state after validation passes
       _isLoading.value = true;
 
-      // Basic validation
-      if (otpController.text.trim().isEmpty) {
-        Snackbars.errorSnackBar('Please enter the OTP');
-        return;
-      }
-
-      if (otpController.text.trim().length < 6) {
-        Snackbars.errorSnackBar('Please enter a valid 6-digit OTP');
-        return;
-      }
-
-      // Clean phone number (same logic as sendOtp)
-      String cleanPhone = phoneController.text.trim().replaceAll(
-        RegExp(r'[^\d]'),
-        '',
+      // Create credential
+      final credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId!,
+        smsCode: otpController.text.trim(),
       );
-      if (cleanPhone.startsWith('91') && cleanPhone.length == 12) {
-        cleanPhone = cleanPhone.substring(2);
+
+      // Sign in with credential
+      await _signInWithCredential(credential);
+    } catch (e) {
+      _isLoading.value = false;
+      debugPrint('Error verifying OTP: $e');
+      if (e is FirebaseAuthException) {
+        if (e.code == 'invalid-verification-code') {
+          Snackbars.errorSnackBar('Invalid OTP. Please try again', duration: const Duration(milliseconds: 1500));
+        } else {
+          Snackbars.errorSnackBar(e.message ?? 'Verification failed', duration: const Duration(milliseconds: 1500));
+        }
+      } else {
+        Snackbars.errorSnackBar('Failed to verify OTP. Please try again', duration: const Duration(milliseconds: 1500));
+      }
+    }
+  }
+
+  // Sign in with Firebase credential and send token to backend
+  Future<void> _signInWithCredential(PhoneAuthCredential credential) async {
+    try {
+      // Sign in to Firebase
+      final userCredential = await _firebaseAuth.signInWithCredential(credential);
+      
+      // Get Firebase ID token
+      final firebaseToken = await userCredential.user?.getIdToken();
+
+      if (firebaseToken == null) {
+        throw Exception('Failed to get Firebase token');
       }
 
-      // Call phone signin API
+      debugPrint('Firebase token obtained: ${firebaseToken.substring(0, 20)}...');
+
+      // Send name, phone number, and Firebase token to backend
       final PhoneSigninResponseModel response = await remoteSource.phoneSignin(
-        phoneNumber: cleanPhone,
-        otp: otpController.text.trim(),
+        name: mobileNameController.text.trim(),
+        phoneNumber: '+91${phoneController.text.trim()}',
+        firebaseToken: firebaseToken,
       );
 
-      // Check if phone signin was successful
-      if (response.isPhoneSigninSuccess) {
+      // Check if signin was successful
+      if (response.isAuthSuccess) {
         // Save tokens to storage
         await TokenHelper.saveTokens(
           response.accessToken!,
@@ -420,9 +480,14 @@ class AuthController extends GetxController {
         );
 
         // Clear form
+        mobileNameController.clear();
         phoneController.clear();
         otpController.clear();
         _isOtpSent.value = false;
+        _verificationId = null;
+        _resendToken = null;
+
+        Snackbars.successSnackBar(response.message, duration: const Duration(milliseconds: 1500));
 
         // Navigate based on area of interest status
         if (response.hasAreaOfIntrest == true) {
@@ -433,39 +498,26 @@ class AuthController extends GetxController {
           Get.offAllNamed(XRoutes.interest);
         }
       } else {
-        Snackbars.errorSnackBar(response.message);
+        Snackbars.errorSnackBar(response.message, duration: const Duration(milliseconds: 1500));
       }
     } on ResponseException catch (e) {
-      Snackbars.errorSnackBar(e.message);
+      Snackbars.errorSnackBar(e.message, duration: const Duration(milliseconds: 1500));
     } on ServerException catch (e) {
-      Snackbars.errorSnackBar(e.message);
+      Snackbars.errorSnackBar(e.message, duration: const Duration(milliseconds: 1500));
+    } on FirebaseAuthException catch (e) {
+      Snackbars.errorSnackBar(e.message ?? 'Authentication failed', duration: const Duration(milliseconds: 1500));
     } catch (e) {
-      Snackbars.errorSnackBar('Invalid OTP');
+      debugPrint('Error in _signInWithCredential: $e');
+      Snackbars.errorSnackBar('Sign in failed. Please try again', duration: const Duration(milliseconds: 1500));
     } finally {
       _isLoading.value = false;
     }
   }
 
-  // Phone number sign in (redirect to mobile screen)
-  Future<void> signInWithPhone() async {
-    Get.toNamed(XRoutes.signinMobile);
-  }
-
-  // Google sign in
-  Future<void> signInWithGoogle() async {
-    try {
-      _isLoading.value = true;
-
-      // Simulate Google authentication
-      await Future.delayed(const Duration(seconds: 2));
-
-      Get.offAllNamed(XRoutes.home);
-      Snackbars.errorSnackBar('Signed in with Google!');
-    } catch (e) {
-      Snackbars.errorSnackBar('Google sign-in failed');
-    } finally {
-      _isLoading.value = false;
-    }
+  // Resend OTP
+  Future<void> resendOtp() async {
+    otpController.clear();
+    await sendOtp();
   }
 
   // Get access token from storage
@@ -493,6 +545,7 @@ class AuthController extends GetxController {
       try {
         emailController.clear();
         passwordController.clear();
+        mobileNameController.clear();
         phoneController.clear();
         otpController.clear();
         fullNameController.clear();
@@ -529,6 +582,7 @@ class AuthController extends GetxController {
     try {
       emailController.dispose();
       passwordController.dispose();
+      mobileNameController.dispose();
       phoneController.dispose();
       otpController.dispose();
       fullNameController.dispose();

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "445384056234",
+    "project_id": "topgrade-86000",
+    "storage_bucket": "topgrade-86000.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:445384056234:android:6ee214da2a14ff19361fd3",
+        "android_client_info": {
+          "package_name": "com.topgrade.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKqWkRbrnlAJa5IdokhrqRc_QWuD-GSTY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

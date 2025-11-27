@@ -8,8 +8,6 @@ import '../model/signin_response_model.dart';
 import '../model/signup_response_model.dart';
 import '../model/reset_password_response_model.dart';
 import '../model/verify_otp_response_model.dart';
-import '../model/phone_otp_response_model.dart';
-import '../model/phone_signin_response_model.dart';
 import '../model/area_of_interest_response_model.dart';
 import '../model/categories_response_model.dart';
 import '../model/programs_filter_response_model.dart';
@@ -20,6 +18,8 @@ import '../model/progress_update_response_model.dart';
 import '../model/purchase_response_model.dart';
 import '../model/program_details_response_model.dart';
 import '../model/carousel_response_model.dart';
+import '../model/phone_otp_response_model.dart';
+import '../model/phone_signin_response_model.dart';
 
 abstract class RemoteSource {
   final DioClient dio;
@@ -52,11 +52,14 @@ abstract class RemoteSource {
     required String confirmPassword,
   });
 
-  Future<PhoneOtpResponseModel> requestPhoneOtp({required String phoneNumber});
+  Future<PhoneOtpResponseModel> requestPhoneOtp({
+    required String phoneNumber,
+  });
 
   Future<PhoneSigninResponseModel> phoneSignin({
+    required String name,
     required String phoneNumber,
-    required String otp,
+    required String firebaseToken,
   });
 
   Future<AreaOfInterestResponseModel> addAreaOfInterest({
@@ -335,107 +338,6 @@ class RemoteSourceImpl extends RemoteSource {
   }
 
   @override
-  Future<PhoneOtpResponseModel> requestPhoneOtp({
-    required String phoneNumber,
-  }) async {
-    try {
-      final response = await dio.post(
-        ApiEndpoints.requestPhoneOtpUrl,
-        data: {'phone_number': phoneNumber},
-      );
-
-      if (response.statusCode == 200) {
-        return PhoneOtpResponseModel.fromJson(response.data);
-      } else {
-        throw ServerException(
-          message: "Unexpected response code: ${response.statusCode}",
-        );
-      }
-    } catch (e) {
-      if (e is DioException) {
-        if (e.response != null) {
-          final statusCode = e.response!.statusCode;
-          final responseData = e.response!.data;
-
-          switch (statusCode) {
-            case 400:
-              // Bad request - invalid phone number format
-              final message =
-                  responseData['message'] ??
-                  'Phone number must be exactly 10 digits';
-              throw ResponseException(message: message);
-            case 500:
-              // Server error
-              throw ServerException(message: 'Internal server error');
-            default:
-              throw ServerException(message: 'Unexpected error occurred');
-          }
-        } else {
-          // Network error
-          throw ServerException(
-            message: 'Network error: Please check your connection',
-          );
-        }
-      }
-      // Other exceptions
-      throw ServerException(message: e.toString());
-    }
-  }
-
-  @override
-  Future<PhoneSigninResponseModel> phoneSignin({
-    required String phoneNumber,
-    required String otp,
-  }) async {
-    try {
-      final response = await dio.post(
-        ApiEndpoints.phoneSigninUrl,
-        data: {'phone_number': phoneNumber, 'otp': otp},
-      );
-
-      if (response.statusCode == 200) {
-        return PhoneSigninResponseModel.fromJson(response.data);
-      } else {
-        throw ServerException(
-          message: "Unexpected response code: ${response.statusCode}",
-        );
-      }
-    } catch (e) {
-      if (e is DioException) {
-        if (e.response != null) {
-          final statusCode = e.response!.statusCode;
-          final responseData = e.response!.data;
-
-          switch (statusCode) {
-            case 400:
-              // Bad request - invalid phone number or OTP format
-              final message =
-                  responseData['message'] ?? 'Invalid phone number or OTP';
-              throw ResponseException(message: message);
-            case 401:
-              // Invalid or expired OTP
-              final message =
-                  responseData['message'] ?? 'Invalid or expired OTP';
-              throw ResponseException(message: message);
-            case 500:
-              // Server error
-              throw ServerException(message: 'Internal server error');
-            default:
-              throw ServerException(message: 'Unexpected error occurred');
-          }
-        } else {
-          // Network error
-          throw ServerException(
-            message: 'Network error: Please check your connection',
-          );
-        }
-      }
-      // Other exceptions
-      throw ServerException(message: e.toString());
-    }
-  }
-
-  @override
   Future<VerifyOtpResponseModel> verifyPasswordResetOtp({
     required String email,
     required String otp,
@@ -488,6 +390,100 @@ class RemoteSourceImpl extends RemoteSource {
         }
       }
       // Other exceptions
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<PhoneOtpResponseModel> requestPhoneOtp({
+    required String phoneNumber,
+  }) async {
+    try {
+      final response = await dio.post(
+        ApiEndpoints.requestPhoneOtpUrl,
+        data: {'phoneNumber': phoneNumber},
+      );
+
+      if (response.statusCode == 200) {
+        return PhoneOtpResponseModel.fromJson(response.data);
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 400:
+              final message = responseData['message'] ?? 'Invalid phone number';
+              throw ResponseException(message: message);
+            case 500:
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<PhoneSigninResponseModel> phoneSignin({
+    required String name,
+    required String phoneNumber,
+    required String firebaseToken,
+  }) async {
+    try {
+      print(firebaseToken);
+      final response = await dio.post(
+        ApiEndpoints.phoneSigninUrl,
+        data: {
+          'name': name,
+          'phoneNumber': phoneNumber,
+          'firebaseToken': firebaseToken,
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return PhoneSigninResponseModel.fromJson(response.data);
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 400:
+              final message = responseData['message'] ?? 'Invalid request';
+              throw ResponseException(message: message);
+            case 401:
+              final message = responseData['message'] ?? 'Authentication failed';
+              throw ResponseException(message: message);
+            case 500:
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
       throw ServerException(message: e.toString());
     }
   }

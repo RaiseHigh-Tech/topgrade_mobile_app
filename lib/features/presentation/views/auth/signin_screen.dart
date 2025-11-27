@@ -238,38 +238,6 @@ class SigninScreen extends StatelessWidget {
                       ),
 
                       SizedBox(height: XSizes.spacingMd),
-
-                      // Google Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            // Handle Google login
-                            authController.signInWithGoogle();
-                          },
-                          label: Text(
-                            'Sign In With Google',
-                            style: TextStyle(
-                              color: themeController.textColor,
-                              fontFamily: 'Lexend',
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(
-                              vertical: XSizes.spacingMd,
-                            ),
-                            side: BorderSide(
-                              color: themeController.textColor.withValues(
-                                alpha: 0.3,
-                              ),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
 

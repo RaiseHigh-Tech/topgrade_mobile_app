@@ -4,6 +4,7 @@ class PhoneSigninResponseModel {
   final String? accessToken;
   final String? refreshToken;
   final bool? hasAreaOfIntrest;
+  final User? user;
 
   PhoneSigninResponseModel({
     required this.success,
@@ -11,22 +12,62 @@ class PhoneSigninResponseModel {
     this.accessToken,
     this.refreshToken,
     this.hasAreaOfIntrest,
+    this.user,
   });
 
-  /// Factory method to create PhoneSigninResponseModel from JSON
   factory PhoneSigninResponseModel.fromJson(Map<String, dynamic> json) {
     return PhoneSigninResponseModel(
       success: json['success'] ?? false,
       message: json['message'] ?? '',
-      accessToken: json['access_token'],
-      refreshToken: json['refresh_token'],
-      hasAreaOfIntrest: json['has_area_of_intrest'],
+      accessToken: json['accessToken'],
+      refreshToken: json['refreshToken'],
+      hasAreaOfIntrest: json['hasAreaOfIntrest'],
+      user: json['user'] != null ? User.fromJson(json['user']) : null,
     );
   }
 
-  /// Check if response contains authentication tokens
-  bool get hasTokens => accessToken != null && refreshToken != null;
+  Map<String, dynamic> toJson() {
+    return {
+      'success': success,
+      'message': message,
+      'accessToken': accessToken,
+      'refreshToken': refreshToken,
+      'hasAreaOfIntrest': hasAreaOfIntrest,
+      'user': user?.toJson(),
+    };
+  }
 
-  /// Check if this is a successful phone signin response
-  bool get isPhoneSigninSuccess => success && hasTokens;
+  bool get isAuthSuccess => success;
+}
+
+class User {
+  final int? id;
+  final String? fullname;
+  final String? email;
+  final String? phoneNumber;
+
+  User({
+    this.id,
+    this.fullname,
+    this.email,
+    this.phoneNumber,
+  });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'],
+      fullname: json['fullname'],
+      email: json['email'],
+      phoneNumber: json['phoneNumber'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'fullname': fullname,
+      'email': email,
+      'phoneNumber': phoneNumber,
+    };
+  }
 }

@@ -63,7 +63,6 @@ class SigninMobileScreen extends StatelessWidget {
 
                   Obx(
                     () {
-                      print('Obx rebuilding - isOtpSent: ${authController.isOtpSent.value}');
                       return !authController.isOtpSent.value
                           ? _buildPhoneNumberSection(
                               themeController,
@@ -144,40 +143,7 @@ class SigninMobileScreen extends StatelessWidget {
                     ),
                   ),
 
-                  SizedBox(height: XSizes.spacingMd),
-
-                  // Google Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        authController.signInWithGoogle();
-                      },
-                      label: Text(
-                        'Sign In With Google',
-                        style: TextStyle(
-                          color: themeController.textColor,
-                          fontFamily: 'Lexend',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          vertical: XSizes.spacingMd,
-                        ),
-                        side: BorderSide(
-                          color: themeController.textColor.withValues(
-                            alpha: 0.3,
-                          ),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(height: XSizes.spacingLg),
+                  SizedBox(height: XSizes.spacingXxl),
 
                   // Footer
                   Row(
@@ -224,6 +190,58 @@ class SigninMobileScreen extends StatelessWidget {
   ) {
     return Column(
       children: [
+        // Name Field
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Full name',
+              style: TextStyle(
+                fontSize: XSizes.textSizeSm,
+                fontWeight: FontWeight.w500,
+                color: themeController.textColor,
+                fontFamily: 'Lexend',
+              ),
+            ),
+            SizedBox(height: XSizes.spacingSm),
+            TextField(
+              controller: authController.mobileNameController,
+              keyboardType: TextInputType.name,
+              cursorColor: themeController.primaryColor,
+              textCapitalization: TextCapitalization.words,
+              style: TextStyle(
+                color: themeController.textColor,
+                fontFamily: 'Lexend',
+                fontSize: XSizes.textSizeSm,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Enter your full name',
+                hintStyle: TextStyle(
+                  color: themeController.textColor.withValues(alpha: 0.5),
+                  fontSize: XSizes.textSizeSm,
+                  fontFamily: 'Lexend',
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: themeController.primaryColor,
+                    width: 1,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: themeController.primaryColor,
+                    width: 1,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        SizedBox(height: XSizes.spacingMd),
+
         // Phone Number Field
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,7 +309,7 @@ class SigninMobileScreen extends StatelessWidget {
           child: Obx(
             () => PrimaryButton(
               text: 'SEND OTP',
-              onPressed: authController.sendOtp,
+              onPressed: () => authController.sendOtp(),
               isLoading: authController.isLoading.value,
             ),
           ),
@@ -406,6 +424,7 @@ class SigninMobileScreen extends StatelessWidget {
           children: [
             TextButton(
               onPressed: () {
+                authController.mobileNameController.clear();
                 authController.phoneController.clear();
                 authController.otpController.clear();
                 authController.isOtpSent.value = false;
@@ -422,9 +441,7 @@ class SigninMobileScreen extends StatelessWidget {
               ),
             ),
             TextButton(
-              onPressed: () {
-                authController.sendOtp();
-              },
+              onPressed: () => authController.resendOtp(),
               child: Text(
                 'Resend OTP',
                 style: TextStyle(
@@ -446,7 +463,7 @@ class SigninMobileScreen extends StatelessWidget {
           child: Obx(
             () => PrimaryButton(
               text: 'VERIFY & SIGN IN',
-              onPressed: authController.verifyOtpAndSignIn,
+              onPressed: () => authController.verifyOtp(),
               isLoading: authController.isLoading.value,
             ),
           ),

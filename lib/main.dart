@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:topgrade/utils/constants/fonts.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 import 'features/locale/locale.dart';
 import 'features/presentation/bindings/initial_bindings.dart';
@@ -27,6 +29,11 @@ Future<void> _preloadFonts() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // Preload custom fonts to prevent text disappearing in release builds
   await _preloadFonts();

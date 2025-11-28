@@ -165,12 +165,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildProfileOptionsList() {
     final profileOptions = [
-      ProfileOption(
-        icon: Icons.edit_rounded,
-        title: 'Edit Profile',
-        subtitle: 'Update your personal information',
-        onTap: () => _navigateToEditProfile(),
-      ),
+      // ProfileOption(
+      //   icon: Icons.edit_rounded,
+      //   title: 'Edit Profile',
+      //   subtitle: 'Update your personal information',
+      //   onTap: () => _navigateToEditProfile(),
+      // ),
       ProfileOption(
         icon: Icons.palette_rounded,
         title: 'Theme',

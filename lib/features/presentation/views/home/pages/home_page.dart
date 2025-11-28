@@ -10,6 +10,7 @@ import '../../../controllers/my_learnings_controller.dart';
 import '../../../../../utils/constants/sizes.dart';
 import '../../../../../utils/constants/fonts.dart';
 import '../../../../../utils/constants/api_endpoints.dart';
+import '../../../../../utils/helpers/token_helper.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -31,10 +32,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   // Current carousel index for indicators
   int _currentCarouselIndex = 0;
+  
+  // User name
+  String _userName = 'User';
 
   @override
   void initState() {
     super.initState();
+    _loadUserName();
 
     _shimmerAnimationController = AnimationController(
       duration: const Duration(milliseconds: 2000),
@@ -77,6 +82,31 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void dispose() {
     _shimmerAnimationController.dispose();
     super.dispose();
+  }
+
+  // Load user name from storage
+  Future<void> _loadUserName() async {
+    final fullname = await TokenHelper.getUserFullname();
+    if (fullname != null && fullname.isNotEmpty && mounted) {
+      setState(() {
+        _userName = fullname;
+      });
+    }
+  }
+
+  // Get dynamic greeting based on time of day
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    
+    if (hour >= 5 && hour < 12) {
+      return 'Good Morning!';
+    } else if (hour >= 12 && hour < 17) {
+      return 'Good Afternoon!';
+    } else if (hour >= 17 && hour < 21) {
+      return 'Good Evening!';
+    } else {
+      return 'Good Night!';
+    }
   }
 
   // Get combined loading state from controllers
@@ -256,7 +286,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Good Morning!",
+                    _getGreeting(),
                     style: TextStyle(
                       fontSize: XSizes.textSizeSm,
                       fontFamily: XFonts.lexend,
@@ -264,7 +294,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     ),
                   ),
                   Text(
-                    "John Doe",
+                    _userName,
                     style: TextStyle(
                       fontSize: XSizes.textSizeMd,
                       fontFamily: XFonts.lexend,

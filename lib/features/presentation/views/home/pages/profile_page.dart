@@ -5,15 +5,53 @@ import 'package:topgrade/features/presentation/routes/routes.dart';
 import '../../../../../utils/constants/fonts.dart';
 import '../../../../../utils/constants/sizes.dart';
 import '../../../../../utils/constants/api_endpoints.dart';
+import '../../../../../utils/helpers/token_helper.dart';
 import '../../../controllers/auth_controller.dart';
 import '../../../controllers/theme_controller.dart';
 import '../../webview/webview_screen.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   ProfilePage({super.key});
 
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
   final XThemeController themeController = Get.find<XThemeController>();
   final AuthController authController = Get.find<AuthController>();
+
+  String _userName = 'User';
+  String _userContact = 'user@example.com';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  // Load user data from storage
+  Future<void> _loadUserData() async {
+    final fullname = await TokenHelper.getUserFullname();
+    final phoneNumber = await TokenHelper.getUserPhoneNumber();
+    final email = await TokenHelper.getUserEmail();
+
+    if (mounted) {
+      setState(() {
+        // Set user name
+        if (fullname != null && fullname.isNotEmpty) {
+          _userName = fullname;
+        }
+
+        // Priority: Phone number > Email
+        if (phoneNumber != null && phoneNumber.isNotEmpty) {
+          _userContact = phoneNumber;
+        } else if (email != null && email.isNotEmpty) {
+          _userContact = email;
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +125,7 @@ class ProfilePage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'John Doe',
+                  _userName,
                   style: TextStyle(
                     fontSize: XSizes.textSizeXl,
                     fontWeight: FontWeight.bold,
@@ -106,7 +144,7 @@ class ProfilePage extends StatelessWidget {
                     SizedBox(width: XSizes.spacingXs),
                     Expanded(
                       child: Text(
-                        'john.doe@example.com', // TODO: Replace with actual email
+                        _userContact,
                         style: TextStyle(
                           fontSize: XSizes.textSizeSm,
                           color: themeController.textColor.withOpacity(0.7),

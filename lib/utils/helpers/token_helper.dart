@@ -14,6 +14,9 @@ class TokenHelper {
   // Storage keys
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
+  static const String _userFullnameKey = 'user_fullname';
+  static const String _userEmailKey = 'user_email';
+  static const String _userPhoneKey = 'user_phone_number';
 
   /// Save tokens to secure storage
   static Future<void> saveTokens(String accessToken, String refreshToken) async {
@@ -37,10 +40,39 @@ class TokenHelper {
     return accessToken != null && accessToken.isNotEmpty;
   }
 
-  /// Clear all tokens from storage
+  /// Save user data to secure storage
+  static Future<void> saveUserData({
+    required String fullname,
+    required String email,
+    required String phoneNumber,
+  }) async {
+    await _secureStorage.write(key: _userFullnameKey, value: fullname);
+    await _secureStorage.write(key: _userEmailKey, value: email);
+    await _secureStorage.write(key: _userPhoneKey, value: phoneNumber);
+  }
+
+  /// Get user fullname from secure storage
+  static Future<String?> getUserFullname() async {
+    return await _secureStorage.read(key: _userFullnameKey);
+  }
+
+  /// Get user email from secure storage
+  static Future<String?> getUserEmail() async {
+    return await _secureStorage.read(key: _userEmailKey);
+  }
+
+  /// Get user phone number from secure storage
+  static Future<String?> getUserPhoneNumber() async {
+    return await _secureStorage.read(key: _userPhoneKey);
+  }
+
+  /// Clear all tokens and user data from storage
   static Future<void> clearTokens() async {
     await _secureStorage.delete(key: _accessTokenKey);
     await _secureStorage.delete(key: _refreshTokenKey);
+    await _secureStorage.delete(key: _userFullnameKey);
+    await _secureStorage.delete(key: _userEmailKey);
+    await _secureStorage.delete(key: _userPhoneKey);
   }
 
   /// Get authorization header with bearer token

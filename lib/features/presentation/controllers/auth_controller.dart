@@ -110,6 +110,15 @@ class AuthController extends GetxController {
           response.refreshToken!,
         );
 
+        // Save user data to storage
+        if (response.user != null) {
+          await TokenHelper.saveUserData(
+            fullname: response.user!.fullname,
+            email: response.user!.email,
+            phoneNumber: response.user!.phoneNumber,
+          );
+        }
+
         // Clear form
         fullNameController.clear();
         signupEmailController.clear();
@@ -172,6 +181,15 @@ class AuthController extends GetxController {
           response.accessToken!,
           response.refreshToken!,
         );
+
+        // Save user data to storage
+        if (response.user != null) {
+          await TokenHelper.saveUserData(
+            fullname: response.user!.fullname,
+            email: response.user!.email,
+            phoneNumber: response.user!.phoneNumber,
+          );
+        }
 
         // Clear form
         emailController.clear();
@@ -478,6 +496,15 @@ class AuthController extends GetxController {
           response.accessToken!,
           response.refreshToken!,
         );
+
+        // Save user data to storage
+        if (response.user != null) {
+          await TokenHelper.saveUserData(
+            fullname: response.user!.fullname,
+            email: response.user!.email,
+            phoneNumber: response.user!.phoneNumber,
+          );
+        }
 
         // Clear form
         mobileNameController.clear();

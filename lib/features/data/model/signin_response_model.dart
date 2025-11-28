@@ -1,3 +1,5 @@
+import 'user_model.dart';
+
 class SigninResponseModel {
   final bool success;
   final String message;
@@ -6,6 +8,7 @@ class SigninResponseModel {
   final String? otp;
   final bool? userExists;
   final bool? hasAreaOfIntrest;
+  final UserModel? user;
 
   SigninResponseModel({
     required this.success,
@@ -15,6 +18,7 @@ class SigninResponseModel {
     this.otp,
     this.userExists,
     this.hasAreaOfIntrest,
+    this.user,
   });
 
   /// Factory method to create SigninResponseModel from JSON
@@ -27,6 +31,7 @@ class SigninResponseModel {
       otp: json['otp'],
       userExists: json['user_exists'],
       hasAreaOfIntrest: json['has_area_of_intrest'],
+      user: json['user'] != null ? UserModel.fromJson(json['user']) : null,
     );
   }
 

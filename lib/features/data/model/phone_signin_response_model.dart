@@ -4,7 +4,6 @@ class PhoneSigninResponseModel {
   final String? accessToken;
   final String? refreshToken;
   final bool? hasAreaOfIntrest;
-  final User? user;
 
   PhoneSigninResponseModel({
     required this.success,
@@ -12,17 +11,16 @@ class PhoneSigninResponseModel {
     this.accessToken,
     this.refreshToken,
     this.hasAreaOfIntrest,
-    this.user,
   });
 
   factory PhoneSigninResponseModel.fromJson(Map<String, dynamic> json) {
     return PhoneSigninResponseModel(
       success: json['success'] ?? false,
       message: json['message'] ?? '',
-      accessToken: json['accessToken'],
-      refreshToken: json['refreshToken'],
-      hasAreaOfIntrest: json['hasAreaOfIntrest'],
-      user: json['user'] != null ? User.fromJson(json['user']) : null,
+      // Support both snake_case (backend) and camelCase (fallback)
+      accessToken: json['access_token'] ?? json['accessToken'],
+      refreshToken: json['refresh_token'] ?? json['refreshToken'],
+      hasAreaOfIntrest: json['has_area_of_intrest'] ?? json['hasAreaOfIntrest'],
     );
   }
 
@@ -30,44 +28,11 @@ class PhoneSigninResponseModel {
     return {
       'success': success,
       'message': message,
-      'accessToken': accessToken,
-      'refreshToken': refreshToken,
-      'hasAreaOfIntrest': hasAreaOfIntrest,
-      'user': user?.toJson(),
+      'access_token': accessToken,
+      'refresh_token': refreshToken,
+      'has_area_of_intrest': hasAreaOfIntrest,
     };
   }
 
   bool get isAuthSuccess => success;
-}
-
-class User {
-  final int? id;
-  final String? fullname;
-  final String? email;
-  final String? phoneNumber;
-
-  User({
-    this.id,
-    this.fullname,
-    this.email,
-    this.phoneNumber,
-  });
-
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['id'],
-      fullname: json['fullname'],
-      email: json['email'],
-      phoneNumber: json['phoneNumber'],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'fullname': fullname,
-      'email': email,
-      'phoneNumber': phoneNumber,
-    };
-  }
 }

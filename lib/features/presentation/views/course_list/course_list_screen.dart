@@ -36,6 +36,8 @@ class _CourseListScreenState extends State<CourseListScreen>
 
   // Search functionality
   Timer? _debounceTimer;
+  final FocusNode _searchFocusNode = FocusNode();
+  final TextEditingController _searchController = TextEditingController();
 
   late AnimationController _searchAnimationController;
   late AnimationController _shimmerAnimationController;
@@ -47,11 +49,12 @@ class _CourseListScreenState extends State<CourseListScreen>
   void initState() {
     super.initState();
 
-    // Check if we came from home page with category filter
+    // Check if we came from home page with category filter or auto focus search
     final arguments = Get.arguments as Map<String, dynamic>?;
     if (arguments != null) {
       final categoryId = arguments['categoryId'] as int?;
       final categoryName = arguments['categoryName'] as String?;
+      final autoFocusSearch = arguments['autoFocusSearch'] as bool?;
 
       if (categoryId != null && categoryName != null) {
         // Set the category filter and update selected index
@@ -65,6 +68,22 @@ class _CourseListScreenState extends State<CourseListScreen>
               _selectedCategoryIndex = index;
             });
           }
+        });
+      }
+
+      // Auto focus search if requested from home page
+      if (autoFocusSearch == true) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          setState(() {
+            _isSearchVisible = true;
+          });
+          _searchAnimationController.forward();
+          // Delay focus slightly to ensure animation starts
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (mounted) {
+              _searchFocusNode.requestFocus();
+            }
+          });
         });
       }
     }
@@ -112,14 +131,18 @@ class _CourseListScreenState extends State<CourseListScreen>
 
         // Listen to both controllers loading state
         ever(_categoriesController.isLoading, (isLoading) {
-          if (!isLoading && !_programsController.isLoading.value) {
-            _shimmerAnimationController.stop();
+          if (!isLoading && !_programsController.isLoading.value && mounted) {
+            if (_shimmerAnimationController.isAnimating) {
+              _shimmerAnimationController.stop();
+            }
           }
         });
 
         ever(_programsController.isLoading, (isLoading) {
-          if (!isLoading && !_categoriesController.isLoading.value) {
-            _shimmerAnimationController.stop();
+          if (!isLoading && !_categoriesController.isLoading.value && mounted) {
+            if (_shimmerAnimationController.isAnimating) {
+              _shimmerAnimationController.stop();
+            }
           }
         });
       }
@@ -131,6 +154,8 @@ class _CourseListScreenState extends State<CourseListScreen>
     _searchAnimationController.dispose();
     _shimmerAnimationController.dispose();
     _debounceTimer?.cancel();
+    _searchFocusNode.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -158,6 +183,7 @@ class _CourseListScreenState extends State<CourseListScreen>
   }
 
   void _clearSearch() {
+    _searchController.clear();
     _programsController.searchPrograms('');
   }
 
@@ -1318,6 +1344,8 @@ class _CourseListScreenState extends State<CourseListScreen>
           SizedBox(width: XSizes.spacingSm),
           Expanded(
             child: TextField(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
               cursorColor: themeController.primaryColor,
               onChanged: (value) {
                 // Debounce search to avoid too many API calls

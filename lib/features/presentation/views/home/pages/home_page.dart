@@ -316,41 +316,47 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget _buildSearchBar() {
     return GetBuilder<XThemeController>(
       builder:
-          (themeController) => Container(
-            padding: EdgeInsets.symmetric(horizontal: XSizes.paddingMd),
-            decoration: BoxDecoration(
-              color: themeController.backgroundColor,
-              borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
-              border: Border.all(
-                color:
-                    themeController.isLightTheme
-                        ? Colors.grey[300]!
-                        : Colors.grey[600]!,
+          (themeController) => GestureDetector(
+            onTap: () {
+              // Navigate to course list screen with search focused
+              Get.toNamed('/course-list', arguments: {'autoFocusSearch': true});
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: XSizes.paddingMd),
+              decoration: BoxDecoration(
+                color: themeController.backgroundColor,
+                borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
+                border: Border.all(
+                  color:
+                      themeController.isLightTheme
+                          ? Colors.grey[300]!
+                          : Colors.grey[600]!,
+                ),
               ),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.search, color: Colors.grey[600]),
-                SizedBox(width: XSizes.spacingSm),
-                Expanded(
-                  child: TextField(
-                    cursorColor: themeController.primaryColor,
-                    decoration: InputDecoration(
-                      hintText: "Search courses...",
-                      hintStyle: TextStyle(
-                        fontFamily: XFonts.lexend,
-                        fontSize: XSizes.textSizeMd,
-                        color: Colors.grey[600],
+              child: Row(
+                children: [
+                  Icon(Icons.search, color: Colors.grey[600]),
+                  SizedBox(width: XSizes.spacingSm),
+                  Expanded(
+                    child: TextField(
+                      enabled: false,
+                      decoration: InputDecoration(
+                        hintText: "Search courses...",
+                        hintStyle: TextStyle(
+                          fontFamily: XFonts.lexend,
+                          fontSize: XSizes.textSizeMd,
+                          color: Colors.grey[600],
+                        ),
+                        border: InputBorder.none,
                       ),
-                      border: InputBorder.none,
-                    ),
-                    style: TextStyle(
-                      fontFamily: XFonts.lexend,
-                      color: themeController.textColor,
+                      style: TextStyle(
+                        fontFamily: XFonts.lexend,
+                        color: themeController.textColor,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
     );

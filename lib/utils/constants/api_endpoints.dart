@@ -1,6 +1,6 @@
 class ApiEndpoints {
   // Base URL
-  static const String baseUrl = 'https://0323b7271e46.ngrok-free.app/';
+  static const String baseUrl = 'https://www.topgradeinnovation.com/';
 
   // Complete URLs
   static const String signupUrl = '${baseUrl}api/auth/signup';
@@ -34,10 +34,14 @@ class ApiEndpoints {
 
   // My Learnings endpoints
   static const String myLearningsUrl = '${baseUrl}api/my-learnings';
-
-  // Purchase endpoints
-  static const String purchaseUrl = '${baseUrl}api/purchase';
   
   // Learning Progress endpoints
   static const String updateProgressUrl = '${baseUrl}api/learning/update-progress';
+  
+  // Request Access endpoints
+  static const String requestAccessUrl = '${baseUrl}api/request-program';
+  
+  // Web URLs
+  static const String privacyPolicyUrl = '${baseUrl}privacy-app/';
+  static const String termsAndConditionsUrl = '${baseUrl}terms-app/';
 }

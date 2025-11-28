@@ -8,7 +8,7 @@ import '../../../../utils/constants/sizes.dart';
 import '../../../../utils/constants/fonts.dart';
 import 'pages/home_page.dart';
 import 'pages/my_learning_page.dart';
-import 'pages/chat_page.dart';
+import 'pages/notifications_page.dart';
 import 'pages/profile_page.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -68,9 +68,9 @@ class HomeScreen extends StatelessWidget {
                       ),
                       _buildNavItem(
                         2,
-                        XIcons.icChat,
-                        XIcons.icChatActive,
-                        'Chat',
+                        XIcons.icEnvelop,
+                        XIcons.icEnvelopActive,
+                        'Notifications',
                         bottomNavController,
                         themeController,
                       ),
@@ -152,7 +152,7 @@ class HomeScreen extends StatelessWidget {
         page = const MyLearningPage();
         break;
       case 2:
-        page = const ChatPage();
+        page = const NotificationsPage();
         break;
       case 3:
         page = ProfilePage();

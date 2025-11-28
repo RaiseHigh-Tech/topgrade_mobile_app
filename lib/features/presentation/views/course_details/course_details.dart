@@ -182,20 +182,20 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                             Text(
                               program.title,
                               style: TextStyle(
-                                fontSize: XSizes.textSizeXl,
+                                fontSize: XSizes.textSizeSm,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: XFonts.lexend,
-                                color: themeController.textColor,
+                                color: themeController.primaryColor,
                               ),
                             ),
                             SizedBox(height: XSizes.spacingXs),
                             Text(
                               program.subtitle,
                               style: TextStyle(
-                                fontSize: XSizes.textSizeSm,
-                                color: themeController.primaryColor,
+                                fontSize: XSizes.textSizeXl,
                                 fontFamily: XFonts.lexend,
                                 fontWeight: FontWeight.w500,
+                                color: themeController.textColor,
                               ),
                             ),
                             SizedBox(height: XSizes.spacingMd),

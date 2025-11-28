@@ -60,5 +60,5 @@ class BottomNavController extends GetxController
   }
 
   // Tab names
-  List<String> get tabNames => ['Home', 'My Learning', 'Chat', 'Profile'];
+  List<String> get tabNames => ['Home', 'My Learning', 'Notifications', 'Profile'];
 }

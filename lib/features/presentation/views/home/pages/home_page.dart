@@ -708,7 +708,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          program.title,
+                          program.subtitle,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: XSizes.textSizeMd,

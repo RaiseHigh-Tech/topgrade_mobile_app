@@ -130,7 +130,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             final program = _controller.program!;
 
             return DefaultTabController(
-              length: 3, // Changed to 3 tabs
+              length: 2, // Changed to 2 tabs
               child: Column(
                 children: [
                   // Fixed Header Section (Non-scrollable)
@@ -289,7 +289,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                           tabs: const [
                             Tab(text: 'Overview'),
                             Tab(text: 'Lessons'),
-                            Tab(text: 'Reviews'),
                           ],
                         ),
                       ),
@@ -399,8 +398,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                           ),
                           // Lessons Tab - Scrollable
                           LessonsTab(),
-                          // Reviews Tab
-                          _buildReviewsTab(themeController),
                         ],
                       ),
                     ),
@@ -409,76 +406,91 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
               ),
             );
           }),
-          // Enroll Now Button
+          // Request Access Button
           bottomNavigationBar: Padding(
             padding: EdgeInsets.all(XSizes.paddingMd),
             child: Obx(
-              () => PrimaryButton(
-                text:
-                    _controller.program?.hasPurchased == true
-                        ? 'Go to Course'
-                        : 'Enroll Now',
-                isLoading: _controller.isPurchasing.value,
-                onPressed: () {
-                  if (_controller.program?.hasPurchased == true) {
-                    final syllabusData = _controller.syllabus;
-                    if (syllabusData != null &&
-                        syllabusData.modules.isNotEmpty) {
-                      // Get first module and first topic
-                      final firstModule = syllabusData.modules.first;
-                      final firstTopic =
-                          firstModule.topics.isNotEmpty
-                              ? firstModule.topics.first
-                              : null;
+              () {
+                final hasPurchased = _controller.program?.hasPurchased == true;
+                final hasRequested = _controller.hasProgramRequested;
+                
+                String buttonText;
+                if (hasPurchased) {
+                  buttonText = 'Go to Course';
+                } else if (hasRequested) {
+                  buttonText = 'Access Requested';
+                } else {
+                  buttonText = 'Request Access';
+                }
 
-                      if (firstTopic != null) {
-                        final syllabusJson = {
-                          'total_modules': syllabusData.totalModules,
-                          'total_topics': syllabusData.totalTopics,
-                          'modules':
-                              syllabusData.modules
-                                  .map(
-                                    (m) => {
-                                      'id': m.id,
-                                      'module_title': m.moduleTitle,
-                                      'topics_count': m.topicsCount,
-                                      'topics':
-                                          m.topics
-                                              .map(
-                                                (t) => {
-                                                  'id': t.id,
-                                                  'topic_title': t.topicTitle,
-                                                  'video_url': t.videoUrl,
-                                                  'video_duration':
-                                                      t.videoDuration,
-                                                },
-                                              )
-                                              .toList(),
-                                    },
-                                  )
-                                  .toList(),
-                        };
+                return PrimaryButton(
+                  text: buttonText,
+                  isLoading: _controller.isRequestingAccess.value,
+                  // Disable button if already requested but not purchased
+                  onPressed: (hasPurchased || (!hasPurchased && !hasRequested))
+                      ? () {
+                          if (hasPurchased) {
+                            final syllabusData = _controller.syllabus;
+                            if (syllabusData != null &&
+                                syllabusData.modules.isNotEmpty) {
+                              // Get first module and first topic
+                              final firstModule = syllabusData.modules.first;
+                              final firstTopic =
+                                  firstModule.topics.isNotEmpty
+                                      ? firstModule.topics.first
+                                      : null;
 
-                        Get.toNamed(
-                          XRoutes.videoPlayer,
-                          arguments: {
-                            'syllabus': syllabusJson,
-                            'currentTopicId': firstTopic.id,
-                            'videoTitle': firstTopic.topicTitle,
-                            'moduleTitle': firstModule.moduleTitle,
-                            'programTitle':
-                                _controller.program?.title ?? 'Course',
-                            'hasPurchased': _controller.program?.hasPurchased,
-                            'purchaseId': _controller.program?.purchaseId,
-                          },
-                        );
-                      }
-                    }
-                  } else {
-                    _controller.purchaseCourse();
-                  }
-                },
-              ),
+                              if (firstTopic != null) {
+                                final syllabusJson = {
+                                  'total_modules': syllabusData.totalModules,
+                                  'total_topics': syllabusData.totalTopics,
+                                  'modules':
+                                      syllabusData.modules
+                                          .map(
+                                            (m) => {
+                                              'id': m.id,
+                                              'module_title': m.moduleTitle,
+                                              'topics_count': m.topicsCount,
+                                              'topics':
+                                                  m.topics
+                                                      .map(
+                                                        (t) => {
+                                                          'id': t.id,
+                                                          'topic_title': t.topicTitle,
+                                                          'video_url': t.videoUrl,
+                                                          'video_duration':
+                                                              t.videoDuration,
+                                                        },
+                                                      )
+                                                      .toList(),
+                                            },
+                                          )
+                                          .toList(),
+                                };
+
+                                Get.toNamed(
+                                  XRoutes.videoPlayer,
+                                  arguments: {
+                                    'syllabus': syllabusJson,
+                                    'currentTopicId': firstTopic.id,
+                                    'videoTitle': firstTopic.topicTitle,
+                                    'moduleTitle': firstModule.moduleTitle,
+                                    'programTitle':
+                                        _controller.program?.title ?? 'Course',
+                                    'hasPurchased': _controller.program?.hasPurchased,
+                                    'purchaseId': _controller.program?.purchaseId,
+                                  },
+                                );
+                              }
+                            }
+                          } else {
+                            // Request access to the program
+                            _controller.requestProgramAccess();
+                          }
+                        }
+                      : null, // null disables the button
+                );
+              },
             ),
           ),
         );
@@ -637,171 +649,4 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     );
   }
 
-  // Reviews tab content
-  Widget _buildReviewsTab(XThemeController themeController) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.only(
-        top: XSizes.spacingLg,
-        bottom: XSizes.spacingXxl,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Reviews header with rating
-          Row(
-            children: [
-              Text(
-                'Reviews',
-                style: TextStyle(
-                  fontSize: XSizes.textSizeXl,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: XFonts.lexend,
-                  color: themeController.textColor,
-                ),
-              ),
-              Spacer(),
-              Row(
-                children: [
-                  Icon(
-                    Icons.star,
-                    color: Colors.amber.shade600,
-                    size: XSizes.iconSizeSm,
-                  ),
-                  SizedBox(width: XSizes.spacingXs),
-                  Text(
-                    _controller.program?.programRating.toString() ?? '0.0',
-                    style: TextStyle(
-                      fontSize: XSizes.textSizeMd,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: XFonts.lexend,
-                      color: themeController.textColor,
-                    ),
-                  ),
-                  SizedBox(width: XSizes.spacingXs),
-                  Text(
-                    '(${_controller.staticReviews.length} reviews)',
-                    style: TextStyle(
-                      fontSize: XSizes.textSizeSm,
-                      fontFamily: XFonts.lexend,
-                      color: themeController.textColor.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          SizedBox(height: XSizes.spacingLg),
-          // Reviews list
-          ...(_controller.staticReviews
-              .map((review) => _buildReviewCard(themeController, review))
-              .toList()),
-        ],
-      ),
-    );
-  }
-
-  // Individual review card
-  Widget _buildReviewCard(XThemeController themeController, dynamic review) {
-    return Container(
-      margin: EdgeInsets.only(bottom: XSizes.spacingLg),
-      padding: EdgeInsets.all(XSizes.paddingMd),
-      decoration: BoxDecoration(
-        color: themeController.backgroundColor,
-        borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
-        border: Border.all(
-          color: themeController.textColor.withValues(alpha: 0.1),
-          width: XSizes.borderSizeSm,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundImage: NetworkImage(review.userAvatar),
-                backgroundColor: themeController.textColor.withValues(
-                  alpha: 0.1,
-                ),
-              ),
-              SizedBox(width: XSizes.spacingMd),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      review.userName,
-                      style: TextStyle(
-                        fontSize: XSizes.textSizeMd,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: XFonts.lexend,
-                        color: themeController.textColor,
-                      ),
-                    ),
-                    SizedBox(height: XSizes.spacingXxs),
-                    Row(
-                      children: [
-                        Row(
-                          children: List.generate(
-                            5,
-                            (index) => Icon(
-                              index < review.rating.floor()
-                                  ? Icons.star
-                                  : Icons.star_border,
-                              color: Colors.amber.shade600,
-                              size: XSizes.iconSizeXs,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: XSizes.spacingSm),
-                        Text(
-                          _formatReviewDate(review.reviewDate),
-                          style: TextStyle(
-                            fontSize: XSizes.textSizeXs,
-                            fontFamily: XFonts.lexend,
-                            color: themeController.textColor.withValues(
-                              alpha: 0.5,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: XSizes.spacingMd),
-          Text(
-            review.reviewText,
-            style: TextStyle(
-              fontSize: XSizes.textSizeSm,
-              fontFamily: XFonts.lexend,
-              color: themeController.textColor.withValues(alpha: 0.8),
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Helper method to format review date
-  String _formatReviewDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date).inDays;
-
-    if (difference == 0) {
-      return 'Today';
-    } else if (difference == 1) {
-      return 'Yesterday';
-    } else if (difference < 7) {
-      return '$difference days ago';
-    } else if (difference < 30) {
-      return '${(difference / 7).floor()} weeks ago';
-    } else {
-      return '${(difference / 30).floor()} months ago';
-    }
-  }
 }

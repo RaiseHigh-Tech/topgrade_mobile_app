@@ -33,6 +33,7 @@ class ProgramDetailsModel {
   final bool isBestSeller;
   final bool isBookmarked;
   final bool hasPurchased;
+  final bool hasProgramRequested;
   final int purchaseId;
   final int enrolledStudents;
   final PricingModel pricing;
@@ -49,6 +50,7 @@ class ProgramDetailsModel {
     required this.isBestSeller,
     required this.isBookmarked,
     required this.hasPurchased,
+    required this.hasProgramRequested,
     required this.purchaseId,
     required this.enrolledStudents,
     required this.pricing,
@@ -67,6 +69,7 @@ class ProgramDetailsModel {
       isBestSeller: json['is_best_seller'] ?? false,
       isBookmarked: json['is_bookmarked'] ?? false,
       hasPurchased: json['has_purchased'] ?? false,
+      hasProgramRequested: json['has_program_requested'] ?? false,
       purchaseId: json['purchase_id'] ?? 0,
       enrolledStudents: json['enrolled_students'] ?? 0,
       pricing: PricingModel.fromJson(json['pricing'] ?? {}),

@@ -4,7 +4,7 @@ import 'package:topgrade/utils/constants/sizes.dart';
 
 class PrimaryButton extends StatefulWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool isLoading;
 
   const PrimaryButton({
@@ -95,16 +95,20 @@ class _PrimaryButtonState extends State<PrimaryButton>
 
   @override
   Widget build(BuildContext context) {
+    final isDisabled = widget.onPressed == null;
+    
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: XColors.primaryColor,
+        backgroundColor: isDisabled 
+            ? XColors.primaryColor.withOpacity(0.5) 
+            : XColors.primaryColor,
         padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(XSizes.borderRadiusSm),
         ),
         elevation: 0,
       ),
-      onPressed: widget.isLoading ? null : widget.onPressed,
+      onPressed: widget.isLoading || isDisabled ? null : widget.onPressed,
       child:
           widget.isLoading
               ? _buildLoadingIndicator()

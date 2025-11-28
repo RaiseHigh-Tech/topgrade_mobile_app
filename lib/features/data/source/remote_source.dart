@@ -15,10 +15,10 @@ import '../model/landing_response_model.dart';
 import '../model/bookmarks_response_model.dart';
 import '../model/my_learnings_response_model.dart';
 import '../model/progress_update_response_model.dart';
-import '../model/purchase_response_model.dart';
 import '../model/program_details_response_model.dart';
 import '../model/carousel_response_model.dart';
 import '../model/phone_signin_response_model.dart';
+import '../model/request_access_response_model.dart';
 
 abstract class RemoteSource {
   final DioClient dio;
@@ -87,12 +87,12 @@ abstract class RemoteSource {
   // Carousel endpoints
   Future<CarouselResponseModel> getCarouselData();
 
-  Future<PurchaseResponseModel> purchaseCourse({
+  Future<ProgramDetailsResponseModel> getProgramDetails({
     required int programId,
-    required String paymentMethod,
   });
 
-  Future<ProgramDetailsResponseModel> getProgramDetails({
+  // Request Access endpoints
+  Future<RequestAccessResponseModel> requestProgramAccess({
     required int programId,
   });
 
@@ -904,68 +904,6 @@ class RemoteSourceImpl extends RemoteSource {
   }
 
   @override
-  Future<PurchaseResponseModel> purchaseCourse({
-    required int programId,
-    required String paymentMethod,
-  }) async {
-    try {
-      final response = await dio.post(
-        ApiEndpoints.purchaseUrl,
-        data: {'program_id': programId, 'payment_method': paymentMethod},
-      );
-
-      if (response.statusCode == 200) {
-        return PurchaseResponseModel.fromJson(response.data);
-      } else {
-        throw ServerException(
-          message: "Unexpected response code: ${response.statusCode}",
-        );
-      }
-    } catch (e) {
-      if (e is DioException) {
-        if (e.response != null) {
-          final statusCode = e.response!.statusCode;
-          final responseData = e.response!.data;
-
-          switch (statusCode) {
-            case 400:
-              // Bad request
-              final message =
-                  responseData['message'] ?? 'Invalid purchase request';
-              throw ResponseException(message: message);
-            case 401:
-              // Unauthorized
-              final message =
-                  responseData['message'] ?? 'Authentication required';
-              throw ResponseException(message: message);
-            case 404:
-              // Program not found
-              final message = responseData['message'] ?? 'Program not found';
-              throw ResponseException(message: message);
-            case 409:
-              // Already purchased
-              final message =
-                  responseData['message'] ?? 'Course already purchased';
-              throw ResponseException(message: message);
-            case 500:
-              // Server error
-              throw ServerException(message: 'Payment processing failed');
-            default:
-              throw ServerException(message: 'Purchase failed');
-          }
-        } else {
-          // Network error
-          throw ServerException(
-            message: 'Network error: Please check your connection',
-          );
-        }
-      }
-      // Other exceptions
-      throw ServerException(message: e.toString());
-    }
-  }
-
-  @override
   Future<ProgramDetailsResponseModel> getProgramDetails({
     required int programId,
   }) async {
@@ -1000,6 +938,63 @@ class RemoteSourceImpl extends RemoteSource {
             case 500:
               // Server error
               throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          // Network error
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
+      // Other exceptions
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<RequestAccessResponseModel> requestProgramAccess({
+    required int programId,
+  }) async {
+    try {
+      final response = await dio.post(
+        ApiEndpoints.requestAccessUrl,
+        data: {'program_id': programId},
+      );
+
+      if (response.statusCode == 200) {
+        return RequestAccessResponseModel.fromJson(response.data);
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 400:
+              // Bad request - missing program_id or duplicate enquiry
+              final message = responseData['message'] ?? 'Invalid request';
+              throw ResponseException(message: message);
+            case 401:
+              // Unauthorized
+              final message =
+                  responseData['detail'] ?? 'Authentication required';
+              throw ResponseException(message: message);
+            case 404:
+              // Program not found
+              final message = responseData['message'] ?? 'Program not found';
+              throw ResponseException(message: message);
+            case 500:
+              // Server error
+              final message =
+                  responseData['message'] ?? 'Internal server error';
+              throw ServerException(message: message);
             default:
               throw ServerException(message: 'Unexpected error occurred');
           }

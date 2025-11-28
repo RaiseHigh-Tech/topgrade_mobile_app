@@ -4,8 +4,10 @@ import 'package:topgrade/features/presentation/routes/routes.dart';
 
 import '../../../../../utils/constants/fonts.dart';
 import '../../../../../utils/constants/sizes.dart';
+import '../../../../../utils/constants/api_endpoints.dart';
 import '../../../controllers/auth_controller.dart';
 import '../../../controllers/theme_controller.dart';
+import '../../webview/webview_screen.dart';
 
 class ProfilePage extends StatelessWidget {
   ProfilePage({super.key});
@@ -130,12 +132,6 @@ class ProfilePage extends StatelessWidget {
         title: 'Edit Profile',
         subtitle: 'Update your personal information',
         onTap: () => _navigateToEditProfile(),
-      ),
-      ProfileOption(
-        icon: Icons.notifications_rounded,
-        title: 'Notifications',
-        subtitle: 'Manage your notification preferences',
-        onTap: () => _navigateToNotifications(),
       ),
       ProfileOption(
         icon: Icons.palette_rounded,
@@ -270,36 +266,21 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  void _navigateToNotifications() {
-    // TODO: Navigate to notifications settings
-    Get.snackbar(
-      'Coming Soon',
-      'Notification settings will be available soon',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: themeController.primaryColor.withOpacity(0.9),
-      colorText: Colors.white,
-    );
-  }
-
   void _navigateToTerms() {
-    // TODO: Navigate to terms and conditions
-    Get.snackbar(
-      'Terms & Conditions',
-      'Terms and Conditions page will be available soon',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: themeController.primaryColor.withOpacity(0.9),
-      colorText: Colors.white,
+    Get.to(
+      () => WebViewScreen(
+        url: ApiEndpoints.termsAndConditionsUrl,
+        title: 'Terms & Conditions',
+      ),
     );
   }
 
   void _navigateToPrivacy() {
-    // TODO: Navigate to privacy policy
-    Get.snackbar(
-      'Privacy Policy',
-      'Privacy Policy page will be available soon',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: themeController.primaryColor.withOpacity(0.9),
-      colorText: Colors.white,
+    Get.to(
+      () => WebViewScreen(
+        url: ApiEndpoints.privacyPolicyUrl,
+        title: 'Privacy Policy',
+      ),
     );
   }
 

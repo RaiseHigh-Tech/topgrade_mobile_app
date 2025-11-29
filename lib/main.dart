@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:topgrade/utils/constants/fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 
 import 'features/locale/locale.dart';
@@ -11,6 +12,19 @@ import 'features/presentation/controllers/onboarding_controller.dart';
 import 'features/presentation/routes/routes.dart';
 import 'utils/constants/strings.dart';
 import 'utils/helpers/token_helper.dart';
+
+// Background message handler - must be a top-level function
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Initialize Firebase if not already initialized
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  
+  print('Background message received: ${message.notification?.title}');
+  print('Message data: ${message.data}');
+  
+  // You can perform background tasks here like updating local database
+  // Don't perform heavy operations as background handlers have time limits
+}
 
 // Preload fonts to prevent text disappearing in release builds
 Future<void> _preloadFonts() async {
@@ -34,6 +48,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Set up Firebase Messaging background handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   // Preload custom fonts to prevent text disappearing in release builds
   await _preloadFonts();

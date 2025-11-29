@@ -41,6 +41,14 @@ class ApiEndpoints {
   // Request Access endpoints
   static const String requestAccessUrl = '${baseUrl}api/request-program';
   
+  // Notification endpoints
+  static const String registerFcmTokenUrl = '${baseUrl}api/notifications/register-fcm-token';
+  static const String notificationsUrl = '${baseUrl}api/notifications/notifications';
+  static const String markNotificationReadUrl = '${baseUrl}api/notifications/mark-notification-read';
+  static const String markAllReadUrl = '${baseUrl}api/notifications/mark-all-read';
+  static const String deleteFcmTokenUrl = '${baseUrl}api/notifications/fcm-token';
+  static const String fcmTokensUrl = '${baseUrl}api/notifications/fcm-tokens';
+  
   // Web URLs
   static const String privacyPolicyUrl = '${baseUrl}privacy-app/';
   static const String termsAndConditionsUrl = '${baseUrl}terms-app/';

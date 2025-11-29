@@ -13,6 +13,7 @@ import '../../data/model/reset_password_response_model.dart';
 import '../../data/model/verify_otp_response_model.dart';
 import '../../data/model/phone_signin_response_model.dart';
 import '../routes/routes.dart';
+import 'notification_controller.dart';
 
 enum ResetStep { email, otp, newPassword }
 
@@ -280,7 +281,7 @@ class AuthController extends GetxController {
       // Check if OTP verification was successful
       if (response.isOtpVerificationSuccess) {
         _resetStep.value = ResetStep.newPassword;
-        Snackbars.errorSnackBar(response.message);
+        Snackbars.successSnackBar(response.message);
       } else {
         Snackbars.errorSnackBar(response.message);
       }
@@ -340,7 +341,7 @@ class AuthController extends GetxController {
         _resetStep.value = ResetStep.email;
 
         Get.back(); // Go back to signin screen
-        Snackbars.errorSnackBar(response.message);
+        Snackbars.successSnackBar(response.message);
       } else {
         Snackbars.errorSnackBar(response.message);
       }
@@ -565,7 +566,16 @@ class AuthController extends GetxController {
   // Logout user
   Future<void> logout() async {
     try {
-      // Clear tokens first
+      // Delete FCM token before clearing tokens
+      try {
+        final notificationController = Get.find<NotificationController>();
+        await notificationController.deleteFcmToken();
+      } catch (e) {
+        debugPrint('Error deleting FCM token: $e');
+        // Continue with logout even if FCM token deletion fails
+      }
+
+      // Clear tokens
       await TokenHelper.clearTokens();
 
       // Clear all form controllers safely

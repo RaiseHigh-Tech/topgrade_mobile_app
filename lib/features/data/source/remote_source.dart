@@ -19,6 +19,7 @@ import '../model/program_details_response_model.dart';
 import '../model/carousel_response_model.dart';
 import '../model/phone_signin_response_model.dart';
 import '../model/request_access_response_model.dart';
+import '../model/notification_response_model.dart';
 
 abstract class RemoteSource {
   final DioClient dio;
@@ -101,6 +102,30 @@ abstract class RemoteSource {
     required int purchaseId,
     required int watchTimeSeconds,
   });
+
+  // Notification endpoints
+  Future<Map<String, dynamic>> registerFcmToken({
+    required String token,
+    required String deviceType,
+    String? deviceId,
+  });
+
+  Future<NotificationResponseModel> getNotifications({
+    int limit = 20,
+    int offset = 0,
+  });
+
+  Future<Map<String, dynamic>> markNotificationAsRead({
+    required int notificationId,
+  });
+
+  Future<Map<String, dynamic>> markAllNotificationsAsRead();
+
+  Future<Map<String, dynamic>> deleteFcmToken({
+    required String token,
+  });
+
+  Future<FcmTokenResponseModel> getFcmTokens();
 }
 
 class RemoteSourceImpl extends RemoteSource {
@@ -1076,6 +1101,281 @@ class RemoteSourceImpl extends RemoteSource {
         }
       }
       // Other exceptions
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> registerFcmToken({
+    required String token,
+    required String deviceType,
+    String? deviceId,
+  }) async {
+    try {
+      final Map<String, dynamic> data = {
+        'token': token,
+        'device_type': deviceType,
+      };
+
+      if (deviceId != null) {
+        data['device_id'] = deviceId;
+      }
+
+      final response = await dio.post(
+        ApiEndpoints.registerFcmTokenUrl,
+        data: data,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data;
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 400:
+              final message = responseData['message'] ?? 'Invalid request';
+              throw ResponseException(message: message);
+            case 401:
+              final message =
+                  responseData['message'] ?? 'Authentication required';
+              throw ResponseException(message: message);
+            case 500:
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<NotificationResponseModel> getNotifications({
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    try {
+      final response = await dio.get(
+        ApiEndpoints.notificationsUrl,
+        queryParameters: {
+          'limit': limit,
+          'offset': offset,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return NotificationResponseModel.fromJson(response.data);
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 401:
+              final message =
+                  responseData['message'] ?? 'Authentication required';
+              throw ResponseException(message: message);
+            case 500:
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> markNotificationAsRead({
+    required int notificationId,
+  }) async {
+    try {
+      final response = await dio.post(
+        ApiEndpoints.markNotificationReadUrl,
+        data: {'notification_id': notificationId},
+      );
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 400:
+              final message = responseData['message'] ?? 'Invalid request';
+              throw ResponseException(message: message);
+            case 401:
+              final message =
+                  responseData['message'] ?? 'Authentication required';
+              throw ResponseException(message: message);
+            case 404:
+              final message =
+                  responseData['message'] ?? 'Notification not found';
+              throw ResponseException(message: message);
+            case 500:
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> markAllNotificationsAsRead() async {
+    try {
+      final response = await dio.post(ApiEndpoints.markAllReadUrl);
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 401:
+              final message =
+                  responseData['message'] ?? 'Authentication required';
+              throw ResponseException(message: message);
+            case 500:
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> deleteFcmToken({
+    required String token,
+  }) async {
+    try {
+      final response = await dio.delete(
+        '${ApiEndpoints.deleteFcmTokenUrl}?token=$token',
+      );
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 401:
+              final message =
+                  responseData['message'] ?? 'Authentication required';
+              throw ResponseException(message: message);
+            case 404:
+              final message = responseData['message'] ?? 'Token not found';
+              throw ResponseException(message: message);
+            case 500:
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<FcmTokenResponseModel> getFcmTokens() async {
+    try {
+      final response = await dio.get(ApiEndpoints.fcmTokensUrl);
+
+      if (response.statusCode == 200) {
+        return FcmTokenResponseModel.fromJson(response.data);
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 401:
+              final message =
+                  responseData['message'] ?? 'Authentication required';
+              throw ResponseException(message: message);
+            case 500:
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
       throw ServerException(message: e.toString());
     }
   }

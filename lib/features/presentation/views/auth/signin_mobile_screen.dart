@@ -242,6 +242,57 @@ class SigninMobileScreen extends StatelessWidget {
 
         SizedBox(height: XSizes.spacingMd),
 
+        // Email Field
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Email',
+              style: TextStyle(
+                fontSize: XSizes.textSizeSm,
+                fontWeight: FontWeight.w500,
+                color: themeController.textColor,
+                fontFamily: 'Lexend',
+              ),
+            ),
+            SizedBox(height: XSizes.spacingSm),
+            TextField(
+              controller: authController.mobileEmailController,
+              keyboardType: TextInputType.emailAddress,
+              cursorColor: themeController.primaryColor,
+              style: TextStyle(
+                color: themeController.textColor,
+                fontFamily: 'Lexend',
+                fontSize: XSizes.textSizeSm,
+              ),
+              decoration: InputDecoration(
+                hintText: 'example@gmail.com',
+                hintStyle: TextStyle(
+                  color: themeController.textColor.withValues(alpha: 0.5),
+                  fontSize: XSizes.textSizeSm,
+                  fontFamily: 'Lexend',
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: themeController.primaryColor,
+                    width: 1,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: themeController.primaryColor,
+                    width: 1,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        SizedBox(height: XSizes.spacingMd),
+
         // Phone Number Field
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,6 +476,7 @@ class SigninMobileScreen extends StatelessWidget {
             TextButton(
               onPressed: () {
                 authController.mobileNameController.clear();
+                authController.mobileEmailController.clear();
                 authController.phoneController.clear();
                 authController.otpController.clear();
                 authController.isOtpSent.value = false;

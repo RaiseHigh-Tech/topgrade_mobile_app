@@ -311,27 +311,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                RichText(
-                                  text: TextSpan(
-                                    style: TextStyle(
-                                      fontSize: XSizes.textSizeSm,
-                                      fontFamily: XFonts.lexend,
-                                      color: themeController.textColor
-                                          .withValues(alpha: 0.6),
-                                      height: 1.5,
-                                    ),
-                                    children: [
-                                      TextSpan(text: program.description),
-                                      TextSpan(
-                                        text: ' Read More...',
-                                        style: TextStyle(
-                                          color: themeController.primaryColor,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: XFonts.lexend,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                _buildDescriptionSection(
+                                  themeController,
+                                  program.description,
                                 ),
                                 SizedBox(height: XSizes.spacingLg),
                                 // Skills Section
@@ -536,6 +518,70 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  // Helper widget to build description section with expandable text
+  Widget _buildDescriptionSection(
+    XThemeController themeController,
+    String description,
+  ) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textStyle = TextStyle(
+          fontSize: XSizes.textSizeSm,
+          fontFamily: XFonts.lexend,
+          color: themeController.textColor.withValues(alpha: 0.6),
+          height: 1.5,
+        );
+
+        final textSpan = TextSpan(
+          text: description,
+          style: textStyle,
+        );
+
+        final textPainter = TextPainter(
+          text: textSpan,
+          maxLines: 4,
+          textDirection: TextDirection.ltr,
+        );
+
+        textPainter.layout(maxWidth: constraints.maxWidth);
+
+        final isTextOverflowing = textPainter.didExceedMaxLines;
+
+        return Obx(() {
+          final isExpanded = _controller.isDescriptionExpanded.value;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                description,
+                style: textStyle,
+                maxLines: isExpanded ? null : 4,
+                overflow: isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+              ),
+              if (isTextOverflowing)
+                GestureDetector(
+                  onTap: () => _controller.toggleDescriptionExpansion(),
+                  child: Padding(
+                    padding: EdgeInsets.only(top: XSizes.spacingXs),
+                    child: Text(
+                      isExpanded ? ' Read Less' : ' Read More...',
+                      style: TextStyle(
+                        color: themeController.primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: XFonts.lexend,
+                        fontSize: XSizes.textSizeSm,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        });
+      },
     );
   }
 

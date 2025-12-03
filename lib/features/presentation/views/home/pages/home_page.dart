@@ -159,7 +159,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   : _buildSearchBar(),
                         ),
                         SizedBox(height: XSizes.spacingMd),
+                        Obx(
+                          () =>
+                              isLoading
+                                  ? _buildShimmerCarousel()
+                                  : _buildImageCarousel(),
+                        ),
                         // Continue Watching Section - only show if data exists
+                        SizedBox(height: XSizes.spacingMd),
                         Obx(
                           () =>
                               _myLearningsController.inProgressLearnings.isNotEmpty 
@@ -185,13 +192,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   )
                                   : const SizedBox.shrink(),
                         ),
-                        Obx(
-                          () =>
-                              isLoading
-                                  ? _buildShimmerCarousel()
-                                  : _buildImageCarousel(),
-                        ),
-                        SizedBox(height: XSizes.spacingMd),
                         Obx(
                           () =>
                               isLoading
@@ -282,13 +282,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           (themeController) => Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Image.asset(
+                'assets/images/logo_main.png',
+                width: 160,
+                height: 60,
+                fit: BoxFit.contain,
+              ),
               Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
                     _getGreeting(),
                     style: TextStyle(
-                      fontSize: XSizes.textSizeSm,
+                      fontSize: XSizes.textSizeMd,
                       fontFamily: XFonts.lexend,
                       color: themeController.textColor,
                     ),
@@ -296,17 +302,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   Text(
                     _userName,
                     style: TextStyle(
-                      fontSize: XSizes.textSizeMd,
+                      fontSize: XSizes.textSizeLg,
                       fontFamily: XFonts.lexend,
-                      color: themeController.textColor,
+                      color: themeController.primaryColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
-              ),
-              CircleAvatar(
-                backgroundColor: themeController.primaryColor,
-                child: Icon(Icons.person, color: Colors.white),
               ),
             ],
           ),

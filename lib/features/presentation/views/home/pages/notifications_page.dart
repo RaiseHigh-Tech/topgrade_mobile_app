@@ -302,26 +302,7 @@ class _NotificationCard extends StatelessWidget {
         return Icons.notifications_rounded;
     }
   }
-
-  Color _getNotificationColor(String type) {
-    switch (type) {
-      case 'program':
-        return Colors.blue;
-      case 'certificate':
-        return Colors.amber;
-      case 'enrollment':
-        return Colors.green;
-      case 'reminder':
-        return Colors.orange;
-      case 'promotional':
-        return Colors.purple;
-      case 'system':
-        return Colors.grey;
-      default:
-        return Colors.blue;
-    }
-  }
-
+  
   Widget _buildNotificationImage(NotificationModel notification, Color color) {
     // Build icon container as fallback
     final iconContainer = Container(
@@ -399,7 +380,7 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _getNotificationColor(notification.notificationType);
+    // final color = _getNotificationColor(notification.notificationType);
     final timeAgo = timeago.format(notification.createdAt);
 
     return Container(
@@ -407,12 +388,12 @@ class _NotificationCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: notification.isRead
             ? themeController.backgroundColor
-            : color.withOpacity(0.1),
+            : themeController.primaryColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: notification.isRead
               ? themeController.backgroundColor
-              : color.withOpacity(0.3),
+              : themeController.primaryColor.withOpacity(0.3),
           width: 1,
         ),
       ),
@@ -427,7 +408,7 @@ class _NotificationCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Icon or Image (no app logo)
-                _buildNotificationImage(notification, color),
+                _buildNotificationImage(notification, themeController.primaryColor),
                 SizedBox(width: XSizes.spacingMd),
                 // Content
                 Expanded(
@@ -454,7 +435,7 @@ class _NotificationCard extends StatelessWidget {
                               width: 8,
                               height: 8,
                               decoration: BoxDecoration(
-                                color: color,
+                                color: themeController.primaryColor,
                                 shape: BoxShape.circle,
                               ),
                             ),

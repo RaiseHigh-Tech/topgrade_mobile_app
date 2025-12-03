@@ -32,7 +32,7 @@ class XThemeController extends GetxController {
 
   void _loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    _isLight.value = prefs.getBool('isLightTheme') ?? false;
+    _isLight.value = prefs.getBool('isLightTheme') ?? true;
     Get.changeTheme(_isLight.value ? ThemeData.light() : ThemeData.dark());
     update();
   }

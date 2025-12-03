@@ -103,36 +103,40 @@ class HomeScreen extends StatelessWidget {
   ) {
     final bool isSelected = controller.selectedIndex == index;
 
-    return GestureDetector(
-      onTap: () => controller.changeTab(index),
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: XSizes.paddingSm,
-          vertical: XSizes.paddingXs,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SvgPicture.asset(
-              isSelected ? activeIcon : inactiveIcon,
-              width: XSizes.iconSizeMd,
-              height: XSizes.iconSizeMd,
-              colorFilter: ColorFilter.mode(
-                isSelected ? themeController.primaryColor : Colors.grey,
-                BlendMode.srcIn,
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: XSizes.paddingMd,
+        vertical: XSizes.paddingXs,
+      ),
+      child: GestureDetector(
+        onTap: () => controller.changeTab(index),
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: EdgeInsets.all(XSizes.paddingXs),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SvgPicture.asset(
+                isSelected ? activeIcon : inactiveIcon,
+                width: XSizes.iconSizeMd,
+                height: XSizes.iconSizeMd,
+                colorFilter: ColorFilter.mode(
+                  isSelected ? themeController.primaryColor : Colors.grey,
+                  BlendMode.srcIn,
+                ),
               ),
-            ),
-            SizedBox(height: XSizes.spacingXs),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: XSizes.textSizeXxs,
-                fontFamily: XFonts.lexend,
-                color: isSelected ? themeController.primaryColor : Colors.grey,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+              SizedBox(height: XSizes.spacingXs),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: XSizes.textSizeXxs,
+                  fontFamily: XFonts.lexend,
+                  color: isSelected ? themeController.primaryColor : Colors.grey,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

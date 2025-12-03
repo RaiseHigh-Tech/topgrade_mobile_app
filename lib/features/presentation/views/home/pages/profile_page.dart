@@ -173,12 +173,12 @@ class _ProfilePageState extends State<ProfilePage> {
       // ),
       ProfileOption(
         icon: Icons.palette_rounded,
-        title: 'Theme',
+        title: 'Dark Mode',
         subtitle: 'Switch between light and dark mode',
         trailing: Obx(
           () => Switch.adaptive(
-            value: themeController.isLightTheme,
-            onChanged: (value) => themeController.changeTheme(value),
+            value: !themeController.isLightTheme,
+            onChanged: (value) => themeController.changeTheme(!value),
             activeColor: themeController.primaryColor,
           ),
         ),

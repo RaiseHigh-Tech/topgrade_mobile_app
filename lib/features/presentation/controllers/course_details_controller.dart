@@ -125,4 +125,11 @@ class CourseDetailsController extends GetxController {
     final totalTopics = syllabusData.totalTopics;
     return '$totalTopics Lecture${totalTopics != 1 ? 's' : ''}';
   }
+
+  // Description expansion state
+  var isDescriptionExpanded = false.obs;
+
+  void toggleDescriptionExpansion() {
+    isDescriptionExpanded.value = !isDescriptionExpanded.value;
+  }
 }

@@ -47,12 +47,13 @@ class AuthController extends GetxController {
   }
 
   // Check profile status after signin
-  Future<void> checkProfileStatus() async {
+  Future<void> checkProfileStatus({bool manageLoading = true}) async {
     try {
-      _isLoading.value = true;
+      if (manageLoading) {
+        _isLoading.value = true;
+      }
 
       final response = await remoteSource.getProfileStatus();
-
       if (response.isProfileComplete) {
         // Save user data to storage
         if (response.user != null) {
@@ -91,7 +92,9 @@ class AuthController extends GetxController {
       // Navigate to complete profile as safe fallback
       Get.offAllNamed(XRoutes.completeProfile);
     } finally {
-      _isLoading.value = false;
+      if (manageLoading) {
+        _isLoading.value = false;
+      }
     }
   }
 
@@ -633,29 +636,41 @@ class AuthController extends GetxController {
           );
         }
 
-        // Check profile status and navigate accordingly
-        await checkProfileStatus();
+        // Don't clear form or change any state before navigation
+        // This prevents the UI from switching back to phone input screen
+        // The form will be reset when user comes back to this screen
 
-        // Clear form
-        phoneController.clear();
-        otpController.clear();
-        _isOtpSent.value = false;
-        _verificationId = null;
-        _resendToken = null;
+        // Check profile status and navigate accordingly
+        // Pass manageLoading: false since we're already managing loading in this method
+        await checkProfileStatus(manageLoading: false);
+
+        // After navigation, schedule form clearing for next time user visits this screen
+        // Using Future.delayed to ensure it happens after the navigation stack is fully cleared
+        Future.delayed(const Duration(milliseconds: 500), () {
+          phoneController.clear();
+          otpController.clear();
+          _isOtpSent.value = false;
+          _verificationId = null;
+          _resendToken = null;
+          _isLoading.value = false; // Reset loading state for next login
+        });
 
       } else {
+        _isLoading.value = false;
         Snackbars.errorSnackBar(response.message, duration: const Duration(milliseconds: 1500));
       }
     } on ResponseException catch (e) {
+      _isLoading.value = false;
       Snackbars.errorSnackBar(e.message, duration: const Duration(milliseconds: 1500));
     } on ServerException catch (e) {
+      _isLoading.value = false;
       Snackbars.errorSnackBar(e.message, duration: const Duration(milliseconds: 1500));
     } on FirebaseAuthException catch (e) {
+      _isLoading.value = false;
       Snackbars.errorSnackBar(e.message ?? 'Authentication failed', duration: const Duration(milliseconds: 1500));
     } catch (e) {
-      Snackbars.errorSnackBar('Sign in failed. Please try again', duration: const Duration(milliseconds: 1500));
-    } finally {
       _isLoading.value = false;
+      Snackbars.errorSnackBar('Sign in failed. Please try again', duration: const Duration(milliseconds: 1500));
     }
   }
 

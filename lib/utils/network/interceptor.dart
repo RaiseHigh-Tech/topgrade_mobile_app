@@ -172,6 +172,8 @@ class AuthInterceptor extends Interceptor {
     // Navigate to login screen (only if not already on auth pages)
     if (Get.currentRoute != routes.XRoutes.login && 
         Get.currentRoute != routes.XRoutes.signup &&
+        Get.currentRoute != routes.XRoutes.signinMobile &&
+        Get.currentRoute != routes.XRoutes.resetPassword &&
         Get.currentRoute != routes.XRoutes.onboarding) {
       Get.offAllNamed(routes.XRoutes.login);
     }

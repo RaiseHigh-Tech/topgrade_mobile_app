@@ -19,7 +19,7 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
+class _HomePageState extends State<HomePage> with TickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _shimmerAnimationController;
   late Animation<double> _shimmerAnimation;
 
@@ -39,6 +39,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadUserName();
 
     _shimmerAnimationController = AnimationController(
@@ -80,8 +81,27 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _shimmerAnimationController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    // Refresh data when app resumes from background
+    if (state == AppLifecycleState.resumed) {
+      _refreshAllData();
+    }
+  }
+
+  // Refresh all data on app resume
+  void _refreshAllData() {
+    _categoriesController.fetchCategories();
+    _landingController.fetchLandingData();
+    _carouselController.fetchCarouselData();
+    _myLearningsController.fetchAllLearnings();
   }
 
   // Load user name from storage

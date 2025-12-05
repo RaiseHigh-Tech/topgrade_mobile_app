@@ -10,6 +10,7 @@ import '../views/auth/signup_screen.dart';
 import '../views/auth/reset_password_screen.dart';
 import '../views/home/home_screen.dart';
 import '../views/onboarding/onboarding_screen.dart';
+import '../views/profile/complete_profile_screen.dart';
 
 class XRoutes {
   XRoutes._();
@@ -20,6 +21,7 @@ class XRoutes {
   static const String signup = '/signup';
   static const String resetPassword = '/reset-password';
   static const String interest = '/interest';
+  static const String completeProfile = '/complete-profile';
   static const String courseDetails = '/course-details';
   static const String courseList = '/course-list';
   static const String videoPlayer = '/video-player';
@@ -32,6 +34,7 @@ class XRoutes {
     GetPage(name: signup, page: () => const SignupScreen()),
     GetPage(name: resetPassword, page: () => const ResetPasswordScreen()),
     GetPage(name: interest, page: () => const IntrestScreen()),
+    GetPage(name: completeProfile, page: () => const CompleteProfileScreen()),
     GetPage(name: courseDetails, page: () => const CourseDetailsScreen()),
     GetPage(
       name: courseList,

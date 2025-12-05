@@ -1,11 +1,14 @@
 class ApiEndpoints {
   // Base URL
-  static const String baseUrl = 'https://www.topgradeinnovation.com/';
+  // static const String baseUrl = 'https://280wgvdh-8000.inc1.devtunnels.ms/';
+  static const String baseUrl = 'https://www.topgradeinnovation.com/'; 
 
   // Complete URLs
   static const String signupUrl = '${baseUrl}api/auth/signup';
   static const String signinUrl = '${baseUrl}api/auth/signin';
   static const String phoneSigninUrl = '${baseUrl}api/auth/phone-signin';
+  static const String profileStatusUrl = '${baseUrl}api/auth/profile-status';
+  static const String profileUpdateUrl = '${baseUrl}api/auth/profile-update';
   static const String requestOtpUrl = '${baseUrl}api/auth/request-otp';
   static const String verifyOtpUrl = '${baseUrl}api/auth/verify-otp';
   static const String resetPasswordUrl = '${baseUrl}api/auth/reset-password';

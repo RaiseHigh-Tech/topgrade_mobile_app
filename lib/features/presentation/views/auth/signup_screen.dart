@@ -112,6 +112,67 @@ class SignupScreen extends StatelessWidget {
 
                   SizedBox(height: XSizes.spacingMd),
 
+                  // Phone Number Field
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Phone Number',
+                        style: TextStyle(
+                          fontSize: XSizes.textSizeSm,
+                          fontWeight: FontWeight.w500,
+                          color: themeController.textColor,
+                          fontFamily: 'Lexend',
+                        ),
+                      ),
+                      SizedBox(height: XSizes.spacingSm),
+                      TextField(
+                        controller: authController.signupPhoneController,
+                        keyboardType: TextInputType.phone,
+                        cursorColor: themeController.primaryColor,
+                        maxLength: 10,
+                        style: TextStyle(
+                          color: themeController.textColor,
+                          fontFamily: 'Lexend',
+                          fontSize: XSizes.textSizeSm,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: '1234567890',
+                          prefixText: '+91 ',
+                          prefixStyle: TextStyle(
+                            color: themeController.textColor,
+                            fontFamily: 'Lexend',
+                            fontSize: XSizes.textSizeSm,
+                          ),
+                          counterText: '',
+                          hintStyle: TextStyle(
+                            color: themeController.textColor.withValues(
+                              alpha: 0.5,
+                            ),
+                            fontSize: XSizes.textSizeSm,
+                            fontFamily: 'Lexend',
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: themeController.primaryColor,
+                              width: 1,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: themeController.primaryColor,
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: XSizes.spacingMd),
+
                   // Email Field
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

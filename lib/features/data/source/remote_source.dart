@@ -18,6 +18,8 @@ import '../model/progress_update_response_model.dart';
 import '../model/program_details_response_model.dart';
 import '../model/carousel_response_model.dart';
 import '../model/phone_signin_response_model.dart';
+import '../model/profile_status_response_model.dart';
+import '../model/profile_update_response_model.dart';
 import '../model/request_access_response_model.dart';
 import '../model/notification_response_model.dart';
 
@@ -32,6 +34,7 @@ abstract class RemoteSource {
 
   Future<SignupResponseModel> signup({
     required String fullname,
+    required String phoneNumber,
     required String email,
     required String password,
     required String confirmPassword,
@@ -53,9 +56,15 @@ abstract class RemoteSource {
   });
 
   Future<PhoneSigninResponseModel> phoneSignin({
-    required String name,
     required String phoneNumber,
     required String firebaseToken,
+  });
+
+  Future<ProfileStatusResponseModel> getProfileStatus();
+
+  Future<ProfileUpdateResponseModel> updateProfile({
+    required String email,
+    required String fullname,
   });
 
   Future<AreaOfInterestResponseModel> addAreaOfInterest({
@@ -190,6 +199,7 @@ class RemoteSourceImpl extends RemoteSource {
   @override
   Future<SignupResponseModel> signup({
     required String fullname,
+    required String phoneNumber,
     required String email,
     required String password,
     required String confirmPassword,
@@ -199,6 +209,7 @@ class RemoteSourceImpl extends RemoteSource {
         ApiEndpoints.signupUrl,
         data: {
           'fullname': fullname,
+          'phone_number': phoneNumber,
           'email': email,
           'password': password,
           'confirm_password': confirmPassword,
@@ -416,16 +427,13 @@ class RemoteSourceImpl extends RemoteSource {
 
   @override
   Future<PhoneSigninResponseModel> phoneSignin({
-    required String name,
     required String phoneNumber,
     required String firebaseToken,
   }) async {
     try {
-      print('phoneSignin $firebaseToken');
       final response = await dio.post(
         ApiEndpoints.phoneSigninUrl,
         data: {
-          'name': name,
           'phoneNumber': phoneNumber,
           'firebaseToken': firebaseToken,
         },
@@ -434,7 +442,6 @@ class RemoteSourceImpl extends RemoteSource {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return PhoneSigninResponseModel.fromJson(response.data);
       } else {
-        print(response.data);
         throw ServerException(
           message: "Unexpected response code: ${response.statusCode}",
         );
@@ -444,8 +451,6 @@ class RemoteSourceImpl extends RemoteSource {
         if (e.response != null) {
           final statusCode = e.response!.statusCode;
           final responseData = e.response!.data;
-          print(statusCode);
-          print(responseData);
 
           switch (statusCode) {
             case 400:
@@ -470,6 +475,107 @@ class RemoteSourceImpl extends RemoteSource {
               // Conflict - possible duplicate entry
               final message = 
                   responseData['message'] ?? 'User conflict error';
+              throw ResponseException(message: message);
+            case 500:
+              // Server error
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          // Network error
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
+      // Other exceptions
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<ProfileStatusResponseModel> getProfileStatus() async {
+    try {
+      final response = await dio.get(
+        ApiEndpoints.profileStatusUrl,
+      );
+
+      if (response.statusCode == 200) {
+        return ProfileStatusResponseModel.fromJson(response.data);
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 401:
+              // Unauthorized - invalid or expired token
+              final message = responseData['message'] ?? 'Authentication required';
+              throw ResponseException(message: message);
+            case 500:
+              // Server error
+              throw ServerException(message: 'Internal server error');
+            default:
+              throw ServerException(message: 'Unexpected error occurred');
+          }
+        } else {
+          // Network error
+          throw ServerException(
+            message: 'Network error: Please check your connection',
+          );
+        }
+      }
+      // Other exceptions
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<ProfileUpdateResponseModel> updateProfile({
+    required String email,
+    required String fullname,
+  }) async {
+    try {
+      final response = await dio.post(
+        ApiEndpoints.profileUpdateUrl,
+        data: {
+          'email': email,
+          'fullname': fullname,
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return ProfileUpdateResponseModel.fromJson(response.data);
+      } else {
+        throw ServerException(
+          message: "Unexpected response code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          switch (statusCode) {
+            case 400:
+              // Bad request - validation errors
+              final message = responseData['message'] ?? 'Invalid request';
+              throw ResponseException(message: message);
+            case 401:
+              // Unauthorized - invalid or expired token
+              final message = responseData['message'] ?? 'Authentication required';
+              throw ResponseException(message: message);
+            case 409:
+              // Conflict - email already exists
+              final message = responseData['message'] ?? 'Email already in use';
               throw ResponseException(message: message);
             case 500:
               // Server error

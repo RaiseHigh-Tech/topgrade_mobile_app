@@ -27,6 +27,7 @@ class AuthController extends GetxController {
 
   // TextField Controllers for mobile sign-in form
   final mobileNameController = TextEditingController();
+  final mobileEmailController = TextEditingController();
   final phoneController = TextEditingController();
   final otpController = TextEditingController();
   final _isOtpSent = false.obs;
@@ -36,8 +37,132 @@ class AuthController extends GetxController {
   String? _verificationId;
   int? _resendToken;
 
+  // Method to reset mobile signin form
+  void resetMobileSigninForm() {
+    phoneController.clear();
+    otpController.clear();
+    _isOtpSent.value = false;
+    _verificationId = null;
+    _resendToken = null;
+  }
+
+  // Check profile status after signin
+  Future<void> checkProfileStatus() async {
+    try {
+      _isLoading.value = true;
+
+      final response = await remoteSource.getProfileStatus();
+
+      if (response.isProfileComplete) {
+        // Save user data to storage
+        if (response.user != null) {
+          await TokenHelper.saveUserData(
+            fullname: response.user!.fullname,
+            email: response.user!.email,
+            phoneNumber: response.user!.phoneNumber,
+          );
+        }
+        
+        // Check if user has area of interest
+        if (response.hasAreaOfInterest) {
+          // User has completed everything, navigate to home
+          Get.offAllNamed(XRoutes.home);
+        } else {
+          // User has profile but not area of interest, navigate to interest screen
+          Get.offAllNamed(XRoutes.interest);
+        }
+      } else {
+        // Profile is incomplete, navigate to complete profile screen
+        Get.offAllNamed(XRoutes.completeProfile);
+      }
+    } on ResponseException catch (e) {
+      // Handle API response errors (400, 401, etc.)
+      Snackbars.errorSnackBar(e.message);
+      // Navigate to complete profile as safe fallback for auth errors
+      Get.offAllNamed(XRoutes.completeProfile);
+    } on ServerException catch (e) {
+      // Handle server/network errors
+      Snackbars.errorSnackBar(e.message);
+      // Navigate to complete profile as safe fallback
+      Get.offAllNamed(XRoutes.completeProfile);
+    } catch (e) {
+      // Handle any other unexpected errors
+      Snackbars.errorSnackBar('Failed to check profile status. Please try again.');
+      // Navigate to complete profile as safe fallback
+      Get.offAllNamed(XRoutes.completeProfile);
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  // Update profile method
+  Future<void> updateProfile() async {
+    try {
+      _isLoading.value = true;
+
+      // Validation
+      if (profileNameController.text.trim().isEmpty) {
+        Snackbars.errorSnackBar('Please enter your full name');
+        return;
+      }
+
+      if (profileEmailController.text.trim().isEmpty) {
+        Snackbars.errorSnackBar('Please enter your email');
+        return;
+      }
+
+      if (!GetUtils.isEmail(profileEmailController.text.trim())) {
+        Snackbars.errorSnackBar('Please enter a valid email address');
+        return;
+      }
+
+      // Call API
+      final response = await remoteSource.updateProfile(
+        email: profileEmailController.text.trim(),
+        fullname: profileNameController.text.trim(),
+      );
+
+      if (response.success) {
+        Snackbars.successSnackBar(response.message);
+        
+        // Save user data to storage
+        if (response.user != null) {
+          await TokenHelper.saveUserData(
+            fullname: response.user!.fullname,
+            email: response.user!.email,
+            phoneNumber: response.user!.phoneNumber,
+          );
+        }
+        
+        // Clear form
+        profileNameController.clear();
+        profileEmailController.clear();
+
+        // Navigate based on area of interest status
+        if (response.hasAreaOfInterest) {
+          // User already has area of interest, navigate to home
+          Get.offAllNamed(XRoutes.home);
+        } else {
+          // User needs to set area of interest, navigate to interest screen
+          Get.offAllNamed(XRoutes.interest);
+        }
+      } else {
+        Snackbars.errorSnackBar('Failed to update profile. Please try again.');
+      }
+    } on ResponseException catch (e) {
+      Snackbars.errorSnackBar(e.message);
+    } on ServerException catch (e) {
+      Snackbars.errorSnackBar(e.message);
+    } catch (e) {
+      Snackbars.errorSnackBar('Failed to update profile. Please try again.');
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
   // TextField Controllers for sign-up form
   final fullNameController = TextEditingController();
+  final signupPhoneController = TextEditingController();
   final signupEmailController = TextEditingController();
   final signupPasswordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
@@ -47,6 +172,10 @@ class AuthController extends GetxController {
   final resetOtpController = TextEditingController();
   final newPasswordController = TextEditingController();
   final confirmNewPasswordController = TextEditingController();
+
+  // TextField Controllers for complete profile form
+  final profileNameController = TextEditingController();
+  final profileEmailController = TextEditingController();
   final _resetStep = ResetStep.email.obs;
 
   RxBool get isLoading => _isLoading;
@@ -61,6 +190,16 @@ class AuthController extends GetxController {
       // Basic validation
       if (fullNameController.text.trim().isEmpty) {
         Snackbars.errorSnackBar('Please enter your full name');
+        return;
+      }
+
+      if (signupPhoneController.text.trim().isEmpty) {
+        Snackbars.errorSnackBar('Please enter your phone number');
+        return;
+      }
+
+      if (signupPhoneController.text.trim().length != 10) {
+        Snackbars.errorSnackBar('Please enter a valid 10-digit phone number');
         return;
       }
 
@@ -98,6 +237,7 @@ class AuthController extends GetxController {
       // Call signup API
       final SignupResponseModel response = await remoteSource.signup(
         fullname: fullNameController.text.trim(),
+        phoneNumber: '+91${signupPhoneController.text.trim()}',
         email: signupEmailController.text.trim(),
         password: signupPasswordController.text.trim(),
         confirmPassword: confirmPasswordController.text.trim(),
@@ -122,6 +262,7 @@ class AuthController extends GetxController {
 
         // Clear form
         fullNameController.clear();
+        signupPhoneController.clear();
         signupEmailController.clear();
         signupPasswordController.clear();
         confirmPasswordController.clear();
@@ -365,11 +506,6 @@ class AuthController extends GetxController {
   Future<void> sendOtp() async {
     try {
       // Basic validation (before setting loading state)
-      if (mobileNameController.text.trim().isEmpty) {
-        Snackbars.errorSnackBar('Please enter your full name', duration: const Duration(milliseconds: 1500));
-        return;
-      }
-
       if (phoneController.text.trim().isEmpty) {
         Snackbars.errorSnackBar('Please enter your phone number', duration: const Duration(milliseconds: 1500));
         return;
@@ -388,12 +524,9 @@ class AuthController extends GetxController {
       await _firebaseAuth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
         verificationCompleted: (PhoneAuthCredential credential) async {
-          // Auto-verification completed
-          debugPrint('Auto verification completed');
           await _signInWithCredential(credential);
         },
         verificationFailed: (FirebaseAuthException e) {
-          debugPrint('Verification failed: ${e.message}');
           _isLoading.value = false;
           if (e.code == 'invalid-phone-number') {
             Snackbars.errorSnackBar('Invalid phone number format', duration: const Duration(milliseconds: 1500));
@@ -402,7 +535,6 @@ class AuthController extends GetxController {
           }
         },
         codeSent: (String verificationId, int? resendToken) {
-          debugPrint('Code sent to $phoneNumber');
           _verificationId = verificationId;
           _resendToken = resendToken;
           _isOtpSent.value = true;
@@ -410,7 +542,6 @@ class AuthController extends GetxController {
           Snackbars.successSnackBar('OTP sent successfully to your phone', duration: const Duration(milliseconds: 1500));
         },
         codeAutoRetrievalTimeout: (String verificationId) {
-          debugPrint('Auto retrieval timeout');
           _verificationId = verificationId;
         },
         timeout: const Duration(seconds: 60),
@@ -418,7 +549,6 @@ class AuthController extends GetxController {
       );
     } catch (e) {
       _isLoading.value = false;
-      debugPrint('Error sending OTP: $e');
       Snackbars.errorSnackBar('Failed to send OTP. Please try again', duration: const Duration(milliseconds: 1500));
     }
   }
@@ -455,7 +585,6 @@ class AuthController extends GetxController {
       await _signInWithCredential(credential);
     } catch (e) {
       _isLoading.value = false;
-      debugPrint('Error verifying OTP: $e');
       if (e is FirebaseAuthException) {
         if (e.code == 'invalid-verification-code') {
           Snackbars.errorSnackBar('Invalid OTP. Please try again', duration: const Duration(milliseconds: 1500));
@@ -481,11 +610,8 @@ class AuthController extends GetxController {
         throw Exception('Failed to get Firebase token');
       }
 
-      debugPrint('Firebase token obtained: ${firebaseToken.substring(0, 20)}...');
-
-      // Send name, phone number, and Firebase token to backend
+      // Send phone number and Firebase token to backend
       final PhoneSigninResponseModel response = await remoteSource.phoneSignin(
-        name: mobileNameController.text.trim(),
         phoneNumber: '+91${phoneController.text.trim()}',
         firebaseToken: firebaseToken,
       );
@@ -507,24 +633,16 @@ class AuthController extends GetxController {
           );
         }
 
+        // Check profile status and navigate accordingly
+        await checkProfileStatus();
+
         // Clear form
-        mobileNameController.clear();
         phoneController.clear();
         otpController.clear();
         _isOtpSent.value = false;
         _verificationId = null;
         _resendToken = null;
 
-        Snackbars.successSnackBar(response.message, duration: const Duration(milliseconds: 1500));
-
-        // Navigate based on area of interest status
-        if (response.hasAreaOfIntrest == true) {
-          // User has selected area of interest, go to home
-          Get.offAllNamed(XRoutes.home);
-        } else {
-          // User hasn't selected area of interest, go to interest screen
-          Get.offAllNamed(XRoutes.interest);
-        }
       } else {
         Snackbars.errorSnackBar(response.message, duration: const Duration(milliseconds: 1500));
       }
@@ -535,7 +653,6 @@ class AuthController extends GetxController {
     } on FirebaseAuthException catch (e) {
       Snackbars.errorSnackBar(e.message ?? 'Authentication failed', duration: const Duration(milliseconds: 1500));
     } catch (e) {
-      debugPrint('Error in _signInWithCredential: $e');
       Snackbars.errorSnackBar('Sign in failed. Please try again', duration: const Duration(milliseconds: 1500));
     } finally {
       _isLoading.value = false;
@@ -583,12 +700,16 @@ class AuthController extends GetxController {
         emailController.clear();
         passwordController.clear();
         mobileNameController.clear();
+        mobileEmailController.clear();
         phoneController.clear();
         otpController.clear();
         fullNameController.clear();
+        signupPhoneController.clear();
         signupEmailController.clear();
         signupPasswordController.clear();
         confirmPasswordController.clear();
+        profileNameController.clear();
+        profileEmailController.clear();
         resetEmailController.clear();
         resetOtpController.clear();
         newPasswordController.clear();
@@ -620,12 +741,16 @@ class AuthController extends GetxController {
       emailController.dispose();
       passwordController.dispose();
       mobileNameController.dispose();
+      mobileEmailController.dispose();
       phoneController.dispose();
       otpController.dispose();
       fullNameController.dispose();
+      signupPhoneController.dispose();
       signupEmailController.dispose();
       signupPasswordController.dispose();
       confirmPasswordController.dispose();
+      profileNameController.dispose();
+      profileEmailController.dispose();
       resetEmailController.dispose();
       resetOtpController.dispose();
       newPasswordController.dispose();

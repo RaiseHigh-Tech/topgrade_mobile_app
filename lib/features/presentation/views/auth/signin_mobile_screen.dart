@@ -24,7 +24,10 @@ class SigninMobileScreen extends StatelessWidget {
             scrolledUnderElevation: 0,
             leading: IconButton(
               icon: Icon(Icons.arrow_back, color: themeController.textColor),
-              onPressed: () => Get.back(),
+              onPressed: () {
+                authController.resetMobileSigninForm();
+                Get.back();
+              },
             ),
           ),
           body: SafeArea(
@@ -190,108 +193,6 @@ class SigninMobileScreen extends StatelessWidget {
   ) {
     return Column(
       children: [
-        // Name Field
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Full name',
-              style: TextStyle(
-                fontSize: XSizes.textSizeSm,
-                fontWeight: FontWeight.w500,
-                color: themeController.textColor,
-                fontFamily: 'Lexend',
-              ),
-            ),
-            SizedBox(height: XSizes.spacingSm),
-            TextField(
-              controller: authController.mobileNameController,
-              keyboardType: TextInputType.name,
-              cursorColor: themeController.primaryColor,
-              textCapitalization: TextCapitalization.words,
-              style: TextStyle(
-                color: themeController.textColor,
-                fontFamily: 'Lexend',
-                fontSize: XSizes.textSizeSm,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Enter your full name',
-                hintStyle: TextStyle(
-                  color: themeController.textColor.withValues(alpha: 0.5),
-                  fontSize: XSizes.textSizeSm,
-                  fontFamily: 'Lexend',
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: themeController.primaryColor,
-                    width: 1,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: themeController.primaryColor,
-                    width: 1,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        SizedBox(height: XSizes.spacingMd),
-
-        // Email Field
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Email',
-              style: TextStyle(
-                fontSize: XSizes.textSizeSm,
-                fontWeight: FontWeight.w500,
-                color: themeController.textColor,
-                fontFamily: 'Lexend',
-              ),
-            ),
-            SizedBox(height: XSizes.spacingSm),
-            TextField(
-              controller: authController.mobileEmailController,
-              keyboardType: TextInputType.emailAddress,
-              cursorColor: themeController.primaryColor,
-              style: TextStyle(
-                color: themeController.textColor,
-                fontFamily: 'Lexend',
-                fontSize: XSizes.textSizeSm,
-              ),
-              decoration: InputDecoration(
-                hintText: 'example@gmail.com',
-                hintStyle: TextStyle(
-                  color: themeController.textColor.withValues(alpha: 0.5),
-                  fontSize: XSizes.textSizeSm,
-                  fontFamily: 'Lexend',
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: themeController.primaryColor,
-                    width: 1,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: themeController.primaryColor,
-                    width: 1,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        SizedBox(height: XSizes.spacingMd),
 
         // Phone Number Field
         Column(
@@ -475,12 +376,7 @@ class SigninMobileScreen extends StatelessWidget {
           children: [
             TextButton(
               onPressed: () {
-                authController.mobileNameController.clear();
-                authController.mobileEmailController.clear();
-                authController.phoneController.clear();
-                authController.otpController.clear();
-                authController.isOtpSent.value = false;
-                print('Manually set isOtpSent to false');
+                authController.resetMobileSigninForm();
               },
               child: Text(
                 'Change Number',

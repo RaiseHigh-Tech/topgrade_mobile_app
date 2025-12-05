@@ -316,36 +316,39 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                                   program.description,
                                 ),
                                 SizedBox(height: XSizes.spacingLg),
-                                // Skills Section
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Skills',
-                                      style: TextStyle(
-                                        fontSize: XSizes.textSizeXl,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: XFonts.lexend,
-                                        color: themeController.textColor,
+                                // Skills Section - Only show if skills exist
+                                if (_controller.skills.isNotEmpty)
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Skills',
+                                        style: TextStyle(
+                                          fontSize: XSizes.textSizeXl,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: XFonts.lexend,
+                                          color: themeController.textColor,
+                                        ),
                                       ),
+                                      SizedBox(height: XSizes.spacingSm),
+                                      Wrap(
+                                        spacing: XSizes.spacingSm,
+                                        runSpacing: XSizes.spacingXs,
+                                        children:
+                                            _controller.skills
+                                                .map(
+                                                  (skill) => _buildSkillChip(
+                                                    themeController,
+                                                    skill,
+                                                  ),
+                                                )
+                                                .toList(),
+                                      ),
+                                    ],
                                     ),
-                                    SizedBox(height: XSizes.spacingSm),
-                                    Wrap(
-                                      spacing: XSizes.spacingSm,
-                                      runSpacing: XSizes.spacingXs,
-                                      children:
-                                          _controller.staticSkills
-                                              .map(
-                                                (skill) => _buildSkillChip(
-                                                  themeController,
-                                                  skill,
-                                                ),
-                                              )
-                                              .toList(),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: XSizes.spacingLg),
+                                // Add spacing only if skills section is shown
+                                if (_controller.skills.isNotEmpty)
+                                  SizedBox(height: XSizes.spacingLg),
                                 // Course Details Section
                                 Column(
                                   mainAxisSize: MainAxisSize.min,

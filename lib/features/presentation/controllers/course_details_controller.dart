@@ -75,14 +75,8 @@ class CourseDetailsController extends GetxController {
   bool get isBookmarked => program?.isBookmarked ?? false;
   bool get hasProgramRequested => program?.hasProgramRequested ?? false;
 
-  // Get static skills data (will be replaced with API data later)
-  List<String> get staticSkills => [
-    'Typography',
-    'Grid Systems',
-    'Color Theory',
-    'Visual Hierarchy',
-    'Brand Identity',
-  ];
+  // Get skills from API data
+  List<String> get skills => program?.skills ?? [];
 
   // Request access related variables
   var isRequestingAccess = false.obs;

@@ -36,6 +36,7 @@ class ProgramDetailsModel {
   final bool hasProgramRequested;
   final int purchaseId;
   final int enrolledStudents;
+  final List<String> skills;
   final PricingModel pricing;
 
   ProgramDetailsModel({
@@ -53,6 +54,7 @@ class ProgramDetailsModel {
     required this.hasProgramRequested,
     required this.purchaseId,
     required this.enrolledStudents,
+    required this.skills,
     required this.pricing,
   });
 
@@ -72,6 +74,10 @@ class ProgramDetailsModel {
       hasProgramRequested: json['has_program_requested'] ?? false,
       purchaseId: json['purchase_id'] ?? 0,
       enrolledStudents: json['enrolled_students'] ?? 0,
+      skills: (json['skills'] as List<dynamic>?)
+              ?.map((skill) => skill.toString())
+              .toList() ??
+          [],
       pricing: PricingModel.fromJson(json['pricing'] ?? {}),
     );
   }

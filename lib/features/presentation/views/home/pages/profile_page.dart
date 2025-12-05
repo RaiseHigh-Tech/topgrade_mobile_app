@@ -402,9 +402,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _performLogout() {
     Get.back(); // Close dialog
-    // TODO: Implement actual logout logic with AuthController
     authController.logout();
-    Get.offAllNamed(XRoutes.login);
   }
 }
 

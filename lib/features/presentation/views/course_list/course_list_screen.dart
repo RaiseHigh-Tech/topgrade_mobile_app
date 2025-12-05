@@ -1007,7 +1007,7 @@ class _CourseListScreenState extends State<CourseListScreen>
         StatefulBuilder(
           builder: (context, setFilterState) {
             final minPrice = _tempMinPrice ?? 0.0;
-            final maxPrice = _tempMaxPrice ?? 9999.0;
+            final maxPrice = _tempMaxPrice ?? 12999.0;
 
             return Column(
               children: [
@@ -1033,8 +1033,8 @@ class _CourseListScreenState extends State<CourseListScreen>
                 RangeSlider(
                   values: RangeValues(minPrice, maxPrice),
                   min: 0,
-                  max: 9999,
-                  divisions: 20,
+                  max: 12999,
+                  divisions: 25,
                   activeColor: themeController.primaryColor,
                   inactiveColor: Colors.grey.withValues(alpha: 0.3),
                   onChanged: (values) {
@@ -1043,35 +1043,6 @@ class _CourseListScreenState extends State<CourseListScreen>
                       _tempMaxPrice = values.end;
                     });
                   },
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: CheckboxListTile(
-                        title: Text(
-                          'Free Only',
-                          style: TextStyle(
-                            fontFamily: XFonts.lexend,
-                            fontSize: XSizes.textSizeXs,
-                          ),
-                        ),
-                        value: minPrice == 0.0 && maxPrice == 0.0,
-                        onChanged: (value) {
-                          setFilterState(() {
-                            if (value == true) {
-                              _tempMinPrice = 0.0;
-                              _tempMaxPrice = 0.0;
-                            } else {
-                              _tempMinPrice = null;
-                              _tempMaxPrice = null;
-                            }
-                          });
-                        },
-                        activeColor: themeController.primaryColor,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    ),
-                  ],
                 ),
               ],
             );

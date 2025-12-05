@@ -47,28 +47,28 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'YOUR_WEB_API_KEY',
-    appId: 'YOUR_WEB_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    authDomain: 'YOUR_AUTH_DOMAIN',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyAhSaDK9CccznusICbQRqw6w8IAqzRGr2M',
+    appId: '1:75051611706:web:app_id_placeholder',
+    messagingSenderId: '75051611706',
+    projectId: 'topgrade-a7a00',
+    authDomain: 'topgrade-a7a00.firebaseapp.com',
+    storageBucket: 'topgrade-a7a00.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBKqWkRbrnlAJa5IdokhrqRc_QWuD-GSTY',
-    appId: '1:445384056234:android:6ee214da2a14ff19361fd3',
-    messagingSenderId: '445384056234',
-    projectId: 'topgrade-86000',
-    storageBucket: 'topgrade-86000.firebasestorage.app',
+    apiKey: 'AIzaSyAhSaDK9CccznusICbQRqw6w8IAqzRGr2M',
+    appId: '1:75051611706:android:b0b1ad1ab4cbb7fcd26703',
+    messagingSenderId: '75051611706',
+    projectId: 'topgrade-a7a00',
+    storageBucket: 'topgrade-a7a00.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR_IOS_API_KEY',
-    appId: 'YOUR_IOS_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyA5iyQgz9JKc15erC3fmGU2kw6GDUtwc4g',
+    appId: '1:75051611706:ios:e26f5cd750cce98ad26703',
+    messagingSenderId: '75051611706',
+    projectId: 'topgrade-a7a00',
+    storageBucket: 'topgrade-a7a00.firebasestorage.app',
     iosBundleId: 'com.topgrade.app',
   );
 }

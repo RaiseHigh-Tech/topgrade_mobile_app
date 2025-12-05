@@ -18,10 +18,6 @@ import 'utils/helpers/token_helper.dart';
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Initialize Firebase if not already initialized
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  
-  print('Background message received: ${message.notification?.title}');
-  print('Message data: ${message.data}');
-  
   // You can perform background tasks here like updating local database
   // Don't perform heavy operations as background handlers have time limits
 }
@@ -37,7 +33,7 @@ Future<void> _preloadFonts() async {
       rootBundle.load('assets/fonts/Lexend-Bold.ttf'),
     ]);
   } catch (e) {
-    print('Font preloading failed: $e');
+    debugPrint('Font preloading failed: $e');
   }
 }
 

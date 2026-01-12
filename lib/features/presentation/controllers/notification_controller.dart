@@ -48,7 +48,6 @@ class NotificationController extends GetxController {
       );
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        debugPrint('User granted notification permission');
 
         // Initialize local notifications
         await _initializeLocalNotifications();
@@ -56,13 +55,11 @@ class NotificationController extends GetxController {
         // Get FCM token
         String? token = await _firebaseMessaging.getToken();
         if (token != null) {
-          debugPrint('FCM Token: $token');
           await registerFcmToken(token);
         }
 
         // Listen for token refresh
         _firebaseMessaging.onTokenRefresh.listen((newToken) {
-          debugPrint('FCM Token refreshed: $newToken');
           registerFcmToken(newToken);
         });
 
@@ -126,7 +123,6 @@ class NotificationController extends GetxController {
 
   /// Handle foreground messages - show local notification
   void _handleForegroundMessage(RemoteMessage message) {
-    debugPrint('Foreground message: ${message.notification?.title}');
 
     // Refresh notification list and unread count
     fetchNotifications(refresh: true);
@@ -177,7 +173,6 @@ class NotificationController extends GetxController {
 
   /// Handle notification tap
   void _handleNotificationTap(RemoteMessage message) {
-    debugPrint('Notification tapped: ${message.data}');
 
     final notificationType = message.data['notification_type'] ?? '';
     final notificationId = message.data['notification_id'];
@@ -193,7 +188,6 @@ class NotificationController extends GetxController {
 
   /// Handle local notification tap
   void _onLocalNotificationTap(NotificationResponse response) {
-    debugPrint('Local notification tapped: ${response.payload}');
     // You can parse the payload and navigate accordingly
   }
 
@@ -280,7 +274,6 @@ class NotificationController extends GetxController {
     } catch (e) {
       hasError.value = true;
       errorMessage.value = e.toString();
-      debugPrint('Error fetching notifications: $e');
     } finally {
       isLoading.value = false;
       isLoadingMore.value = false;
@@ -363,7 +356,6 @@ class NotificationController extends GetxController {
       String? token = await _firebaseMessaging.getToken();
       if (token != null) {
         await _remoteSource.deleteFcmToken(token: token);
-        debugPrint('FCM token deleted');
       }
     } catch (e) {
       debugPrint('Error deleting FCM token: $e');

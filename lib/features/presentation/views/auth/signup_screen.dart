@@ -324,45 +324,45 @@ class SignupScreen extends StatelessWidget {
 
                   SizedBox(height: XSizes.spacingLg),
 
-                  // Social Login Buttons
-                  Column(
-                    children: [
-                      // Phone Number Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            // Handle Phone number signup
-                            authController.signInWithPhone();
-                          },
-                          label: Text(
-                            'Sign Up With Phone Number',
-                            style: TextStyle(
-                              color: themeController.textColor,
-                              fontFamily: 'Lexend',
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(
-                              vertical: XSizes.spacingMd,
-                            ),
-                            side: BorderSide(
-                              color: themeController.textColor.withValues(
-                                alpha: 0.3,
-                              ),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    ],
-                  ),
-
-                  SizedBox(height: XSizes.spacingLg),
+                  // // Social Login Buttons
+                  // Column(
+                  //   children: [
+                  //     // Phone Number Button
+                  //     SizedBox(
+                  //       width: double.infinity,
+                  //       child: OutlinedButton.icon(
+                  //         onPressed: () {
+                  //           // Handle Phone number signup
+                  //           authController.signInWithPhone();
+                  //         },
+                  //         label: Text(
+                  //           'Sign In With Phone Number',
+                  //           style: TextStyle(
+                  //             color: themeController.textColor,
+                  //             fontFamily: 'Lexend',
+                  //             fontWeight: FontWeight.w500,
+                  //           ),
+                  //         ),
+                  //         style: OutlinedButton.styleFrom(
+                  //           padding: EdgeInsets.symmetric(
+                  //             vertical: XSizes.spacingMd,
+                  //           ),
+                  //           side: BorderSide(
+                  //             color: themeController.textColor.withValues(
+                  //               alpha: 0.3,
+                  //             ),
+                  //           ),
+                  //           shape: RoundedRectangleBorder(
+                  //             borderRadius: BorderRadius.circular(12),
+                  //           ),
+                  //         ),
+                  //       ),
+                  //     ),
+                  //
+                  //   ],
+                  // ),
+                  //
+                  // SizedBox(height: XSizes.spacingLg),
 
                   // Footer
                   Row(

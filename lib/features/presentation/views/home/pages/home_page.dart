@@ -487,7 +487,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Widg
     }
 
     return SizedBox(
-      height: 220,
+      height: 230,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: programs.length,
@@ -518,6 +518,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Widg
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Stack(
                     children: [
@@ -614,58 +615,66 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin, Widg
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    program.subtitle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: XSizes.textSizeSm,
-                      fontFamily: XFonts.lexend,
-                      color: themeController.textColor,
-                    ),
-                  ),
-                  SizedBox(height: XSizes.spacingXs),
-                  Text(
-                    program.category?.name ?? 'General',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: themeController.textColor.withValues(alpha: 0.6),
-                      fontSize: XSizes.textSizeXs,
-                      fontFamily: XFonts.lexend,
-                    ),
-                  ),
-                  SizedBox(height: XSizes.spacingXxs),
-                  Text(
-                    '${program.enrolledStudents} students',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: themeController.textColor.withValues(alpha: 0.5),
-                      fontSize: XSizes.textSizeXxs,
-                      fontFamily: XFonts.lexend,
-                    ),
-                  ),
-                  const Spacer(),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.star,
-                        color: Colors.amber,
-                        size: XSizes.iconSizeSm,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        program.programRating.toString(),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: XSizes.textSizeXs,
-                          fontFamily: XFonts.lexend,
-                          color: themeController.textColor,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          program.subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: XSizes.textSizeSm,
+                            fontFamily: XFonts.lexend,
+                            color: themeController.textColor,
+                          ),
                         ),
-                      ),
-                    ],
+                        SizedBox(height: XSizes.spacingXxs),
+                        Text(
+                          program.category?.name ?? 'General',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: themeController.textColor.withValues(alpha: 0.6),
+                            fontSize: XSizes.textSizeXs,
+                            fontFamily: XFonts.lexend,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          '${program.enrolledStudents} students',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: themeController.textColor.withValues(alpha: 0.5),
+                            fontSize: XSizes.textSizeXxs,
+                            fontFamily: XFonts.lexend,
+                          ),
+                        ),
+                        const Spacer(),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: XSizes.iconSizeSm,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              program.programRating.toString(),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: XSizes.textSizeXs,
+                                fontFamily: XFonts.lexend,
+                                color: themeController.textColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

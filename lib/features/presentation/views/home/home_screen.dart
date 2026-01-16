@@ -44,7 +44,7 @@ class HomeScreen extends StatelessWidget {
               child: SafeArea(
                 child: Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: XSizes.paddingLg,
+                    horizontal: XSizes.paddingMd,
                     vertical: XSizes.paddingSm,
                   ),
                   child: Row(

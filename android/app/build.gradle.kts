@@ -19,7 +19,6 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.topgrade.app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -66,11 +65,6 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            
-            // Optimize build for release
-            ndk {
-                debugSymbolLevel = "FULL"
-            }
         }
         
         debug {

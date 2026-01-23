@@ -12,7 +12,24 @@
           "package_name": "com.topgrade.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "75051611706-k8e7u9er49hr9icmuo2a4d3q9ihaue5e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.topgrade.app",
+            "certificate_hash": "ec3a72780c9f7d5f5185ed1570fdf158bcc1ba6b"
+          }
+        },
+        {
+          "client_id": "75051611706-trtaufpm1a7v2apg4gjm9vht4bc0fald.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.topgrade.app",
+            "certificate_hash": "6ffc22e3189baf01e1b479b0b12d4720af9c5961"
+          }
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAhSaDK9CccznusICbQRqw6w8IAqzRGr2M"

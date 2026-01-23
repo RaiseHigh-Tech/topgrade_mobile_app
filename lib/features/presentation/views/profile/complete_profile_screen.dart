@@ -16,6 +16,7 @@ class CompleteProfileScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: themeController.backgroundColor,
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           // Background Gradient at the bottom
@@ -37,174 +38,184 @@ class CompleteProfileScreen extends StatelessWidget {
             ),
           ),
           SafeArea(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: XSizes.paddingLg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  SizedBox(height: XSizes.spacingXxl),
-                  
-                  // Header
-                  Text(
-                    "Complete Your\nProfile",
-                    style: TextStyle(
-                      fontSize: XSizes.textSize3xl,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: XFonts.lexend,
-                      color: themeController.textColor,
-                    ),
-                  ),
-                  SizedBox(height: XSizes.spacingMd),
-                  Text(
-                    "Please provide your name and email to continue",
-                    style: TextStyle(
-                      fontSize: XSizes.textSizeSm,
-                      color: Colors.grey,
-                      fontFamily: XFonts.lexend,
-                    ),
-                  ),
-                  
-                  SizedBox(height: XSizes.spacingXxl),
-                  
-                  // Full Name Field
-                  Column(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: themeController.height - 
+                             MediaQuery.of(context).padding.top - 
+                             MediaQuery.of(context).padding.bottom,
+                ),
+                child: IntrinsicHeight(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                    children: <Widget>[
+                      SizedBox(height: XSizes.spacingXxl),
+
+                      // Header
                       Text(
-                        'Full Name',
+                        "Complete Your\nProfile",
+
+                        style: TextStyle(
+                          fontSize: XSizes.textSize3xl,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: XFonts.lexend,
+                          color: themeController.textColor,
+                        ),
+                      ),
+                      SizedBox(height: XSizes.spacingMd),
+                      Text(
+                        "Please provide your name and email to continue",
                         style: TextStyle(
                           fontSize: XSizes.textSizeSm,
-                          fontWeight: FontWeight.w500,
-                          color: themeController.textColor,
+                          color: Colors.grey,
                           fontFamily: XFonts.lexend,
                         ),
                       ),
-                      SizedBox(height: XSizes.spacingSm),
-                      TextField(
-                        controller: authController.profileNameController,
-                        keyboardType: TextInputType.name,
-                        textCapitalization: TextCapitalization.words,
-                        cursorColor: themeController.primaryColor,
-                        style: TextStyle(
-                          color: themeController.textColor,
-                          fontFamily: XFonts.lexend,
-                          fontSize: XSizes.textSizeSm,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Enter your full name',
-                          hintStyle: TextStyle(
-                            color: themeController.textColor.withValues(
-                              alpha: 0.5,
-                            ),
-                            fontSize: XSizes.textSizeSm,
-                            fontFamily: XFonts.lexend,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: themeController.primaryColor,
-                              width: 1,
+
+                      SizedBox(height: XSizes.spacingXxl),
+
+                      // Full Name Field
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Full Name',
+                            style: TextStyle(
+                              fontSize: XSizes.textSizeSm,
+                              fontWeight: FontWeight.w500,
+                              color: themeController.textColor,
+                              fontFamily: XFonts.lexend,
                             ),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: themeController.primaryColor,
-                              width: 1,
+                          SizedBox(height: XSizes.spacingSm),
+                          TextField(
+                            controller: authController.profileNameController,
+                            keyboardType: TextInputType.name,
+                            textCapitalization: TextCapitalization.words,
+                            cursorColor: themeController.primaryColor,
+                            style: TextStyle(
+                              color: themeController.textColor,
+                              fontFamily: XFonts.lexend,
+                              fontSize: XSizes.textSizeSm,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'Enter your full name',
+                              hintStyle: TextStyle(
+                                color: themeController.textColor.withValues(
+                                  alpha: 0.5,
+                                ),
+                                fontSize: XSizes.textSizeSm,
+                                fontFamily: XFonts.lexend,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: themeController.primaryColor,
+                                  width: 1,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: themeController.primaryColor,
+                                  width: 1,
+                                ),
+                              ),
                             ),
                           ),
+                        ],
+                      ),
+
+                      SizedBox(height: XSizes.spacingLg),
+
+                      // Email Field
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Email',
+                            style: TextStyle(
+                              fontSize: XSizes.textSizeSm,
+                              fontWeight: FontWeight.w500,
+                              color: themeController.textColor,
+                              fontFamily: XFonts.lexend,
+                            ),
+                          ),
+                          SizedBox(height: XSizes.spacingSm),
+                          TextField(
+                            controller: authController.profileEmailController,
+                            keyboardType: TextInputType.emailAddress,
+                            cursorColor: themeController.primaryColor,
+                            style: TextStyle(
+                              color: themeController.textColor,
+                              fontFamily: XFonts.lexend,
+                              fontSize: XSizes.textSizeSm,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'example@gmail.com',
+                              hintStyle: TextStyle(
+                                color: themeController.textColor.withValues(
+                                  alpha: 0.5,
+                                ),
+                                fontSize: XSizes.textSizeSm,
+                                fontFamily: XFonts.lexend,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: themeController.primaryColor,
+                                  width: 1,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: themeController.primaryColor,
+                                  width: 1,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const Spacer(),
+
+                      // Footer Section
+                      Padding(
+                        padding: EdgeInsets.only(bottom: XSizes.spacingLg),
+                        child: Column(
+                          children: [
+                            Text(
+                              "This information will be used to personalize your experience",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: XSizes.textSizeSm,
+                                color: Colors.grey,
+                                fontFamily: XFonts.lexend,
+                              ),
+                            ),
+                            SizedBox(height: XSizes.spacingLg),
+                            Obx(
+                              () => SizedBox(
+                                width: double.infinity,
+                                height: 50,
+                                child: PrimaryButton(
+                                  text: 'Continue',
+                                  isLoading: authController.isLoading.value,
+                                  onPressed: () {
+                                    authController.updateProfile();
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  
-                  SizedBox(height: XSizes.spacingLg),
-                  
-                  // Email Field
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Email',
-                        style: TextStyle(
-                          fontSize: XSizes.textSizeSm,
-                          fontWeight: FontWeight.w500,
-                          color: themeController.textColor,
-                          fontFamily: XFonts.lexend,
-                        ),
-                      ),
-                      SizedBox(height: XSizes.spacingSm),
-                      TextField(
-                        controller: authController.profileEmailController,
-                        keyboardType: TextInputType.emailAddress,
-                        cursorColor: themeController.primaryColor,
-                        style: TextStyle(
-                          color: themeController.textColor,
-                          fontFamily: XFonts.lexend,
-                          fontSize: XSizes.textSizeSm,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'example@gmail.com',
-                          hintStyle: TextStyle(
-                            color: themeController.textColor.withValues(
-                              alpha: 0.5,
-                            ),
-                            fontSize: XSizes.textSizeSm,
-                            fontFamily: XFonts.lexend,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: themeController.primaryColor,
-                              width: 1,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: themeController.primaryColor,
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const Spacer(),
-                  
-                  // Footer Section
-                  Padding(
-                    padding: EdgeInsets.only(bottom: XSizes.spacingLg),
-                    child: Column(
-                      children: [
-                        Text(
-                          "This information will be used to personalize your experience",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: XSizes.textSizeSm,
-                            color: Colors.grey,
-                            fontFamily: XFonts.lexend,
-                          ),
-                        ),
-                        SizedBox(height: XSizes.spacingLg),
-                        Obx(
-                          () => SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: PrimaryButton(
-                              text: 'Continue',
-                              isLoading: authController.isLoading.value,
-                              onPressed: () {
-                                authController.updateProfile();
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

@@ -82,8 +82,13 @@
 -keep class * implements com.google.gson.JsonSerializer
 -keep class * implements com.google.gson.JsonDeserializer
 
-# Video Player
--keep class io.flutter.plugins.videoplayer.** { *; }
+# Media Kit Video Player
+-keep class com.alexmercerind.** { *; }
+-keep class media.** { *; }
+-keep class fvp.** { *; }
+-dontwarn com.alexmercerind.**
+-dontwarn media.**
+-dontwarn fvp.**
 
 # WebView
 -keep class io.flutter.plugins.webviewflutter.** { *; }

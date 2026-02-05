@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:video_player/video_player.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import '../../controllers/video_player_controller.dart';
 import '../../controllers/theme_controller.dart';
 import '../../../../utils/constants/sizes.dart';
@@ -39,7 +39,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void dispose() {
     // Reset orientation when leaving video player
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-
     // Properly dispose controller
     Get.delete<VideoPlayerScreenController>(
       tag: _controller.hashCode.toString(),
@@ -71,15 +70,24 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<XThemeController>(
-      builder:
-          (themeController) => Scaffold(
-            backgroundColor:
-                _isFullScreen ? Colors.black : themeController.backgroundColor,
-            appBar:
-                _isFullScreen
-                    ? null
-                    : AppBar(
+    return WillPopScope(
+      onWillPop: () async {
+        // If in fullscreen, exit fullscreen instead of closing the screen
+        if (_isFullScreen) {
+          _toggleFullScreen();
+          return false; // Don't close the screen
+        }
+        return true; // Allow back navigation
+      },
+      child: GetBuilder<XThemeController>(
+        builder:
+            (themeController) => Scaffold(
+              backgroundColor:
+                  _isFullScreen ? Colors.black : themeController.backgroundColor,
+              appBar:
+                  _isFullScreen
+                      ? null
+                      : AppBar(
                       backgroundColor: themeController.backgroundColor,
                       elevation: 0,
                       leading: IconButton(
@@ -121,6 +129,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     ? _buildFullScreenVideo(themeController)
                     : _buildNormalView(themeController),
           ),
+      ),
     );
   }
 
@@ -300,12 +309,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         );
       }
 
-      if (_controller.videoPlayerController != null) {
-        return AspectRatio(
-          aspectRatio: _controller.videoPlayerController!.value.aspectRatio,
+      if (_controller.videoController != null) {
+        return Container(
+          color: Colors.black,
           child: Stack(
+            fit: StackFit.expand,
             children: [
-              VideoPlayer(_controller.videoPlayerController!),
+              // Video widget - using Center to maintain aspect ratio
+              Center(
+                child: Video(
+                  controller: _controller.videoController!,
+                  controls: NoVideoControls,
+                ),
+              ),
 
               // Video Controls Overlay
               Positioned.fill(
@@ -352,6 +368,60 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   ) {
     return Stack(
       children: [
+        // Top bar for fullscreen with back/exit button
+        if (isFullScreen)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: XSizes.paddingSm,
+                vertical: XSizes.paddingXs,
+              ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.black54, Colors.transparent],
+                ),
+              ),
+              child: SafeArea(
+                child: Row(
+                  children: [
+                    // Exit fullscreen button
+                    IconButton(
+                      onPressed: _toggleFullScreen,
+                      icon: Icon(
+                        Icons.fullscreen_exit,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                      tooltip: 'Exit Fullscreen',
+                    ),
+                    SizedBox(width: XSizes.spacingSm),
+                    // Video title
+                    Expanded(
+                      child: Obx(
+                        () => Text(
+                          _controller.currentVideo.value?.title ?? 'Video Player',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: XSizes.textSizeSm,
+                            fontFamily: XFonts.lexend,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
         // Play/Pause Button (Center)
         Center(
           child: GestureDetector(
@@ -392,13 +462,25 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               children: [
                 // Progress Bar
                 Obx(
-                  () => VideoProgressIndicator(
-                    _controller.videoPlayerController!,
-                    allowScrubbing: true,
-                    colors: VideoProgressColors(
-                      playedColor: themeController.primaryColor,
-                      bufferedColor: Colors.white30,
-                      backgroundColor: Colors.white12,
+                  () => SliderTheme(
+                    data: SliderThemeData(
+                      trackHeight: 3,
+                      thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6),
+                      overlayShape: RoundSliderOverlayShape(overlayRadius: 12),
+                    ),
+                    child: Slider(
+                      value: _controller.currentPosition.value.inMilliseconds.toDouble(),
+                      max: _controller.totalDuration.value.inMilliseconds > 0
+                          ? _controller.totalDuration.value.inMilliseconds.toDouble()
+                          : 1.0,
+                      min: 0.0,
+                      activeColor: themeController.primaryColor,
+                      inactiveColor: Colors.white30,
+                      onChanged: (value) async {
+                        await _controller.player.seek(
+                          Duration(milliseconds: value.toInt()),
+                        );
+                      },
                     ),
                   ),
                 ),

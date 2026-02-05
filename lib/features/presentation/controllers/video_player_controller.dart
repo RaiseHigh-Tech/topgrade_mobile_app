@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:video_player/video_player.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:dio/dio.dart';
 import '../../../utils/constants/api_endpoints.dart';
 import '../../data/source/remote_source.dart';
@@ -59,7 +59,9 @@ class ModuleVideoStructure {
 }
 
 class VideoPlayerScreenController extends GetxController {
-  VideoPlayerController? videoPlayerController;
+  // Media Kit player and controller
+  late final Player player;
+  VideoController? videoController;
 
   // Remote source for API calls
   late RemoteSource _remoteSource;
@@ -92,14 +94,40 @@ class VideoPlayerScreenController extends GetxController {
   // Playlist data
   var playlist = <VideoItem>[].obs;
   var moduleStructure = <ModuleVideoStructure>[].obs;
+  
+  // Stream subscriptions
+  StreamSubscription<bool>? _playingSubscription;
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<Duration>? _durationSubscription;
+  StreamSubscription<bool>? _bufferingSubscription;
 
   @override
   void onInit() {
     super.onInit();
+    
+    // Initialize Media Kit player with configuration
+    player = Player(
+      configuration: PlayerConfiguration(
+        title: 'Video Player',
+        bufferSize: 32 * 1024 * 1024, // 32MB buffer
+        logLevel: MPVLogLevel.warn,
+      ),
+    );
+    
+    // Initialize video controller with configuration  
+    videoController = VideoController(
+      player,
+      configuration: const VideoControllerConfiguration(
+        enableHardwareAcceleration: true,
+        width: 640,
+        height: 360,
+      ),
+    );
+    
     // Initialize remote source
     _remoteSource = RemoteSourceImpl(dio: Get.find<DioClient>());
 
-    _configureAudioSession();
+    _setupPlayerListeners();
 
     // Get navigation arguments
     final args = Get.arguments as Map<String, dynamic>?;
@@ -121,20 +149,25 @@ class VideoPlayerScreenController extends GetxController {
 
   @override
   void onClose() {
-    _removeVideoPlayerListener();
-    _disposeVideoController();
+    _cancelSubscriptions();
+    _disposePlayer();
     _controlsTimer?.cancel();
     _volumeSliderTimer?.cancel();
     super.onClose();
   }
 
-  // Properly dispose video controller
-  Future<void> _disposeVideoController() async {
-    if (videoPlayerController != null) {
-      videoPlayerController!.removeListener(_videoPlayerListener);
-      await videoPlayerController!.dispose();
-      videoPlayerController = null;
-    }
+  // Cancel all stream subscriptions
+  void _cancelSubscriptions() {
+    _playingSubscription?.cancel();
+    _positionSubscription?.cancel();
+    _durationSubscription?.cancel();
+    _bufferingSubscription?.cancel();
+  }
+
+  // Properly dispose player and controller
+  Future<void> _disposePlayer() async {
+    await player.dispose();
+    videoController = null;
   }
 
   // Initialize playlist from server data
@@ -246,84 +279,59 @@ class VideoPlayerScreenController extends GetxController {
       isLoading.value = true;
       hasError.value = false;
 
-      if (videoPlayerController != null) {
-        await videoPlayerController!.pause();
-        isPlaying.value = false;
-      }
-      await _disposeVideoController();
-
       currentVideoIndex.value = index;
       currentVideo.value = playlist[index];
 
       currentPosition.value = Duration.zero;
       totalDuration.value = Duration.zero;
 
-      // Create video controller with network URL
-      videoPlayerController = VideoPlayerController.networkUrl(
-        Uri.parse(playlist[index].url),
-        videoPlayerOptions: VideoPlayerOptions(
-          mixWithOthers: false,
-          allowBackgroundPlayback: false,
-        ),
-        httpHeaders: {
-          'Connection': 'keep-alive',
-          'Accept-Encoding': 'identity',
-        },
+      // Open media with Media Kit
+      await player.open(
+        Media(playlist[index].url),
+        play: false, // Don't auto-play, we'll play manually after buffering
       );
-
-      // Initialize with extended timeout for high-quality videos
-      await videoPlayerController!.initialize().timeout(
-        Duration(seconds: 60), // Increased timeout for high-quality videos
-        onTimeout: () {
-          throw Exception('Video initialization timeout. Please check your internet connection.');
-        },
-      );
-
-      // Verify initialization was successful
-      if (!videoPlayerController!.value.isInitialized) {
-        throw Exception('Video failed to initialize properly');
-      }
 
       // Set volume
-      await setVolume(1.0);
+      await player.setVolume(100.0);
+      currentVolume.value = 1.0;
 
-      // Add listener before playing
-      videoPlayerController!.addListener(_videoPlayerListener);
-      totalDuration.value = videoPlayerController!.value.duration;
+      // Wait a bit for video to initialize
+      await Future.delayed(Duration(milliseconds: 500));
 
       // Start playing
-      await videoPlayerController!.play();
-      isPlaying.value = true;
+      await player.play();
+      
+      isLoading.value = false;
 
       debugPrint('✅ Video loaded successfully: ${playlist[index].title}');
     } catch (e) {
       debugPrint('❌ Video loading error: $e');
       hasError.value = true;
-      await _disposeVideoController();
-    } finally {
       isLoading.value = false;
     }
   }
 
-  // Video player listener
-  void _videoPlayerListener() {
-    if (videoPlayerController != null &&
-        videoPlayerController!.value.isInitialized) {
-      // Check for errors first
-      if (videoPlayerController!.value.hasError) {
-        debugPrint('❌ Video playback error detected');
-        hasError.value = true;
-        isPlaying.value = false;
-        return;
+  // Setup player stream listeners
+  void _setupPlayerListeners() {
+    // Listen to playing state
+    _playingSubscription = player.stream.playing.listen((playing) {
+      isPlaying.value = playing;
+      debugPrint('🎬 Player state changed - Playing: $playing');
+    });
+
+    // Listen to buffering state
+    _bufferingSubscription = player.stream.buffering.listen((buffering) {
+      debugPrint('📦 Buffering: $buffering');
+      if (buffering) {
+        isLoading.value = true;
+      } else {
+        isLoading.value = false;
       }
+    });
 
-      final position = videoPlayerController!.value.position;
-      final duration = videoPlayerController!.value.duration;
-
-      // Update observable values for UI
+    // Listen to position changes
+    _positionSubscription = player.stream.position.listen((position) {
       currentPosition.value = position;
-      totalDuration.value = duration;
-      isPlaying.value = videoPlayerController!.value.isPlaying;
 
       // API Update every 30 seconds when playing (for purchased content only)
       if (isPlaying.value &&
@@ -349,28 +357,24 @@ class VideoPlayerScreenController extends GetxController {
 
       // Check for video end and auto-play next
       if (position.inMilliseconds > 0 &&
-          duration.inMilliseconds > 0 &&
-          (position.inMilliseconds >= duration.inMilliseconds - 1000)) {
+          totalDuration.value.inMilliseconds > 0 &&
+          (position.inMilliseconds >= totalDuration.value.inMilliseconds - 1000)) {
         if (hasNextVideo) {
           playNextVideo();
-        } else {
-          isPlaying.value = false;
         }
       }
-    }
+    });
+
+    // Listen to duration changes
+    _durationSubscription = player.stream.duration.listen((duration) {
+      totalDuration.value = duration;
+      debugPrint('⏱️ Duration set: ${formatDuration(duration)}');
+    });
   }
 
   // Play/Pause toggle
   Future<void> togglePlayPause() async {
-    if (videoPlayerController == null) return;
-
-    if (videoPlayerController!.value.isPlaying) {
-      await videoPlayerController!.pause();
-    } else {
-      await videoPlayerController!.play();
-    }
-
-    isPlaying.value = videoPlayerController!.value.isPlaying;
+    await player.playOrPause();
   }
 
   // Show/Hide controls
@@ -477,11 +481,9 @@ class VideoPlayerScreenController extends GetxController {
 
   // Set volume
   Future<void> setVolume(double volume) async {
-    if (videoPlayerController != null) {
-      final clampedVolume = volume.clamp(0.0, 1.0);
-      await videoPlayerController!.setVolume(clampedVolume);
-      currentVolume.value = clampedVolume;
-    }
+    final clampedVolume = volume.clamp(0.0, 1.0);
+    await player.setVolume(clampedVolume * 100.0); // Media Kit uses 0-100 scale
+    currentVolume.value = clampedVolume;
   }
 
   // Mute/Unmute toggle
@@ -493,33 +495,6 @@ class VideoPlayerScreenController extends GetxController {
     }
   }
 
-  // Configure audio session for proper video playback
-  Future<void> _configureAudioSession() async {
-    try {
-      await SystemChannels.platform.invokeMethod(
-        'AudioManager.requestAudioFocus',
-      );
-      await SystemChannels.platform.invokeMethod(
-        'AudioManager.setStreamVolume',
-        {'streamType': 'STREAM_MUSIC', 'volume': 15, 'flags': 0},
-      );
-    } catch (e) {
-      debugPrint('⚠️ Failed to configure audio session: $e');
-    }
-  }
-
-  // Add video player listener for position-based printing
-  void _addVideoPlayerListener() {
-    if (videoPlayerController == null) return;
-    videoPlayerController!.addListener(_videoPlayerListener);
-  }
-
-  // Remove video player listener
-  void _removeVideoPlayerListener() {
-    if (videoPlayerController != null) {
-      videoPlayerController!.removeListener(_videoPlayerListener);
-    }
-  }
 
   // Update progress to server every 30 seconds
   Future<void> _updateProgressToServer(int watchTimeSeconds) async {

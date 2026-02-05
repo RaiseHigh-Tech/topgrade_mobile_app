@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:topgrade/utils/constants/fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:media_kit/media_kit.dart';
 import 'firebase_options.dart';
 
 import 'features/locale/locale.dart';
@@ -39,6 +40,9 @@ Future<void> _preloadFonts() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize MediaKit for video playback
+  MediaKit.ensureInitialized();
 
   // Initialize Firebase
   await Firebase.initializeApp(

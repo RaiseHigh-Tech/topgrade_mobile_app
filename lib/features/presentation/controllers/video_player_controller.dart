@@ -258,28 +258,46 @@ class VideoPlayerScreenController extends GetxController {
       currentPosition.value = Duration.zero;
       totalDuration.value = Duration.zero;
 
+      // Create video controller with network URL
       videoPlayerController = VideoPlayerController.networkUrl(
         Uri.parse(playlist[index].url),
-      );
-
-      await videoPlayerController!.initialize().timeout(
-        Duration(seconds: 30),
-        onTimeout: () {
-          throw Exception('Video initialization timeout after 30 seconds');
+        videoPlayerOptions: VideoPlayerOptions(
+          mixWithOthers: false,
+          allowBackgroundPlayback: false,
+        ),
+        httpHeaders: {
+          'Connection': 'keep-alive',
+          'Accept-Encoding': 'identity',
         },
       );
 
+      // Initialize with extended timeout for high-quality videos
+      await videoPlayerController!.initialize().timeout(
+        Duration(seconds: 60), // Increased timeout for high-quality videos
+        onTimeout: () {
+          throw Exception('Video initialization timeout. Please check your internet connection.');
+        },
+      );
+
+      // Verify initialization was successful
+      if (!videoPlayerController!.value.isInitialized) {
+        throw Exception('Video failed to initialize properly');
+      }
+
+      // Set volume
       await setVolume(1.0);
 
+      // Add listener before playing
       videoPlayerController!.addListener(_videoPlayerListener);
       totalDuration.value = videoPlayerController!.value.duration;
-      await setVolume(1.0);
 
+      // Start playing
       await videoPlayerController!.play();
       isPlaying.value = true;
 
-      _addVideoPlayerListener();
+      debugPrint('✅ Video loaded successfully: ${playlist[index].title}');
     } catch (e) {
+      debugPrint('❌ Video loading error: $e');
       hasError.value = true;
       await _disposeVideoController();
     } finally {
@@ -293,7 +311,9 @@ class VideoPlayerScreenController extends GetxController {
         videoPlayerController!.value.isInitialized) {
       // Check for errors first
       if (videoPlayerController!.value.hasError) {
+        debugPrint('❌ Video playback error detected');
         hasError.value = true;
+        isPlaying.value = false;
         return;
       }
 
@@ -402,9 +422,43 @@ class VideoPlayerScreenController extends GetxController {
   // Check if has next video
   bool get hasNextVideo => currentVideoIndex.value < playlist.length - 1;
 
-  // Retry video loading
+  // Retry video loading with exponential backoff
+  int _retryCount = 0;
+  static const int _maxRetries = 3;
+  
   Future<void> retryVideo() async {
-    await _loadVideoAtIndex(currentVideoIndex.value);
+    _retryCount = 0;
+    await _retryWithBackoff();
+  }
+  
+  Future<void> _retryWithBackoff() async {
+    if (_retryCount >= _maxRetries) {
+      debugPrint('❌ Max retry attempts reached');
+      hasError.value = true;
+      return;
+    }
+    
+    _retryCount++;
+    debugPrint('🔄 Retry attempt $_retryCount of $_maxRetries');
+    
+    // Wait before retrying with exponential backoff
+    if (_retryCount > 1) {
+      final delaySeconds = _retryCount * 2; // 2, 4, 6 seconds
+      debugPrint('⏳ Waiting ${delaySeconds}s before retry...');
+      await Future.delayed(Duration(seconds: delaySeconds));
+    }
+    
+    try {
+      await _loadVideoAtIndex(currentVideoIndex.value);
+      _retryCount = 0; // Reset on success
+    } catch (e) {
+      debugPrint('❌ Retry failed: $e');
+      if (_retryCount < _maxRetries) {
+        await _retryWithBackoff();
+      } else {
+        hasError.value = true;
+      }
+    }
   }
 
   // Format duration

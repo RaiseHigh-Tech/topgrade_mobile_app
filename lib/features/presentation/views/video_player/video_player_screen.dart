@@ -249,29 +249,53 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
       if (_controller.hasError.value) {
         return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 48,
-                color: themeController.textColor.withValues(alpha: 0.5),
-              ),
-              SizedBox(height: XSizes.spacingMd),
-              Text(
-                'Failed to load video',
-                style: TextStyle(
-                  fontSize: XSizes.textSizeSm,
-                  fontFamily: XFonts.lexend,
-                  color: themeController.textColor.withValues(alpha: 0.7),
+          child: Padding(
+            padding: EdgeInsets.all(XSizes.paddingLg),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: themeController.textColor.withValues(alpha: 0.5),
                 ),
-              ),
-              SizedBox(height: XSizes.spacingMd),
-              ElevatedButton(
-                onPressed: () => _controller.retryVideo(),
-                child: Text('Retry'),
-              ),
-            ],
+                SizedBox(height: XSizes.spacingMd),
+                Text(
+                  'Failed to load video',
+                  style: TextStyle(
+                    fontSize: XSizes.textSizeMd,
+                    fontFamily: XFonts.lexend,
+                    fontWeight: FontWeight.w600,
+                    color: themeController.textColor.withValues(alpha: 0.8),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: XSizes.spacingSm),
+                Text(
+                  'This could be due to:\n• Poor internet connection\n• Video format not supported\n• Server unavailable',
+                  style: TextStyle(
+                    fontSize: XSizes.textSizeXs,
+                    fontFamily: XFonts.lexend,
+                    color: themeController.textColor.withValues(alpha: 0.6),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: XSizes.spacingLg),
+                ElevatedButton.icon(
+                  onPressed: () => _controller.retryVideo(),
+                  icon: Icon(Icons.refresh),
+                  label: Text('Retry'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: themeController.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: XSizes.paddingLg,
+                      vertical: XSizes.paddingMd,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       }

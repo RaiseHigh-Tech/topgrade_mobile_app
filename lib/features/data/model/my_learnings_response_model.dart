@@ -23,6 +23,15 @@ class MyLearningsResponseModel {
           .toList() ?? [],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'success': success,
+      'statistics': statistics.toJson(),
+      'filter_applied': filterApplied,
+      'learnings': learnings.map((l) => l.toJson()).toList(),
+    };
+  }
 }
 
 class StatisticsModel {
@@ -45,6 +54,15 @@ class StatisticsModel {
       inProgressCourses: json['in_progress_courses'] ?? 0,
       completionRate: (json['completion_rate'] ?? 0.0).toDouble(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'total_courses': totalCourses,
+      'completed_courses': completedCourses,
+      'in_progress_courses': inProgressCourses,
+      'completion_rate': completionRate,
+    };
   }
 }
 
@@ -69,6 +87,15 @@ class LearningModel {
       progress: ProgressModel.fromJson(json['progress'] ?? {}),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'purchase_id': purchaseId,
+      'program': program.toJson(),
+      'purchase_date': purchaseDate.toIso8601String(),
+      'progress': progress.toJson(),
+    };
+  }
 }
 
 class ProgressModel {
@@ -76,6 +103,8 @@ class ProgressModel {
   final String status;
   final int completedModules;
   final int totalModules;
+  final int completedTopics;
+  final int totalTopics;
   final String estimatedCompletion;
 
   ProgressModel({
@@ -83,6 +112,8 @@ class ProgressModel {
     required this.status,
     required this.completedModules,
     required this.totalModules,
+    required this.completedTopics,
+    required this.totalTopics,
     required this.estimatedCompletion,
   });
 
@@ -92,9 +123,24 @@ class ProgressModel {
       status: json['status'] ?? '',
       completedModules: json['completed_modules'] ?? 0,
       totalModules: json['total_modules'] ?? 0,
+      completedTopics: json['completed_topics'] ?? 0,
+      totalTopics: json['total_topics'] ?? 0,
       estimatedCompletion: json['estimated_completion'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'percentage': percentage,
+      'status': status,
+      'completed_modules': completedModules,
+      'total_modules': totalModules,
+      'completed_topics': completedTopics,
+      'total_topics': totalTopics,
+      'estimated_completion': estimatedCompletion,
+    };
+  }
+
   bool get isCompleted => status.toLowerCase() == 'completed';
   bool get isInProgress => status.toLowerCase() == 'onprogress';
 }

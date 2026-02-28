@@ -61,6 +61,7 @@ class ModuleVideoStructure {
 class VideoPlayerScreenController extends GetxController {
   // Media Kit player and controller
   late final Player player;
+  final String videoId;
   VideoController? videoController;
 
   // Remote source for API calls
@@ -77,10 +78,14 @@ class VideoPlayerScreenController extends GetxController {
   var currentPosition = Duration.zero.obs;
   var totalDuration = Duration.zero.obs;
   var currentVolume = 1.0.obs;
+  var isBuffering = false.obs; // separate buffering indicator for overlay
 
   // Timer for hiding controls
   Timer? _controlsTimer;
   Timer? _volumeSliderTimer;
+
+  // Constructor accepting the video identifier
+  VideoPlayerScreenController({required this.videoId});
 
   // Position tracking for milestones
   Duration _lastApiUpdatePosition = Duration.zero;
@@ -109,7 +114,6 @@ class VideoPlayerScreenController extends GetxController {
     player = Player(
       configuration: PlayerConfiguration(
         title: 'Video Player',
-        bufferSize: 32 * 1024 * 1024, // 32MB buffer
         logLevel: MPVLogLevel.warn,
       ),
     );
@@ -119,8 +123,6 @@ class VideoPlayerScreenController extends GetxController {
       player,
       configuration: const VideoControllerConfiguration(
         enableHardwareAcceleration: true,
-        width: 640,
-        height: 360,
       ),
     );
     
@@ -278,6 +280,7 @@ class VideoPlayerScreenController extends GetxController {
     try {
       isLoading.value = true;
       hasError.value = false;
+      isBuffering.value = true;
 
       currentVideoIndex.value = index;
       currentVideo.value = playlist[index];
@@ -285,29 +288,22 @@ class VideoPlayerScreenController extends GetxController {
       currentPosition.value = Duration.zero;
       totalDuration.value = Duration.zero;
 
-      // Open media with Media Kit
+      // Open media and start playing immediately.
       await player.open(
         Media(playlist[index].url),
-        play: false, // Don't auto-play, we'll play manually after buffering
+        play: true,
       );
 
       // Set volume
       await player.setVolume(100.0);
       currentVolume.value = 1.0;
 
-      // Wait a bit for video to initialize
-      await Future.delayed(Duration(milliseconds: 500));
-
-      // Start playing
-      await player.play();
-      
-      isLoading.value = false;
-
-      debugPrint('✅ Video loaded successfully: ${playlist[index].title}');
+      debugPrint('✅ Video opened: ${playlist[index].title}');
     } catch (e) {
       debugPrint('❌ Video loading error: $e');
       hasError.value = true;
       isLoading.value = false;
+      isBuffering.value = false;
     }
   }
 
@@ -316,22 +312,37 @@ class VideoPlayerScreenController extends GetxController {
     // Listen to playing state
     _playingSubscription = player.stream.playing.listen((playing) {
       isPlaying.value = playing;
+      if (playing) {
+        isLoading.value = false;
+        debugPrint('🎬 Player started playing - Hiding loading screen');
+      }
       debugPrint('🎬 Player state changed - Playing: $playing');
     });
 
     // Listen to buffering state
     _bufferingSubscription = player.stream.buffering.listen((buffering) {
       debugPrint('📦 Buffering: $buffering');
-      if (buffering) {
-        isLoading.value = true;
-      } else {
+      isBuffering.value = buffering;
+      
+      // If we are already playing or have some position, don't show the full loading screen.
+      // Just show the buffer spinner overlay.
+      if (isPlaying.value || currentPosition.value.inMilliseconds > 0) {
         isLoading.value = false;
+      } else {
+        // Only show full loading before playback starts
+        isLoading.value = buffering;
       }
     });
 
     // Listen to position changes
     _positionSubscription = player.stream.position.listen((position) {
       currentPosition.value = position;
+      
+      // Safety check: if position is moving, we definitely shouldn't be in loading state
+      if (position.inMilliseconds > 500 && isLoading.value) {
+        isLoading.value = false;
+        debugPrint('🎬 Position detected - Hiding loading screen');
+      }
 
       // API Update every 30 seconds when playing (for purchased content only)
       if (isPlaying.value &&

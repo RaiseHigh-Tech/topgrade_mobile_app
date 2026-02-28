@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'my_learnings_controller.dart';
 import '../../data/model/program_details_response_model.dart';
 import '../../data/source/remote_source.dart';
 import '../../../utils/network/dio_client.dart';
@@ -118,6 +119,52 @@ class CourseDetailsController extends GetxController {
 
     final totalTopics = syllabusData.totalTopics;
     return '$totalTopics Lecture${totalTopics != 1 ? 's' : ''}';
+  }
+
+  // Find resume topic based on progress
+  TopicModel? get resumeTopic {
+    final syllabusData = syllabus;
+    if (syllabusData == null || syllabusData.modules.isEmpty) return null;
+
+    // Try to find progress in MyLearningsController
+    try {
+      if (Get.isRegistered<MyLearningsController>()) {
+        final learningsController = Get.find<MyLearningsController>();
+        final learning = learningsController.allLearnings.firstWhereOrNull(
+          (l) => l.program.id == programId,
+        );
+
+        if (learning != null) {
+          int completedTopicsCount = learning.progress.completedTopics;
+          
+          // Flatten all topics from all modules to find the exact lecture
+          List<TopicModel> allTopics = [];
+          for (var module in syllabusData.modules) {
+            allTopics.addAll(module.topics);
+          }
+
+          if (allTopics.isNotEmpty) {
+            // If completedTopicsCount is 1, we want the 2nd topic (index 1)
+            // If it's already at the end, stay at the last topic
+            int resumeIndex = completedTopicsCount;
+            if (resumeIndex >= allTopics.length) {
+              resumeIndex = allTopics.length - 1;
+            }
+            return allTopics[resumeIndex];
+          }
+        }
+      }
+    } catch (e) {
+      // Fallback if data is missing
+    }
+
+    // Default: Return the first topic of the first module
+    for (var module in syllabusData.modules) {
+      if (module.topics.isNotEmpty) {
+        return module.topics.first;
+      }
+    }
+    return null;
   }
 
   // Description expansion state

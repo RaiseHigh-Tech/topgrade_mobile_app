@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import 'categories_response_model.dart';
 import 'program_model.dart';
 
@@ -74,7 +76,8 @@ class ProgramDetailsModel {
       hasProgramRequested: json['has_program_requested'] ?? false,
       purchaseId: json['purchase_id'] ?? 0,
       enrolledStudents: json['enrolled_students'] ?? 0,
-      skills: (json['skills'] as List<dynamic>?)
+      skills:
+          (json['skills'] as List<dynamic>?)
               ?.map((skill) => skill.toString())
               .toList() ??
           [],
@@ -148,6 +151,7 @@ class TopicModel {
   });
 
   factory TopicModel.fromJson(Map<String, dynamic> json) {
+    debugPrint("Video URL for details screen ${json['video_url'] ?? ''}");
     return TopicModel(
       id: json['id'] ?? 0,
       topicTitle: json['topic_title'] ?? '',

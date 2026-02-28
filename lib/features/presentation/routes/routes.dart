@@ -43,7 +43,7 @@ class XRoutes {
     ),
     GetPage(
       name: videoPlayer,
-      page: () => const VideoPlayerScreen(),
+      page: () => VideoPlayerScreen(videoId: Get.parameters['videoId'] ?? ''),
       transition: Transition.fadeIn,
     ),
   ];

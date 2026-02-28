@@ -419,14 +419,15 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                               final syllabusData = _controller.syllabus;
                               if (syllabusData != null &&
                                   syllabusData.modules.isNotEmpty) {
-                                // Get first module and first topic
-                                final firstModule = syllabusData.modules.first;
-                                final firstTopic =
-                                    firstModule.topics.isNotEmpty
-                                        ? firstModule.topics.first
-                                        : null;
-          
-                                if (firstTopic != null) {
+                                // find resume topic and its module
+                                final resumeTopic = _controller.resumeTopic;
+                                if (resumeTopic != null) {
+                                  // Find module containing the resume topic
+                                  final resumeModule = syllabusData.modules.firstWhere(
+                                    (m) => m.topics.any((t) => t.id == resumeTopic.id),
+                                    orElse: () => syllabusData.modules.first,
+                                  );
+
                                   final syllabusJson = {
                                     'total_modules': syllabusData.totalModules,
                                     'total_topics': syllabusData.totalTopics,
@@ -458,9 +459,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                                     XRoutes.videoPlayer,
                                     arguments: {
                                       'syllabus': syllabusJson,
-                                      'currentTopicId': firstTopic.id,
-                                      'videoTitle': firstTopic.topicTitle,
-                                      'moduleTitle': firstModule.moduleTitle,
+                                      'currentTopicId': resumeTopic.id,
+                                      'videoTitle': resumeTopic.topicTitle,
+                                      'moduleTitle': resumeModule.moduleTitle,
                                       'programTitle':
                                           _controller.program?.title ?? 'Course',
                                       'hasPurchased': _controller.program?.hasPurchased,

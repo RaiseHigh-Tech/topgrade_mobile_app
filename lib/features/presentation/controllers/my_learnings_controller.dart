@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../data/model/my_learnings_response_model.dart';
 import '../../data/source/remote_source.dart';
@@ -36,6 +38,15 @@ class MyLearningsController extends GetxController {
       final response = await _remoteSource.getMyLearnings();
 
       if (response.success) {
+        // Log the full response in chunks to avoid terminal truncation
+        final jsonStr = jsonEncode(response.toJson());
+        _logLongString("✅ API: My Learnings Response: $jsonStr");
+        
+        // Explicitly print percentage to make it easy to find for the user
+        for (var learning in response.learnings) {
+          debugPrint("📊 COURSE: ${learning.program.title} | PERCENTAGE: ${learning.progress.percentage}%");
+        }
+        
         allLearnings.value = response.learnings;
         statistics.value = response.statistics;
 
@@ -132,6 +143,15 @@ class MyLearningsController extends GetxController {
         return completedLearnings;
       default:
         return allLearnings;
+    }
+  }
+
+  // Logger to handle long strings in terminal by splitting into chunks
+  void _logLongString(String text) {
+    const int maxLength = 800;
+    for (int i = 0; i < text.length; i += maxLength) {
+      int end = (i + maxLength < text.length) ? i + maxLength : text.length;
+      debugPrint(text.substring(i, end));
     }
   }
 }

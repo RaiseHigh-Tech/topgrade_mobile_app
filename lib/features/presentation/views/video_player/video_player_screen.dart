@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import '../../controllers/video_player_controller.dart';
-import '../../controllers/theme_controller.dart';
-import '../../../../utils/constants/sizes.dart';
+
 import '../../../../utils/constants/fonts.dart';
+import '../../../../utils/constants/sizes.dart';
+import '../../controllers/theme_controller.dart';
+import '../../controllers/video_player_controller.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
-  const VideoPlayerScreen({super.key});
+  final String videoId;
+  const VideoPlayerScreen({super.key, this.videoId = ''});
 
   @override
   State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
@@ -23,8 +25,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     super.initState();
     // Create a fresh controller instance to avoid reuse issues
     _controller = Get.put(
-      VideoPlayerScreenController(),
-      tag: DateTime.now().millisecondsSinceEpoch.toString(), // Unique tag
+      VideoPlayerScreenController(videoId: widget.videoId),
+      tag: widget.videoId, // stable tag for reuse
     );
 
     // Set preferred orientations for video player
@@ -40,9 +42,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     // Reset orientation when leaving video player
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     // Properly dispose controller
-    Get.delete<VideoPlayerScreenController>(
-      tag: _controller.hashCode.toString(),
-    );
+    Get.delete<VideoPlayerScreenController>(tag: widget.videoId);
 
     super.dispose();
   }
@@ -83,52 +83,54 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         builder:
             (themeController) => Scaffold(
               backgroundColor:
-                  _isFullScreen ? Colors.black : themeController.backgroundColor,
+                  _isFullScreen
+                      ? Colors.black
+                      : themeController.backgroundColor,
               appBar:
                   _isFullScreen
                       ? null
                       : AppBar(
-                      backgroundColor: themeController.backgroundColor,
-                      elevation: 0,
-                      leading: IconButton(
-                        icon: Icon(
-                          Icons.arrow_back,
-                          color: themeController.textColor,
-                        ),
-                        onPressed: () => Get.back(),
-                      ),
-                      title: Obx(
-                        () => Text(
-                          _controller.currentVideo.value?.title ??
-                              'Video Player',
-                          style: TextStyle(
-                            fontSize: XSizes.textSizeMd,
-                            fontFamily: XFonts.lexend,
-                            fontWeight: FontWeight.w600,
+                        backgroundColor: themeController.backgroundColor,
+                        elevation: 0,
+                        leading: IconButton(
+                          icon: Icon(
+                            Icons.arrow_back,
                             color: themeController.textColor,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                          onPressed: () => Get.back(),
                         ),
-                      ),
-                      actions: [
-                        IconButton(
-                          icon: Icon(
-                            Icons.playlist_play,
-                            color: themeController.primaryColor,
+                        title: Obx(
+                          () => Text(
+                            _controller.currentVideo.value?.title ??
+                                'Video Player',
+                            style: TextStyle(
+                              fontSize: XSizes.textSizeMd,
+                              fontFamily: XFonts.lexend,
+                              fontWeight: FontWeight.w600,
+                              color: themeController.textColor,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          onPressed: () {
-                            // Toggle playlist visibility
-                            _controller.togglePlaylistVisibility();
-                          },
                         ),
-                      ],
-                    ),
-            body:
-                _isFullScreen
-                    ? _buildFullScreenVideo(themeController)
-                    : _buildNormalView(themeController),
-          ),
+                        actions: [
+                          IconButton(
+                            icon: Icon(
+                              Icons.playlist_play,
+                              color: themeController.primaryColor,
+                            ),
+                            onPressed: () {
+                              // Toggle playlist visibility
+                              _controller.togglePlaylistVisibility();
+                            },
+                          ),
+                        ],
+                      ),
+              body:
+                  _isFullScreen
+                      ? _buildFullScreenVideo(themeController)
+                      : _buildNormalView(themeController),
+            ),
       ),
     );
   }
@@ -250,9 +252,57 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     bool isFullScreen = false,
   }) {
     return Obx(() {
+      // ── Initial buffering state: show thumbnail + spinner instead of black ──
       if (_controller.isLoading.value) {
-        return Center(
-          child: CircularProgressIndicator(color: themeController.primaryColor),
+        final thumb = _controller.currentVideo.value?.thumbnail;
+        return Container(
+          color: Colors.black,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Thumbnail
+              if (thumb != null && thumb.isNotEmpty)
+                Image.network(
+                  thumb,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              // Dark overlay
+              Container(color: Colors.black54),
+              // Centred loading indicator with label
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(
+                      color: themeController.primaryColor,
+                      strokeWidth: 3,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Preparing video…',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: XSizes.textSizeXs,
+                        fontFamily: XFonts.lexend,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Show total duration timing as requested
+                    Text(
+                      _controller.currentVideo.value?.duration ?? '00:00',
+                      style: TextStyle(
+                        color: Colors.white54,
+                        fontSize: XSizes.textSizeXs,
+                        fontFamily: XFonts.lexend,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         );
       }
 
@@ -315,7 +365,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Video widget - using Center to maintain aspect ratio
+              // ── Video frame ──
               Center(
                 child: Video(
                   controller: _controller.videoController!,
@@ -323,13 +373,25 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 ),
               ),
 
-              // Video Controls Overlay
+              // ── Mid-playback buffering overlay spinner ──
+              if (_controller.isBuffering.value)
+                Container(
+                  color: Colors.black38,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: themeController.primaryColor,
+                      strokeWidth: 3,
+                    ),
+                  ),
+                ),
+
+              // ── Controls overlay ──
               Positioned.fill(
                 child: GestureDetector(
                   onTap: () => _controller.toggleControls(),
                   child: AnimatedOpacity(
                     opacity: _controller.showControls.value ? 1.0 : 0.0,
-                    duration: Duration(milliseconds: 300),
+                    duration: const Duration(milliseconds: 300),
                     child: Container(
                       color: Colors.black26,
                       child: Stack(
@@ -404,7 +466,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     Expanded(
                       child: Obx(
                         () => Text(
-                          _controller.currentVideo.value?.title ?? 'Video Player',
+                          _controller.currentVideo.value?.title ??
+                              'Video Player',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: XSizes.textSizeSm,
@@ -469,10 +532,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                       overlayShape: RoundSliderOverlayShape(overlayRadius: 12),
                     ),
                     child: Slider(
-                      value: _controller.currentPosition.value.inMilliseconds.toDouble(),
-                      max: _controller.totalDuration.value.inMilliseconds > 0
-                          ? _controller.totalDuration.value.inMilliseconds.toDouble()
-                          : 1.0,
+                      value:
+                          _controller.currentPosition.value.inMilliseconds
+                              .toDouble(),
+                      max:
+                          _controller.totalDuration.value.inMilliseconds > 0
+                              ? _controller.totalDuration.value.inMilliseconds
+                                  .toDouble()
+                              : 1.0,
                       min: 0.0,
                       activeColor: themeController.primaryColor,
                       inactiveColor: Colors.white30,

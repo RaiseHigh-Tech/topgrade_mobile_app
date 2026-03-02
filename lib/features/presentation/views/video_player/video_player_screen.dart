@@ -70,14 +70,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: !_isFullScreen,
+      onPopInvokedWithResult: (didPop, _) {
         // If in fullscreen, exit fullscreen instead of closing the screen
-        if (_isFullScreen) {
+        if (!didPop && _isFullScreen) {
           _toggleFullScreen();
-          return false; // Don't close the screen
         }
-        return true; // Allow back navigation
       },
       child: GetBuilder<XThemeController>(
         builder:
@@ -134,6 +133,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       ),
     );
   }
+
 
   Widget _buildFullScreenVideo(XThemeController themeController) {
     return Container(
@@ -252,15 +252,22 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     bool isFullScreen = false,
   }) {
     return Obx(() {
-      // ── Initial buffering state: show thumbnail + spinner instead of black ──
+      // ── Initial loading: show thumbnail + spinner + stream-type badge ──────
       if (_controller.isLoading.value) {
         final thumb = _controller.currentVideo.value?.thumbnail;
+        final videoUrl = _controller.currentVideo.value?.url ?? '';
+        final isHls = videoUrl.toLowerCase().contains('.m3u8') ||
+            videoUrl.toLowerCase().contains('hls') ||
+            videoUrl.toLowerCase().contains('/stream/');
+        final streamLabel = isHls ? '⚡ HLS Stream' : '📁 MP4';
+        final duration = _controller.currentVideo.value?.duration ?? '00:00';
+
         return Container(
           color: Colors.black,
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Thumbnail
+              // Thumbnail background
               if (thumb != null && thumb.isNotEmpty)
                 Image.network(
                   thumb,
@@ -269,7 +276,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 ),
               // Dark overlay
               Container(color: Colors.black54),
-              // Centred loading indicator with label
+              // Centred loading indicator
               Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -278,24 +285,53 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                       color: themeController.primaryColor,
                       strokeWidth: 3,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     Text(
-                      'Preparing video…',
+                      'Loading video…',
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: XSizes.textSizeXs,
                         fontFamily: XFonts.lexend,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    // Show total duration timing as requested
+                    const SizedBox(height: 6),
+                    // Duration
                     Text(
-                      _controller.currentVideo.value?.duration ?? '00:00',
+                      duration,
                       style: TextStyle(
                         color: Colors.white54,
                         fontSize: XSizes.textSizeXs,
                         fontFamily: XFonts.lexend,
                         fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // Stream type badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isHls
+                            ? Colors.green.withValues(alpha: 0.25)
+                            : Colors.orange.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isHls
+                              ? Colors.greenAccent.withValues(alpha: 0.6)
+                              : Colors.orangeAccent.withValues(alpha: 0.6),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        streamLabel,
+                        style: TextStyle(
+                          color: isHls ? Colors.greenAccent : Colors.orange,
+                          fontSize: XSizes.textSizeXs,
+                          fontFamily: XFonts.lexend,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],

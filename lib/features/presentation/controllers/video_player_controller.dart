@@ -8,6 +8,12 @@ import '../../../utils/constants/api_endpoints.dart';
 import '../../data/source/remote_source.dart';
 import '../../../utils/network/dio_client.dart';
 
+// ─── HLS / MP4 helper ────────────────────────────────────────────────────────
+bool _isHlsUrl(String url) =>
+    url.toLowerCase().contains('.m3u8') ||
+    url.toLowerCase().contains('hls') ||
+    url.toLowerCase().contains('/stream/');
+
 class VideoItem {
   final int id;
   final String title;
@@ -106,26 +112,44 @@ class VideoPlayerScreenController extends GetxController {
   StreamSubscription<Duration>? _durationSubscription;
   StreamSubscription<bool>? _bufferingSubscription;
 
+  // Resume position in seconds (from last API-saved progress)
+  int _resumeAtSeconds = 0;
+
   @override
   void onInit() {
     super.onInit();
-    
-    // Initialize Media Kit player with configuration
+
+    // ── Initialize Media Kit player with fast-start MPV options ──────────────
     player = Player(
       configuration: PlayerConfiguration(
         title: 'Video Player',
         logLevel: MPVLogLevel.warn,
+        // Called once mpv is ready – set fast-start demuxer options via NativePlayer
+        ready: () async {
+          try {
+            final native = player.platform as NativePlayer;
+            await native.setProperty('cache', 'yes');
+            await native.setProperty('demuxer-max-bytes', '104857600');     // 100 MB read-ahead
+            await native.setProperty('demuxer-max-back-bytes', '10485760'); // 10 MB back-buffer
+            await native.setProperty('demuxer-readahead-secs', '20');       // 20 s look-ahead
+            await native.setProperty('video-sync', 'audio');
+            await native.setProperty('ytdl', 'no');                         // skip yt-dlp
+            debugPrint('✅ MPV fast-start options applied');
+          } catch (e) {
+            debugPrint('⚠️ Could not set MPV properties: $e');
+          }
+        },
       ),
     );
-    
-    // Initialize video controller with configuration  
+
+    // Initialize video controller with hardware acceleration
     videoController = VideoController(
       player,
       configuration: const VideoControllerConfiguration(
         enableHardwareAcceleration: true,
       ),
     );
-    
+
     // Initialize remote source
     _remoteSource = RemoteSourceImpl(dio: Get.find<DioClient>());
 
@@ -242,7 +266,21 @@ class VideoPlayerScreenController extends GetxController {
         playlist.value = serverPlaylist;
         moduleStructure.value = modules;
         currentVideo.value = playlist[currentVideoIndex];
+
+        // ── 📋 ALL VIDEO URLs — for browser testing ────────────────────────
+        debugPrint('╔══════════════════════════════════════════════════════════');
+        debugPrint('║ 📋 ALL LECTURE VIDEO URLs (${serverPlaylist.length} total)');
+        debugPrint('╠══════════════════════════════════════════════════════════');
+        for (int i = 0; i < serverPlaylist.length; i++) {
+          final v = serverPlaylist[i];
+          debugPrint('║ [${(i + 1).toString().padLeft(2, "0")}] ${v.title}');
+          debugPrint('║     🔗 ${v.url}');
+        }
+        debugPrint('╚══════════════════════════════════════════════════════════');
+        // ────────────────────────────────────────────────────────────────────
+
         _loadVideoAtIndex(currentVideoIndex);
+
       } else {
         _showNoVideosError();
       }
@@ -274,25 +312,53 @@ class VideoPlayerScreenController extends GetxController {
   }
 
   // Load video at specific index
-  Future<void> _loadVideoAtIndex(int index) async {
+  // [resumeSeconds] → seek to this position after the first frame appears.
+  Future<void> _loadVideoAtIndex(int index, {int resumeSeconds = 0}) async {
     if (index < 0 || index >= playlist.length) return;
 
     try {
       isLoading.value = true;
       hasError.value = false;
-      isBuffering.value = true;
+      isBuffering.value = false; // don't show mid-play spinner yet
 
       currentVideoIndex.value = index;
       currentVideo.value = playlist[index];
+      _resumeAtSeconds = resumeSeconds;
 
       currentPosition.value = Duration.zero;
       totalDuration.value = Duration.zero;
+      _lastApiUpdatePosition = Duration.zero;
 
-      // Open media and start playing immediately.
-      await player.open(
-        Media(playlist[index].url),
-        play: true,
-      );
+      // ════════════════════════════════════════════════════════════════════════
+      // 🧪 DEV TEST (commented out — HLS confirmed working 2026-02-28)
+      // const String devHlsTestUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
+      // final url = devHlsTestUrl;
+      // ════════════════════════════════════════════════════════════════════════
+      final url = playlist[index].url; // ← production URL restored
+
+      final isHls = _isHlsUrl(url);
+
+
+      // ── Timing log: record open time for startup measurement ─────────────
+      _videoOpenTime = DateTime.now();
+      _startupTimerLogged = false;
+      // ────────────────────────────────────────────────────────────────────────
+
+      // 📋 URL LOG — shows all lecture URLs in order for testing
+      debugPrint('┌─────────────────────────────────────────────────────────');
+      debugPrint('│ 🎬 VIDEO #${index + 1}/${playlist.length}');
+      debugPrint('│ 📌 Title   : ${playlist[index].title}');
+      debugPrint('│ 📁 Format  : ${isHls ? "HLS (.m3u8)" : "MP4"}');
+      debugPrint('│ 🔗 URL     : $url');
+      debugPrint('│ ⏱️ Duration : ${playlist[index].duration}');
+      debugPrint('│ 🕐 OpenedAt: ${_videoOpenTime!.toIso8601String()}');
+      debugPrint('└─────────────────────────────────────────────────────────');
+
+      // Build Media object
+      final media = Media(url);
+
+      // Open and let mpv start playing immediately
+      await player.open(media, play: true);
 
       // Set volume
       await player.setVolume(100.0);
@@ -307,53 +373,88 @@ class VideoPlayerScreenController extends GetxController {
     }
   }
 
+  // Track whether we have done the resume-seek for the current video
+  bool _hasSeekedToResume = false;
+  // Tracks when player.open() was called — to measure startup latency
+  DateTime? _videoOpenTime;
+  bool _startupTimerLogged = false;
+
   // Setup player stream listeners
   void _setupPlayerListeners() {
-    // Listen to playing state
+    // ── Playing state ─────────────────────────────────────────────────────────
     _playingSubscription = player.stream.playing.listen((playing) {
       isPlaying.value = playing;
       if (playing) {
+        // First frame is being presented → hide loading screen immediately
         isLoading.value = false;
-        debugPrint('🎬 Player started playing - Hiding loading screen');
+        // ── Startup timing log ──────────────────────────────────────────────
+        if (!_startupTimerLogged && _videoOpenTime != null) {
+          _startupTimerLogged = true;
+          final elapsed = DateTime.now().difference(_videoOpenTime!).inMilliseconds;
+          debugPrint('┌─────────────────────────────────────────────────────────');
+          debugPrint('│ ⚡ STARTUP TIME : ${elapsed}ms');
+          debugPrint('│ 📌 Video        : ${currentVideo.value?.title ?? "-"}');
+          debugPrint('│ 🔗 URL          : ${currentVideo.value?.url ?? "-"}');
+          debugPrint('│ ${elapsed < 2000 ? "✅ FAST" : elapsed < 5000 ? "⚠️  MODERATE" : "❌ SLOW (>5s)"}');
+          debugPrint('└─────────────────────────────────────────────────────────');
+        }
+        debugPrint('🎬 Playback started – loading screen hidden');
       }
-      debugPrint('🎬 Player state changed - Playing: $playing');
     });
 
-    // Listen to buffering state
+    // ── Buffering state ───────────────────────────────────────────────────────
+    // Only show the mid-playback spinner; never re-show the full loading screen
+    // once position has advanced past 0.
     _bufferingSubscription = player.stream.buffering.listen((buffering) {
       debugPrint('📦 Buffering: $buffering');
-      isBuffering.value = buffering;
-      
-      // If we are already playing or have some position, don't show the full loading screen.
-      // Just show the buffer spinner overlay.
-      if (isPlaying.value || currentPosition.value.inMilliseconds > 0) {
-        isLoading.value = false;
+      if (currentPosition.value.inMilliseconds > 0 || isPlaying.value) {
+        // Mid-play rebuffer: show the small overlay spinner only
+        isBuffering.value = buffering;
+        isLoading.value = false;   // never re-show full loading screen
       } else {
-        // Only show full loading before playback starts
-        isLoading.value = buffering;
+        // Pre-play initial buffer
+        isBuffering.value = buffering;
       }
     });
 
-    // Listen to position changes
+    // ── Position updates ──────────────────────────────────────────────────────
     _positionSubscription = player.stream.position.listen((position) {
       currentPosition.value = position;
-      
-      // Safety check: if position is moving, we definitely shouldn't be in loading state
-      if (position.inMilliseconds > 500 && isLoading.value) {
+
+      // As soon as the player is at any position > 0 ms, kill the loading screen
+      if (position.inMilliseconds > 0 && isLoading.value) {
         isLoading.value = false;
-        debugPrint('🎬 Position detected - Hiding loading screen');
+        // Fallback startup log if playing event was missed
+        if (!_startupTimerLogged && _videoOpenTime != null) {
+          _startupTimerLogged = true;
+          final elapsed = DateTime.now().difference(_videoOpenTime!).inMilliseconds;
+          debugPrint('┌─────────────────────────────────────────────────────────');
+          debugPrint('│ ⚡ STARTUP TIME (position): ${elapsed}ms');
+          debugPrint('│ 📌 Video : ${currentVideo.value?.title ?? "-"}');
+          debugPrint('│ ${elapsed < 2000 ? "✅ FAST" : elapsed < 5000 ? "⚠️  MODERATE" : "❌ SLOW (>5s)"}');
+          debugPrint('└─────────────────────────────────────────────────────────');
+        }
+        debugPrint('🎬 Position advancing – loading screen hidden');
       }
 
-      // API Update every 30 seconds when playing (for purchased content only)
+      // ── Resume seek: once the player has started and duration is known ──────
+      if (!_hasSeekedToResume &&
+          _resumeAtSeconds > 0 &&
+          totalDuration.value.inSeconds > 0 &&
+          position.inMilliseconds > 0) {
+        _hasSeekedToResume = true;
+        final resumeDuration = Duration(seconds: _resumeAtSeconds);
+        // Only seek if we haven't passed the resume point already
+        if (resumeDuration < totalDuration.value) {
+          player.seek(resumeDuration);
+          debugPrint('⏩ Resumed from ${_resumeAtSeconds}s');
+        }
+      }
+
+      // ── API progress update every 30 s ────────────────────────────────────
       if (isPlaying.value &&
           position.inSeconds >=
               _lastApiUpdatePosition.inSeconds + _apiUpdateInterval.inSeconds) {
-        print('   - isPlaying: ${isPlaying.value}');
-        print('   - hasPurchased: ${hasPurchased.value}');
-        print('   - currentTopicId: ${currentTopicId.value}');
-        print('   - purchaseId: ${purchaseId.value}');
-        print('   - position: ${position.inSeconds}s');
-
         if (hasPurchased.value &&
             currentTopicId.value > 0 &&
             purchaseId.value > 0) {
@@ -361,25 +462,24 @@ class VideoPlayerScreenController extends GetxController {
             seconds: (position.inSeconds ~/ 30) * 30,
           );
           _updateProgressToServer(position.inSeconds);
-        } else {
-          debugPrint('❌ DEBUG: API update blocked - missing purchase requirements');
+          debugPrint('📡 Progress saved: ${position.inSeconds}s');
         }
       }
 
-      // Check for video end and auto-play next
+      // ── Auto-play next video at end ────────────────────────────────────────
       if (position.inMilliseconds > 0 &&
           totalDuration.value.inMilliseconds > 0 &&
-          (position.inMilliseconds >= totalDuration.value.inMilliseconds - 1000)) {
+          position.inMilliseconds >= totalDuration.value.inMilliseconds - 1000) {
         if (hasNextVideo) {
           playNextVideo();
         }
       }
     });
 
-    // Listen to duration changes
+    // ── Duration changes ──────────────────────────────────────────────────────
     _durationSubscription = player.stream.duration.listen((duration) {
       totalDuration.value = duration;
-      debugPrint('⏱️ Duration set: ${formatDuration(duration)}');
+      debugPrint('⏱️ Duration: ${formatDuration(duration)}');
     });
   }
 
@@ -412,14 +512,16 @@ class VideoPlayerScreenController extends GetxController {
     isPlaylistVisible.value = !isPlaylistVisible.value;
   }
 
-  // Play video at specific index
-  Future<void> playVideoAtIndex(int index) async {
-    await _loadVideoAtIndex(index);
+  // Play video at specific index (optionally resume from saved position)
+  Future<void> playVideoAtIndex(int index, {int resumeSeconds = 0}) async {
+    _hasSeekedToResume = false;
+    await _loadVideoAtIndex(index, resumeSeconds: resumeSeconds);
   }
 
   // Play previous video
   Future<void> playPreviousVideo() async {
     if (hasPreviousVideo) {
+      _hasSeekedToResume = false;
       await _loadVideoAtIndex(currentVideoIndex.value - 1);
     }
   }
@@ -427,6 +529,7 @@ class VideoPlayerScreenController extends GetxController {
   // Play next video
   Future<void> playNextVideo() async {
     if (hasNextVideo) {
+      _hasSeekedToResume = false;
       await _loadVideoAtIndex(currentVideoIndex.value + 1);
     }
   }
@@ -443,29 +546,29 @@ class VideoPlayerScreenController extends GetxController {
   
   Future<void> retryVideo() async {
     _retryCount = 0;
+    _hasSeekedToResume = false;
     await _retryWithBackoff();
   }
-  
+
   Future<void> _retryWithBackoff() async {
     if (_retryCount >= _maxRetries) {
       debugPrint('❌ Max retry attempts reached');
       hasError.value = true;
       return;
     }
-    
+
     _retryCount++;
     debugPrint('🔄 Retry attempt $_retryCount of $_maxRetries');
-    
-    // Wait before retrying with exponential backoff
+
     if (_retryCount > 1) {
-      final delaySeconds = _retryCount * 2; // 2, 4, 6 seconds
+      final delaySeconds = _retryCount * 2;
       debugPrint('⏳ Waiting ${delaySeconds}s before retry...');
       await Future.delayed(Duration(seconds: delaySeconds));
     }
-    
+
     try {
       await _loadVideoAtIndex(currentVideoIndex.value);
-      _retryCount = 0; // Reset on success
+      _retryCount = 0;
     } catch (e) {
       debugPrint('❌ Retry failed: $e');
       if (_retryCount < _maxRetries) {

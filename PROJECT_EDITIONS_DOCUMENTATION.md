@@ -41,3 +41,107 @@ This document summarizes all modifications and enhancements made to the codebase
 
 ---
 **Status**: All core requirements (Immediate load, Granular Resume, No black screens, Branded loading) have been implemented and verified.
+
+---
+
+## Edition — 2026-02-28: HLS Support, MPV Fast-Start & Black Screen Fix
+
+**Files Modified:** `video_player_controller.dart`, `video_player_screen.dart`
+
+### Changes
+1. **MPV Fast-Start Options**: `Player.ready` callback casts to `NativePlayer` and sets `cache=yes`, `demuxer-max-bytes=100MB`, `demuxer-readahead-secs=20`, `video-sync=audio`, `ytdl=no` → first frame appears faster.
+2. **HLS URL Auto-Detection**: Added `_isHlsUrl()` helper detecting `.m3u8`/`hls`/`/stream/`. `media_kit 1.2.6` + libmpv natively supports HLS — no extra package needed.
+3. **Black Screen Fix**: `isLoading=false` fires immediately when `player.stream.playing→true` OR `position > 0ms`. Mid-play rebuffers show only small overlay spinner.
+4. **Resume-Position Support**: `_loadVideoAtIndex(index, {resumeSeconds})` seeks to saved position after first frame, guarded by `_hasSeekedToResume` flag.
+5. **Loading UI Badge**: Loading overlay shows `⚡ HLS Stream` (green) or `📁 MP4` (orange) badge.
+6. **PopScope**: Replaced deprecated `WillPopScope` → `PopScope`.
+
+**Verification:** `flutter analyze` — **No issues found.**
+
+---
+
+## Edition — 2026-02-28 (Update 2): HLS Dev Test & Production URL Restore
+
+**Date:** 2026-02-28 10:45–10:53 IST
+**Files Modified:** `video_player_controller.dart`
+
+### What Was Done
+
+#### 1. HLS Test URL Hardcoded (Dev Testing)
+- Temporarily hardcoded `https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8` in `_loadVideoAtIndex()` to verify HLS playback on a real device.
+- Purpose: Confirm `media_kit` + libmpv HLS pipeline works correctly before the backend migrates to HLS.
+
+#### 2. Test Result on Moto g45 5G (Android 15)
+- **✅ HLS stream started near-instantly** — no black screen, no delay.
+- Loading badge showed **⚡ HLS Stream** (green) on the loading overlay.
+- MPV fast-start options confirmed working.
+- **Conclusion:** Player is fully HLS-ready. No code changes needed when backend switches to `.m3u8` URLs.
+
+#### 3. Test URL Commented Out — Production URL Restored
+- `devHlsTestUrl` line is commented out and preserved as a reference.
+- `final url = playlist[index].url;` restored (real app video URL).
+- App hot-restarted on device with production URLs.
+
+```dart
+// 🧪 DEV TEST (commented out — HLS confirmed working 2026-02-28)
+// const String devHlsTestUrl = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
+// final url = devHlsTestUrl;
+// ════════════════════════════════════════════════════════════════════════
+final url = playlist[index].url; // ← production URL restored
+```
+
+### How to Re-enable HLS Test
+Uncomment the `devHlsTestUrl` lines and comment out `playlist[index].url` — useful for future regression testing.
+
+---
+
+## 🔴 Root Cause Investigation — 2026-02-28: Black Screen on Lecture 3+ (5–15 min delay)
+
+### Symptom
+- Lecture 1, 2 → play immediately ✅
+- Lecture 3 and some others → black screen for ~8 minutes, then plays ❌
+
+### Root Cause — S3 Glacier Storage Class
+
+Confirmed via HTTP header inspection:
+```
+curl -I https://media.topgradeinnovation.com/media/programs/regular/UI_UX_Design/UIUX_3.mp4_720p.mp4
+
+HTTP/2 200
+content-type: video/mp4
+x-amz-storage-class: GLACIER     ← ⚠️ PROBLEM
+x-cache: Miss from cloudfront     ← ⚠️ Not cached, retrieving from Glacier
+```
+
+**Lecture 2 (working):**
+```
+x-amz-storage-class: STANDARD    ← ✅ Hot storage, instant delivery
+```
+
+### Why 8 Minutes?
+S3 Glacier is archival (cold) storage. When a file is requested:
+1. CloudFront cache miss → request goes to S3 Glacier
+2. Glacier initiates restore (Standard retrieval = 3–12 hours, Expedited = 1–5 min)
+3. libmpv in the Flutter app silently retries/buffers while waiting
+4. Once Glacier restores the file → CloudFront serves it → video plays
+
+Chrome shows an XML error immediately because it does not retry. The Flutter app (libmpv) waits patiently, which is why the video eventually plays after ~8 minutes.
+
+### Fix Required (Backend)
+Move all course videos from Glacier → S3 Standard:
+```bash
+aws s3 cp s3://<bucket>/media/programs/regular/UI_UX_Design/ \
+          s3://<bucket>/media/programs/regular/UI_UX_Design/ \
+          --recursive \
+          --storage-class STANDARD \
+          --metadata-directive COPY
+```
+
+Apply this to **all program folders**, not just UI_UX_Design.
+
+### Priority
+| Fix | Impact | Who |
+|-----|--------|-----|
+| ✅ Move S3 Glacier → Standard | Fixes black screen instantly | **Backend team** |
+| 🔜 Migrate MP4 → HLS (.m3u8) | Faster startup for long videos | Backend team |
+| ✅ MPV fast-start options | Best possible MP4 startup (done) | App (done) |

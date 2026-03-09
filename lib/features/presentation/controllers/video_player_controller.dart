@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
+import 'package:better_player_plus/better_player_plus.dart';
 import 'package:dio/dio.dart';
 import '../../../utils/constants/api_endpoints.dart';
 import '../../data/source/remote_source.dart';
@@ -59,80 +59,53 @@ class ModuleVideoStructure {
 }
 
 class VideoPlayerScreenController extends GetxController {
-  // Media Kit player and controller
-  late final Player player;
-  VideoController? videoController;
+  var betterPlayerController = Rx<BetterPlayerController?>(null);
 
-  // Remote source for API calls
   late RemoteSource _remoteSource;
 
-  // Observable variables
   var isLoading = true.obs;
   var hasError = false.obs;
-  var isPlaying = false.obs;
-  var showControls = true.obs;
   var isPlaylistVisible = true.obs;
   var currentVideoIndex = 0.obs;
   var currentVideo = Rx<VideoItem?>(null);
-  var currentPosition = Duration.zero.obs;
-  var totalDuration = Duration.zero.obs;
-  var currentVolume = 1.0.obs;
 
-  // Timer for hiding controls
-  Timer? _controlsTimer;
-  Timer? _volumeSliderTimer;
-
-  // Position tracking for milestones
+  // Position tracking for API progress updates
   Duration _lastApiUpdatePosition = Duration.zero;
   static const Duration _apiUpdateInterval = Duration(seconds: 30);
 
-  // Progress tracking variables
   var hasPurchased = false.obs;
   var purchaseId = 0.obs;
   var currentTopicId = 0.obs;
 
-  // Playlist data
   var playlist = <VideoItem>[].obs;
   var moduleStructure = <ModuleVideoStructure>[].obs;
-  
-  // Stream subscriptions
-  StreamSubscription<bool>? _playingSubscription;
-  StreamSubscription<Duration>? _positionSubscription;
-  StreamSubscription<Duration>? _durationSubscription;
-  StreamSubscription<bool>? _bufferingSubscription;
+
+  BetterPlayerConfiguration get _playerConfig => BetterPlayerConfiguration(
+    autoPlay: true,
+    looping: false,
+    aspectRatio: 16 / 9,
+    fit: BoxFit.contain,
+    controlsConfiguration: const BetterPlayerControlsConfiguration(
+      showControls: true,
+    ),
+    deviceOrientationsOnFullScreen: const [
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ],
+    deviceOrientationsAfterFullScreen: const [
+      DeviceOrientation.portraitUp,
+    ],
+    eventListener: _onPlayerEvent,
+  );
 
   @override
   void onInit() {
     super.onInit();
-    
-    // Initialize Media Kit player with configuration
-    player = Player(
-      configuration: PlayerConfiguration(
-        title: 'Video Player',
-        bufferSize: 32 * 1024 * 1024, // 32MB buffer
-        logLevel: MPVLogLevel.warn,
-      ),
-    );
-    
-    // Initialize video controller with configuration  
-    videoController = VideoController(
-      player,
-      configuration: const VideoControllerConfiguration(
-        enableHardwareAcceleration: true,
-        width: 640,
-        height: 360,
-      ),
-    );
-    
-    // Initialize remote source
+
     _remoteSource = RemoteSourceImpl(dio: Get.find<DioClient>());
 
-    _setupPlayerListeners();
-
-    // Get navigation arguments
     final args = Get.arguments as Map<String, dynamic>?;
     if (args != null) {
-      // Initialize progress tracking from navigation arguments
       hasPurchased.value = args['hasPurchased'] ?? false;
       purchaseId.value = args['purchaseId'] ?? 0;
       currentTopicId.value = args['currentTopicId'] ?? 0;
@@ -149,28 +122,52 @@ class VideoPlayerScreenController extends GetxController {
 
   @override
   void onClose() {
-    _cancelSubscriptions();
-    _disposePlayer();
-    _controlsTimer?.cancel();
-    _volumeSliderTimer?.cancel();
+    betterPlayerController.value?.dispose();
+    betterPlayerController.value = null;
     super.onClose();
   }
 
-  // Cancel all stream subscriptions
-  void _cancelSubscriptions() {
-    _playingSubscription?.cancel();
-    _positionSubscription?.cancel();
-    _durationSubscription?.cancel();
-    _bufferingSubscription?.cancel();
+  void _onPlayerEvent(BetterPlayerEvent event) {
+    switch (event.betterPlayerEventType) {
+      case BetterPlayerEventType.initialized:
+        isLoading.value = false;
+        break;
+      case BetterPlayerEventType.progress:
+        final position = event.parameters?['progress'] as Duration?;
+        if (position != null) _handlePositionUpdate(position);
+        break;
+      case BetterPlayerEventType.exception:
+        hasError.value = true;
+        isLoading.value = false;
+        debugPrint('❌ BetterPlayer exception: ${event.parameters}');
+        break;
+      case BetterPlayerEventType.finished:
+        if (hasNextVideo) playNextVideo();
+        break;
+      default:
+        break;
+    }
   }
 
-  // Properly dispose player and controller
-  Future<void> _disposePlayer() async {
-    await player.dispose();
-    videoController = null;
+  void _handlePositionUpdate(Duration position) {
+    final isPlaying = betterPlayerController.value?.isPlaying() ?? false;
+
+    if (isPlaying &&
+        position.inSeconds >=
+            _lastApiUpdatePosition.inSeconds + _apiUpdateInterval.inSeconds) {
+      if (hasPurchased.value &&
+          currentTopicId.value > 0 &&
+          purchaseId.value > 0) {
+        _lastApiUpdatePosition = Duration(
+          seconds: (position.inSeconds ~/ 30) * 30,
+        );
+        _updateProgressToServer(position.inSeconds);
+      } else {
+        debugPrint('❌ API update blocked - missing purchase requirements');
+      }
+    }
   }
 
-  // Initialize playlist from server data
   void _initializeFromServerData(Map<String, dynamic> args) {
     try {
       final syllabus = args['syllabus'];
@@ -178,7 +175,7 @@ class VideoPlayerScreenController extends GetxController {
 
       List<VideoItem> serverPlaylist = [];
       List<ModuleVideoStructure> modules = [];
-      int currentVideoIndex = 0;
+      int startIndex = 0;
       int videoIndex = 0;
 
       if (syllabus != null && syllabus['modules'] != null) {
@@ -213,23 +210,20 @@ class VideoPlayerScreenController extends GetxController {
                 serverPlaylist.add(videoItem);
                 moduleVideos.add(videoItem);
                 if (topicId == currentTopicId) {
-                  currentVideoIndex = videoIndex;
+                  startIndex = videoIndex;
                 }
                 videoIndex++;
               }
             }
           }
 
-          // Add module to structure if it has videos
           if (moduleVideos.isNotEmpty) {
             modules.add(
               ModuleVideoStructure(
                 id: moduleId,
                 title: moduleName,
                 videos: moduleVideos,
-                isExpanded: moduleVideos.any(
-                  (video) => video.id == currentTopicId,
-                ),
+                isExpanded: moduleVideos.any((v) => v.id == currentTopicId),
               ),
             );
           }
@@ -239,8 +233,8 @@ class VideoPlayerScreenController extends GetxController {
       if (serverPlaylist.isNotEmpty) {
         playlist.value = serverPlaylist;
         moduleStructure.value = modules;
-        currentVideo.value = playlist[currentVideoIndex];
-        _loadVideoAtIndex(currentVideoIndex);
+        currentVideo.value = playlist[startIndex];
+        _loadVideoAtIndex(startIndex);
       } else {
         _showNoVideosError();
       }
@@ -249,7 +243,6 @@ class VideoPlayerScreenController extends GetxController {
     }
   }
 
-  // Show error when no videos are available
   void _showNoVideosError() {
     hasError.value = true;
     isLoading.value = false;
@@ -258,52 +251,41 @@ class VideoPlayerScreenController extends GetxController {
     currentVideo.value = null;
   }
 
-  // Toggle module expansion
   void toggleModuleExpansion(int moduleId) {
-    final updatedModules =
+    moduleStructure.value =
         moduleStructure.map((module) {
           if (module.id == moduleId) {
             return module.copyWith(isExpanded: !module.isExpanded);
           }
           return module;
         }).toList();
-
-    moduleStructure.value = updatedModules;
   }
 
-  // Load video at specific index
   Future<void> _loadVideoAtIndex(int index) async {
     if (index < 0 || index >= playlist.length) return;
 
     try {
       isLoading.value = true;
       hasError.value = false;
-
       currentVideoIndex.value = index;
       currentVideo.value = playlist[index];
+      _lastApiUpdatePosition = Duration.zero;
 
-      currentPosition.value = Duration.zero;
-      totalDuration.value = Duration.zero;
+      // Dispose old controller and clear so widget removes it
+      betterPlayerController.value?.dispose();
+      betterPlayerController.value = null;
 
-      // Open media with Media Kit
-      await player.open(
-        Media(playlist[index].url),
-        play: false, // Don't auto-play, we'll play manually after buffering
+      final dataSource = BetterPlayerDataSource(
+        BetterPlayerDataSourceType.network,
+        playlist[index].url,
       );
 
-      // Set volume
-      await player.setVolume(100.0);
-      currentVolume.value = 1.0;
+      // Create fresh controller for this video
+      final newController = BetterPlayerController(_playerConfig);
+      await newController.setupDataSource(dataSource);
+      betterPlayerController.value = newController;
 
-      // Wait a bit for video to initialize
-      await Future.delayed(Duration(milliseconds: 500));
-
-      // Start playing
-      await player.play();
-      
-      isLoading.value = false;
-
-      debugPrint('✅ Video loaded successfully: ${playlist[index].title}');
+      debugPrint('✅ Video loaded: ${playlist[index].title}');
     } catch (e) {
       debugPrint('❌ Video loading error: $e');
       hasError.value = true;
@@ -311,152 +293,46 @@ class VideoPlayerScreenController extends GetxController {
     }
   }
 
-  // Setup player stream listeners
-  void _setupPlayerListeners() {
-    // Listen to playing state
-    _playingSubscription = player.stream.playing.listen((playing) {
-      isPlaying.value = playing;
-      debugPrint('🎬 Player state changed - Playing: $playing');
-    });
-
-    // Listen to buffering state
-    _bufferingSubscription = player.stream.buffering.listen((buffering) {
-      debugPrint('📦 Buffering: $buffering');
-      if (buffering) {
-        isLoading.value = true;
-      } else {
-        isLoading.value = false;
-      }
-    });
-
-    // Listen to position changes
-    _positionSubscription = player.stream.position.listen((position) {
-      currentPosition.value = position;
-
-      // API Update every 30 seconds when playing (for purchased content only)
-      if (isPlaying.value &&
-          position.inSeconds >=
-              _lastApiUpdatePosition.inSeconds + _apiUpdateInterval.inSeconds) {
-        print('   - isPlaying: ${isPlaying.value}');
-        print('   - hasPurchased: ${hasPurchased.value}');
-        print('   - currentTopicId: ${currentTopicId.value}');
-        print('   - purchaseId: ${purchaseId.value}');
-        print('   - position: ${position.inSeconds}s');
-
-        if (hasPurchased.value &&
-            currentTopicId.value > 0 &&
-            purchaseId.value > 0) {
-          _lastApiUpdatePosition = Duration(
-            seconds: (position.inSeconds ~/ 30) * 30,
-          );
-          _updateProgressToServer(position.inSeconds);
-        } else {
-          debugPrint('❌ DEBUG: API update blocked - missing purchase requirements');
-        }
-      }
-
-      // Check for video end and auto-play next
-      if (position.inMilliseconds > 0 &&
-          totalDuration.value.inMilliseconds > 0 &&
-          (position.inMilliseconds >= totalDuration.value.inMilliseconds - 1000)) {
-        if (hasNextVideo) {
-          playNextVideo();
-        }
-      }
-    });
-
-    // Listen to duration changes
-    _durationSubscription = player.stream.duration.listen((duration) {
-      totalDuration.value = duration;
-      debugPrint('⏱️ Duration set: ${formatDuration(duration)}');
-    });
-  }
-
-  // Play/Pause toggle
-  Future<void> togglePlayPause() async {
-    await player.playOrPause();
-  }
-
-  // Show/Hide controls
-  void toggleControls() {
-    showControls.value = !showControls.value;
-
-    if (showControls.value) {
-      _startControlsTimer();
-    } else {
-      _controlsTimer?.cancel();
-    }
-  }
-
-  // Start timer to hide controls
-  void _startControlsTimer() {
-    _controlsTimer?.cancel();
-    _controlsTimer = Timer(Duration(seconds: 3), () {
-      showControls.value = false;
-    });
-  }
-
-  // Toggle playlist visibility
   void togglePlaylistVisibility() {
     isPlaylistVisible.value = !isPlaylistVisible.value;
   }
 
-  // Play video at specific index
   Future<void> playVideoAtIndex(int index) async {
     await _loadVideoAtIndex(index);
   }
 
-  // Play previous video
   Future<void> playPreviousVideo() async {
-    if (hasPreviousVideo) {
-      await _loadVideoAtIndex(currentVideoIndex.value - 1);
-    }
+    if (hasPreviousVideo) await _loadVideoAtIndex(currentVideoIndex.value - 1);
   }
 
-  // Play next video
   Future<void> playNextVideo() async {
-    if (hasNextVideo) {
-      await _loadVideoAtIndex(currentVideoIndex.value + 1);
-    }
+    if (hasNextVideo) await _loadVideoAtIndex(currentVideoIndex.value + 1);
   }
 
-  // Check if has previous video
   bool get hasPreviousVideo => currentVideoIndex.value > 0;
-
-  // Check if has next video
   bool get hasNextVideo => currentVideoIndex.value < playlist.length - 1;
 
-  // Retry video loading with exponential backoff
   int _retryCount = 0;
   static const int _maxRetries = 3;
-  
+
   Future<void> retryVideo() async {
     _retryCount = 0;
     await _retryWithBackoff();
   }
-  
+
   Future<void> _retryWithBackoff() async {
     if (_retryCount >= _maxRetries) {
-      debugPrint('❌ Max retry attempts reached');
       hasError.value = true;
       return;
     }
-    
     _retryCount++;
-    debugPrint('🔄 Retry attempt $_retryCount of $_maxRetries');
-    
-    // Wait before retrying with exponential backoff
     if (_retryCount > 1) {
-      final delaySeconds = _retryCount * 2; // 2, 4, 6 seconds
-      debugPrint('⏳ Waiting ${delaySeconds}s before retry...');
-      await Future.delayed(Duration(seconds: delaySeconds));
+      await Future.delayed(Duration(seconds: _retryCount * 2));
     }
-    
     try {
       await _loadVideoAtIndex(currentVideoIndex.value);
-      _retryCount = 0; // Reset on success
+      _retryCount = 0;
     } catch (e) {
-      debugPrint('❌ Retry failed: $e');
       if (_retryCount < _maxRetries) {
         await _retryWithBackoff();
       } else {
@@ -465,38 +341,6 @@ class VideoPlayerScreenController extends GetxController {
     }
   }
 
-  // Format duration
-  String formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    if (hours > 0) {
-      return '${twoDigits(hours)}:${twoDigits(minutes)}:${twoDigits(seconds)}';
-    } else {
-      return '${twoDigits(minutes)}:${twoDigits(seconds)}';
-    }
-  }
-
-  // Set volume
-  Future<void> setVolume(double volume) async {
-    final clampedVolume = volume.clamp(0.0, 1.0);
-    await player.setVolume(clampedVolume * 100.0); // Media Kit uses 0-100 scale
-    currentVolume.value = clampedVolume;
-  }
-
-  // Mute/Unmute toggle
-  Future<void> toggleMute() async {
-    if (currentVolume.value > 0) {
-      await setVolume(0.0);
-    } else {
-      await setVolume(0.7);
-    }
-  }
-
-
-  // Update progress to server every 30 seconds
   Future<void> _updateProgressToServer(int watchTimeSeconds) async {
     if (!hasPurchased.value ||
         currentTopicId.value <= 0 ||
@@ -520,8 +364,6 @@ class VideoPlayerScreenController extends GetxController {
       debugPrint('❌ API: Failed to update progress: $e');
       if (e is DioException) {
         debugPrint('❌ API: Dio error details: ${e.response?.data}');
-      } else {
-        debugPrint('❌ API: Non-Dio error: ${e.runtimeType}');
       }
     }
   }

@@ -30,6 +30,10 @@ android {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
+    lint {
+        disable += "NullSafeMutableLiveData"
+    }
+
     // Signing configurations for release builds
     signingConfigs {
         create("release") {

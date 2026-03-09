@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:media_kit_video/media_kit_video.dart';
+import 'package:better_player_plus/better_player_plus.dart';
 import '../../controllers/video_player_controller.dart';
 import '../../controllers/theme_controller.dart';
 import '../../../../utils/constants/sizes.dart';
@@ -16,239 +15,176 @@ class VideoPlayerScreen extends StatefulWidget {
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   late final VideoPlayerScreenController _controller;
-  bool _isFullScreen = false;
 
   @override
   void initState() {
     super.initState();
-    // Create a fresh controller instance to avoid reuse issues
     _controller = Get.put(
       VideoPlayerScreenController(),
-      tag: DateTime.now().millisecondsSinceEpoch.toString(), // Unique tag
+      tag: DateTime.now().millisecondsSinceEpoch.toString(),
     );
-
-    // Set preferred orientations for video player
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
   }
 
   @override
   void dispose() {
-    // Reset orientation when leaving video player
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    // Properly dispose controller
     Get.delete<VideoPlayerScreenController>(
       tag: _controller.hashCode.toString(),
     );
-
     super.dispose();
-  }
-
-  void _toggleFullScreen() {
-    setState(() {
-      _isFullScreen = !_isFullScreen;
-    });
-
-    if (_isFullScreen) {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
-    } else {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        // If in fullscreen, exit fullscreen instead of closing the screen
-        if (_isFullScreen) {
-          _toggleFullScreen();
-          return false; // Don't close the screen
-        }
-        return true; // Allow back navigation
-      },
-      child: GetBuilder<XThemeController>(
-        builder:
-            (themeController) => Scaffold(
-              backgroundColor:
-                  _isFullScreen ? Colors.black : themeController.backgroundColor,
-              appBar:
-                  _isFullScreen
-                      ? null
-                      : AppBar(
-                      backgroundColor: themeController.backgroundColor,
-                      elevation: 0,
-                      leading: IconButton(
-                        icon: Icon(
-                          Icons.arrow_back,
-                          color: themeController.textColor,
-                        ),
-                        onPressed: () => Get.back(),
-                      ),
-                      title: Obx(
-                        () => Text(
-                          _controller.currentVideo.value?.title ??
-                              'Video Player',
-                          style: TextStyle(
-                            fontSize: XSizes.textSizeMd,
-                            fontFamily: XFonts.lexend,
-                            fontWeight: FontWeight.w600,
-                            color: themeController.textColor,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      actions: [
-                        IconButton(
-                          icon: Icon(
-                            Icons.playlist_play,
-                            color: themeController.primaryColor,
-                          ),
-                          onPressed: () {
-                            // Toggle playlist visibility
-                            _controller.togglePlaylistVisibility();
-                          },
-                        ),
-                      ],
-                    ),
-            body:
-                _isFullScreen
-                    ? _buildFullScreenVideo(themeController)
-                    : _buildNormalView(themeController),
-          ),
-      ),
-    );
-  }
-
-  Widget _buildFullScreenVideo(XThemeController themeController) {
-    return Container(
-      color: Colors.black,
-      child: Center(
-        child: _buildVideoPlayer(themeController, isFullScreen: true),
-      ),
-    );
-  }
-
-  Widget _buildNormalView(XThemeController themeController) {
-    return Obx(
-      () => Column(
-        children: [
-          // Video Player Section
-          Container(
-            width: double.infinity,
-            height: 250,
-            color: Colors.black,
-            child: _buildVideoPlayer(themeController),
-          ),
-
-          // Video Info Section
-          Container(
-            padding: EdgeInsets.all(XSizes.paddingMd),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _controller.currentVideo.value?.title ?? 'Loading...',
+    return GetBuilder<XThemeController>(
+      builder:
+          (themeController) => Scaffold(
+            backgroundColor: themeController.backgroundColor,
+            appBar: AppBar(
+              backgroundColor: themeController.backgroundColor,
+              elevation: 0,
+              leading: IconButton(
+                icon: Icon(Icons.arrow_back, color: themeController.textColor),
+                onPressed: () => Get.back(),
+              ),
+              title: Obx(
+                () => Text(
+                  _controller.currentVideo.value?.title ?? 'Video Player',
                   style: TextStyle(
-                    fontSize: XSizes.textSizeLg,
+                    fontSize: XSizes.textSizeMd,
                     fontFamily: XFonts.lexend,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: themeController.textColor,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: XSizes.spacingSm),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.access_time,
-                      size: 16,
-                      color: themeController.textColor.withValues(alpha: 0.6),
-                    ),
-                    SizedBox(width: XSizes.spacingXs),
-                    Text(
-                      _controller.currentVideo.value?.duration ?? '00:00',
-                      style: TextStyle(
-                        fontSize: XSizes.textSizeXs,
-                        fontFamily: XFonts.lexend,
-                        color: themeController.textColor.withValues(alpha: 0.6),
-                      ),
-                    ),
-                    Spacer(),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: XSizes.spacingSm,
-                        vertical: XSizes.spacingXs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: themeController.primaryColor.withValues(
-                          alpha: 0.1,
-                        ),
-                        borderRadius: BorderRadius.circular(
-                          XSizes.borderRadiusSm,
-                        ),
-                      ),
-                      child: Text(
-                        'Module ${_controller.currentVideoIndex.value + 1}',
-                        style: TextStyle(
-                          fontSize: XSizes.textSizeXs,
-                          fontFamily: XFonts.lexend,
-                          fontWeight: FontWeight.w500,
-                          color: themeController.primaryColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (_controller.currentVideo.value?.description != null &&
-                    _controller
-                        .currentVideo
-                        .value!
-                        .description!
-                        .isNotEmpty) ...[
-                  SizedBox(height: XSizes.spacingMd),
-                  Text(
-                    _controller.currentVideo.value!.description!,
-                    style: TextStyle(
-                      fontSize: XSizes.textSizeSm,
-                      fontFamily: XFonts.lexend,
-                      color: themeController.textColor.withValues(alpha: 0.8),
-                      height: 1.5,
-                    ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
+              ),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    Icons.playlist_play,
+                    color: themeController.primaryColor,
                   ),
-                ],
+                  onPressed: () => _controller.togglePlaylistVisibility(),
+                ),
               ],
+            ),
+            body: _buildBody(themeController),
+          ),
+    );
+  }
+
+  Widget _buildBody(XThemeController themeController) {
+    return Obx(
+      () => Column(
+        children: [
+          // Video Player - fixed height
+          SizedBox(
+            width: double.infinity,
+            height: 250,
+            child: ColoredBox(
+              color: Colors.black,
+              child: _buildVideoPlayer(themeController),
             ),
           ),
 
-          // Playlist Section
-          if (_controller.isPlaylistVisible.value)
-            Expanded(child: _buildPlaylist(themeController)),
+          // Info + Playlist - takes remaining space
+          Expanded(
+            child:
+                _controller.isPlaylistVisible.value
+                    ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildVideoInfo(themeController),
+                        Expanded(child: _buildPlaylist(themeController)),
+                      ],
+                    )
+                    : SingleChildScrollView(
+                      child: _buildVideoInfo(themeController),
+                    ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildVideoPlayer(
-    XThemeController themeController, {
-    bool isFullScreen = false,
-  }) {
+  Widget _buildVideoInfo(XThemeController themeController) {
+    return Container(
+      padding: EdgeInsets.all(XSizes.paddingMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _controller.currentVideo.value?.title ?? 'Loading...',
+            style: TextStyle(
+              fontSize: XSizes.textSizeLg,
+              fontFamily: XFonts.lexend,
+              fontWeight: FontWeight.w700,
+              color: themeController.textColor,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          SizedBox(height: XSizes.spacingSm),
+          Row(
+            children: [
+              Icon(
+                Icons.access_time,
+                size: 16,
+                color: themeController.textColor.withValues(alpha: 0.6),
+              ),
+              SizedBox(width: XSizes.spacingXs),
+              Text(
+                _controller.currentVideo.value?.duration ?? '00:00',
+                style: TextStyle(
+                  fontSize: XSizes.textSizeXs,
+                  fontFamily: XFonts.lexend,
+                  color: themeController.textColor.withValues(alpha: 0.6),
+                ),
+              ),
+              Spacer(),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: XSizes.spacingSm,
+                  vertical: XSizes.spacingXs,
+                ),
+                decoration: BoxDecoration(
+                  color: themeController.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(XSizes.borderRadiusSm),
+                ),
+                child: Text(
+                  'Module ${_controller.currentVideoIndex.value + 1}',
+                  style: TextStyle(
+                    fontSize: XSizes.textSizeXs,
+                    fontFamily: XFonts.lexend,
+                    fontWeight: FontWeight.w500,
+                    color: themeController.primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_controller.currentVideo.value?.description != null &&
+              _controller.currentVideo.value!.description!.isNotEmpty) ...[
+            SizedBox(height: XSizes.spacingMd),
+            Text(
+              _controller.currentVideo.value!.description!,
+              style: TextStyle(
+                fontSize: XSizes.textSizeSm,
+                fontFamily: XFonts.lexend,
+                color: themeController.textColor.withValues(alpha: 0.8),
+                height: 1.5,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVideoPlayer(XThemeController themeController) {
     return Obx(() {
       if (_controller.isLoading.value) {
         return Center(
@@ -257,7 +193,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       }
 
       if (_controller.hasError.value) {
-        return Center(
+        return SingleChildScrollView(
           child: Padding(
             padding: EdgeInsets.all(XSizes.paddingLg),
             child: Column(
@@ -309,271 +245,24 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         );
       }
 
-      if (_controller.videoController != null) {
-        return Container(
-          color: Colors.black,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Video widget - using Center to maintain aspect ratio
-              Center(
-                child: Video(
-                  controller: _controller.videoController!,
-                  controls: NoVideoControls,
-                ),
-              ),
-
-              // Video Controls Overlay
-              Positioned.fill(
-                child: GestureDetector(
-                  onTap: () => _controller.toggleControls(),
-                  child: AnimatedOpacity(
-                    opacity: _controller.showControls.value ? 1.0 : 0.0,
-                    duration: Duration(milliseconds: 300),
-                    child: Container(
-                      color: Colors.black26,
-                      child: Stack(
-                        children: [
-                          _buildVideoControls(themeController, isFullScreen),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+      if (_controller.betterPlayerController.value != null) {
+        return BetterPlayer(
+          key: ValueKey(_controller.currentVideoIndex.value),
+          controller: _controller.betterPlayerController.value!,
         );
       }
 
-      return Container(
-        color: Colors.black,
-        child: Center(
-          child: Text(
-            'No video loaded',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: XSizes.textSizeSm,
-              fontFamily: XFonts.lexend,
-            ),
+      return Center(
+        child: Text(
+          'No video loaded',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: XSizes.textSizeSm,
+            fontFamily: XFonts.lexend,
           ),
         ),
       );
     });
-  }
-
-  Widget _buildVideoControls(
-    XThemeController themeController,
-    bool isFullScreen,
-  ) {
-    return Stack(
-      children: [
-        // Top bar for fullscreen with back/exit button
-        if (isFullScreen)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: XSizes.paddingSm,
-                vertical: XSizes.paddingXs,
-              ),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.black54, Colors.transparent],
-                ),
-              ),
-              child: SafeArea(
-                child: Row(
-                  children: [
-                    // Exit fullscreen button
-                    IconButton(
-                      onPressed: _toggleFullScreen,
-                      icon: Icon(
-                        Icons.fullscreen_exit,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                      tooltip: 'Exit Fullscreen',
-                    ),
-                    SizedBox(width: XSizes.spacingSm),
-                    // Video title
-                    Expanded(
-                      child: Obx(
-                        () => Text(
-                          _controller.currentVideo.value?.title ?? 'Video Player',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: XSizes.textSizeSm,
-                            fontFamily: XFonts.lexend,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-        // Play/Pause Button (Center)
-        Center(
-          child: GestureDetector(
-            onTap: () => _controller.togglePlayPause(),
-            child: Container(
-              padding: EdgeInsets.all(XSizes.paddingMd),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                shape: BoxShape.circle,
-              ),
-              child: Obx(
-                () => Icon(
-                  _controller.isPlaying.value ? Icons.pause : Icons.play_arrow,
-                  color: Colors.white,
-                  size: isFullScreen ? 48 : 36,
-                ),
-              ),
-            ),
-          ),
-        ),
-
-        // Bottom Controls
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            padding: EdgeInsets.all(XSizes.paddingSm),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Colors.black54],
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Progress Bar
-                Obx(
-                  () => SliderTheme(
-                    data: SliderThemeData(
-                      trackHeight: 3,
-                      thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6),
-                      overlayShape: RoundSliderOverlayShape(overlayRadius: 12),
-                    ),
-                    child: Slider(
-                      value: _controller.currentPosition.value.inMilliseconds.toDouble(),
-                      max: _controller.totalDuration.value.inMilliseconds > 0
-                          ? _controller.totalDuration.value.inMilliseconds.toDouble()
-                          : 1.0,
-                      min: 0.0,
-                      activeColor: themeController.primaryColor,
-                      inactiveColor: Colors.white30,
-                      onChanged: (value) async {
-                        await _controller.player.seek(
-                          Duration(milliseconds: value.toInt()),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                SizedBox(height: XSizes.spacingSm),
-
-                // Control Buttons Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Time Display
-                    Obx(
-                      () => Text(
-                        '${_controller.formatDuration(_controller.currentPosition.value)} / ${_controller.formatDuration(_controller.totalDuration.value)}',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: XSizes.textSizeXs,
-                          fontFamily: XFonts.lexend,
-                        ),
-                      ),
-                    ),
-
-                    // Control Buttons
-                    Row(
-                      children: [
-                        // Previous Video
-                        IconButton(
-                          onPressed:
-                              _controller.hasPreviousVideo
-                                  ? () => _controller.playPreviousVideo()
-                                  : null,
-                          icon: Icon(
-                            Icons.skip_previous,
-                            color:
-                                _controller.hasPreviousVideo
-                                    ? Colors.white
-                                    : Colors.white38,
-                            size: 24,
-                          ),
-                        ),
-
-                        // Next Video
-                        IconButton(
-                          onPressed:
-                              _controller.hasNextVideo
-                                  ? () => _controller.playNextVideo()
-                                  : null,
-                          icon: Icon(
-                            Icons.skip_next,
-                            color:
-                                _controller.hasNextVideo
-                                    ? Colors.white
-                                    : Colors.white38,
-                            size: 24,
-                          ),
-                        ),
-
-                        // Volume Control
-                        IconButton(
-                          onPressed: () => _controller.toggleMute(),
-                          icon: Obx(
-                            () => Icon(
-                              _controller.currentVolume.value > 0.5
-                                  ? Icons.volume_up
-                                  : _controller.currentVolume.value > 0
-                                  ? Icons.volume_down
-                                  : Icons.volume_off,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-
-                        // Fullscreen Toggle
-                        IconButton(
-                          onPressed: _toggleFullScreen,
-                          icon: Icon(
-                            _isFullScreen
-                                ? Icons.fullscreen_exit
-                                : Icons.fullscreen,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _buildPlaylist(XThemeController themeController) {
@@ -624,7 +313,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             ),
           ),
 
-          // Playlist Items with Module Structure
+          // Playlist Items
           Expanded(
             child: Obx(
               () => ListView.builder(
@@ -643,9 +332,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         color: themeController.textColor.withValues(alpha: 0.1),
                         width: 1,
                       ),
-                      borderRadius: BorderRadius.circular(
-                        XSizes.borderRadiusMd,
-                      ),
+                      borderRadius: BorderRadius.circular(XSizes.borderRadiusMd),
                     ),
                     child: Column(
                       children: [
